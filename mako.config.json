@@ -1,0 +1,14 @@
+{
+  "entry": {
+    "main": "src/plugin.ts"
+  },
+  "cjs": true,
+  "codeSplitting": {
+    "strategy": "auto"
+  },
+  "copy": ["styles.css", "manifest.json"],
+  "platform": "node",
+  "externals": {
+    "obsidian": "obsidian"
+  }
+}
