@@ -29,5 +29,18 @@
       "indentWidth": 2,
       "indentStyle": "space"
     }
-  }
+  },
+  "overrides": [
+    {
+      "include": ["*.svelte"],
+      "linter": {
+        "rules": {
+          "style": {
+            "useConst": "off",
+            "useImportType": "off"
+          }
+        }
+      }
+    }
+  ]
 }

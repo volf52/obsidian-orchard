@@ -9,6 +9,7 @@ import OrchardSettingsTab, {
 } from "./settings";
 import { YtInputModal } from "./yt";
 import YtServ from "./yt/service";
+import "../styles.css";
 
 class Orchard extends Plugin {
   settings: OrchardSettings;

@@ -3,22 +3,33 @@ import builtins from "builtin-modules";
 import { pluginSvelte } from "@rsbuild/plugin-svelte";
 
 export default defineConfig({
-  plugins: [pluginSvelte()],
+  plugins: [
+    pluginSvelte({
+      // svelteLoaderOptions: { compilerOptions: { css: "injected" } },
+    }),
+  ],
   source: {
     entry: {
-      main: "./src/plugin.ts",
+      main: {
+        html: false,
+        import: "./src/plugin.ts",
+        filename: "main.js",
+        library: { type: "umd" },
+      },
     },
     assetsInclude: ["./styles.css", "./manifest.json"],
   },
   resolve: {
-    extensions: [".ts"],
+    extensions: [".ts", ".svelte", ".js"],
   },
   output: {
+    minify: false,
+    inlineStyles: false,
     injectStyles: true,
     target: "web",
     // target: "node",
     externals: [
-      "obsidian",
+      { obsidian: "commonjs2 obsidian" },
       "electron",
       "@codemirror/autocomplete",
       "@codemirror/collab",
@@ -33,11 +44,6 @@ export default defineConfig({
       "@lezer/lr",
       ...builtins,
     ],
-    // manifest: {
-    //   generate: ({ files, manifestData }) => ({
-    //     manifest_version: 2,
-    //     version: manifestData.
-    //   }),
-    // },
   },
+  performance: { chunkSplit: { strategy: "all-in-one" } },
 });

@@ -3,8 +3,12 @@ import { ICON, ORCHAR_RSB_VIEW_TYPE } from "./constants";
 import { PREDEFINED_LATEX, insertLatexItem } from "./latex";
 import type Orchard from "./plugin";
 import { getActiveEditor } from "./utils";
+import Counter from "./components/Counter.svelte";
+import { mount, unmount } from "svelte";
 
 class RightSidebarView extends ItemView {
+  counter: ReturnType<typeof Counter>;
+
   constructor(
     leaf: WorkspaceLeaf,
     readonly plugin: Orchard,
@@ -52,6 +56,19 @@ class RightSidebarView extends ItemView {
 
         insertLatexItem(lit, editor);
       });
+    }
+
+    const counterEl = container.createDiv();
+    counterEl.id = "counterSv";
+    this.counter = mount(Counter, {
+      target: counterEl,
+      props: { startCount: 5 },
+    });
+  }
+
+  async onClose(): Promise<void> {
+    if (this.counter) {
+      unmount(this.counter);
     }
   }
 
