@@ -90,7 +90,6 @@ class Orchard extends Plugin {
       ...DEFAULT_SETTINGS,
       ...loadedSettings,
     };
-    // this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
   }
 
   async saveSettings() {

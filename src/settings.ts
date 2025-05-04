@@ -38,7 +38,16 @@ class OrchardSettingsTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("Video Note Folder")
-      .addSearch((search) => {});
+      .addDropdown((dropdown) => {
+        const folders = this.app.vault.getAllFolders(false);
+
+        for (const folder of folders) {
+          dropdown.addOption(folder.path, folder.name);
+        }
+        dropdown.onChange((newVal) => {
+          console.log("Selected folder", newVal);
+        });
+      });
   }
 }
 

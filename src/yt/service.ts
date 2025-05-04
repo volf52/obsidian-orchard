@@ -15,6 +15,7 @@ class YtServ {
     readonly plugin: Orchard,
   ) {
     this.plugin.et.onSettingUpdate((s) => {
+      console.log("Google API Key updated", s.googleApiKey);
       this.updateApiKey(s.googleApiKey);
     });
 
