@@ -33,7 +33,6 @@ class OrchardSettingsTab extends PluginSettingTab {
       fullWidth: true,
       onChange: (_txt, value) => {
         pluginSettings.googleApiKey = value;
-        this.plugin.settingsUpdated();
       },
     });
 
@@ -54,10 +53,13 @@ class OrchardSettingsTab extends PluginSettingTab {
       containerEl,
       cta: true,
       text: "Save Settings",
-      onClick: (_b, e) => {
+      onClick: (b, e) => {
         e.preventDefault();
 
-        this.plugin.saveSettings();
+        b.setDisabled(true);
+        this.plugin.saveSettings().finally(() => {
+          b.setDisabled(false);
+        });
       },
     });
   }

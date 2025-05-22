@@ -96,6 +96,7 @@ class Orchard extends Plugin {
   }
 
   async saveSettings() {
+    notifySettingUpdate(this.settings);
     await this.saveData(this.settings);
   }
 
