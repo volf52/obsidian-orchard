@@ -1,7 +1,8 @@
 import { Notice } from "obsidian";
 
 export const notifyErr = (message: string, err?: unknown) => {
-  console.error(err || message);
+  console.error(message);
+  if (err) console.error(err);
   const notice = new Notice(message);
-  notice.noticeEl.style.color = "red";
+  notice.messageEl.style.color = "red";
 };

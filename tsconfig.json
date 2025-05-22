@@ -1,6 +1,6 @@
 {
+  "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
-    "baseUrl": ".",
     "inlineSourceMap": false,
     "inlineSources": false,
     "module": "ESNext",
@@ -22,7 +22,11 @@
         "enabled": true, // enables this plugin
         "assumeIsSvelteProject": false // if true, skip detection and always assume it's a Svelte project
       }
-    ]
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": ["**/*.ts", "**/*.svelte"]
 }

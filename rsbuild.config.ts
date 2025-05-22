@@ -1,6 +1,6 @@
 import { defineConfig } from "@rsbuild/core";
-import builtins from "builtin-modules";
 import { pluginSvelte } from "@rsbuild/plugin-svelte";
+import builtins from "builtin-modules";
 
 export default defineConfig({
   plugins: [

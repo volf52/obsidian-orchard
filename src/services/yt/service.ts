@@ -1,7 +1,7 @@
-import type Orchard from "../plugin";
+import { notifyErr } from "@/error";
+import type Orchard from "@/plugin";
 import ky, { type KyInstance } from "ky";
 import type { YtSearchResponse } from "./types";
-import { notifyErr } from "../error";
 
 const DEFAULT_PARAMS = {
   part: "snippet,contentDetails",
@@ -15,7 +15,6 @@ class YtServ {
     readonly plugin: Orchard,
   ) {
     this.plugin.et.onSettingUpdate((s) => {
-      console.log("Google API Key updated", s.googleApiKey);
       this.updateApiKey(s.googleApiKey);
     });
 

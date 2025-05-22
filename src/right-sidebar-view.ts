@@ -1,10 +1,10 @@
 import { type App, ItemView, Notice, type WorkspaceLeaf } from "obsidian";
+import { mount, unmount } from "svelte";
+import Counter from "./components/Counter.svelte";
 import { ICON, ORCHAR_RSB_VIEW_TYPE } from "./constants";
 import { PREDEFINED_LATEX, insertLatexItem } from "./latex";
 import type Orchard from "./plugin";
 import { getActiveEditor } from "./utils";
-import Counter from "./components/Counter.svelte";
-import { mount, unmount } from "svelte";
 
 class RightSidebarView extends ItemView {
   counter: ReturnType<typeof Counter>;

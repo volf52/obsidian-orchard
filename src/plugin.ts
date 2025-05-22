@@ -1,4 +1,6 @@
-import { MarkdownView, Notice, Plugin } from "obsidian";
+import { YtInputModal } from "@/services/yt";
+import YtServ from "@/services/yt/service";
+import { MarkdownView, Plugin } from "obsidian";
 import { ICON, ORCHAR_RSB_VIEW_TYPE } from "./constants";
 import AppEventTarget from "./events";
 import OrchardModal from "./latex/modal";
@@ -7,8 +9,6 @@ import OrchardSettingsTab, {
   DEFAULT_SETTINGS,
   type OrchardSettings,
 } from "./settings";
-import { YtInputModal } from "./yt";
-import YtServ from "./yt/service";
 import "../styles.css";
 
 class Orchard extends Plugin {

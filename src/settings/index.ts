@@ -1,5 +1,6 @@
+import type Orchard from "@/plugin";
 import { type App, PluginSettingTab, Setting } from "obsidian";
-import type Orchard from "./plugin";
+import { createCenterBtn, createHeading, createTextSetting } from "./utils";
 
 export interface OrchardSettings {
   googleApiKey: string;
@@ -20,22 +21,24 @@ class OrchardSettingsTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
-    const currentSettings = this.plugin.settings;
+    const pluginSettings = this.plugin.settings;
 
-    new Setting(containerEl).setName("Latex Snippets").setHeading();
+    // new Setting(containerEl).setName("Latex Snippets").setHeading();
 
-    new Setting(containerEl).setName("Video and Book Data").setHeading();
+    createHeading(containerEl, "Video and Book data");
 
-    new Setting(containerEl)
-      .setName("Google API Key")
-      .setDesc("For fetching video and book data")
-      .setTooltip("AI....")
-      .addText((txt) =>
-        txt.setValue(currentSettings.googleApiKey).onChange((key) => {
-          this.plugin.settings.googleApiKey = key;
-          this.plugin.settingsUpdated();
-        }),
-      );
+    createTextSetting({
+      containerEl,
+      name: "Google API Key",
+      description: "For fetching video and book data",
+      tooltip: "AI....",
+      initialValue: pluginSettings.googleApiKey,
+      fullWidth: true,
+      onChange: (_txt, value) => {
+        pluginSettings.googleApiKey = value;
+        this.plugin.settingsUpdated();
+      },
+    });
 
     // new Setting(containerEl)
     //   .setName("Video Note Folder")
@@ -50,11 +53,15 @@ class OrchardSettingsTab extends PluginSettingTab {
     //     });
     //   });
 
-    new Setting(containerEl).addButton((b) => {
-      b.buttonEl.style.width = "100%";
-      b.setButtonText("Save Settings").onClick(() => {
+    createCenterBtn({
+      containerEl,
+      cta: true,
+      text: "Save Settings",
+      onClick: (_b, e) => {
+        e.preventDefault();
+
         this.plugin.saveSettings();
-      });
+      },
     });
   }
 }
