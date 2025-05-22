@@ -1,10 +1,7 @@
 import type Orchard from "@/plugin";
 import { type App, PluginSettingTab } from "obsidian";
 import { createCenterBtn, createHeading, createTextSetting } from "./utils";
-
-export interface OrchardSettings {
-  googleApiKey: string;
-}
+import type { OrchardSettings } from "./types";
 
 export const DEFAULT_SETTINGS: OrchardSettings = {
   googleApiKey: "",

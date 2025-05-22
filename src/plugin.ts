@@ -2,23 +2,22 @@ import { YtInputModal } from "@/services/yt";
 import YtServ from "@/services/yt/service";
 import { MarkdownView, Plugin } from "obsidian";
 import { ICON, ORCHAR_RSB_VIEW_TYPE } from "./constants";
-import AppEventTarget from "./events";
 import OrchardModal from "./latex/modal";
 import RightSidebarView from "./right-sidebar-view";
-import OrchardSettingsTab, {
-  DEFAULT_SETTINGS,
-  type OrchardSettings,
-} from "./settings";
+import OrchardSettingsTab, { DEFAULT_SETTINGS } from "./settings";
 import "../styles.css";
 import { videoMetaToContent } from "./services/yt/utils";
-import { moment } from "obsidian";
 import { cleanTitle } from "./utils";
 import { notifySuccess } from "./notify";
+import type { OrchardSettings } from "./settings/types";
+import {
+  clearAllSettingUpdates,
+  notifySettingUpdate,
+} from "./events/settings-store";
 
 class Orchard extends Plugin {
   settings: OrchardSettings;
   ytServ: YtServ;
-  et = new AppEventTarget();
 
   async onload(): Promise<void> {
     await this.loadSettings();
@@ -84,7 +83,7 @@ class Orchard extends Plugin {
   }
 
   onunload() {
-    this.et.clear();
+    clearAllSettingUpdates();
   }
 
   private async loadSettings() {
@@ -125,7 +124,6 @@ class Orchard extends Plugin {
 
       // const now = moment().format("DD/MM/YYYY HH:mm");
       const now = new Date().toISOString();
-      console.log(now);
       const content = videoMetaToContent(videoId, meta, now);
       const title = cleanTitle(meta.title);
       const file = await this.app.vault.create(
@@ -140,16 +138,8 @@ class Orchard extends Plugin {
   }
 
   settingsUpdated() {
-    this.et.notifySettingUpdate(this.settings);
+    return notifySettingUpdate(this.settings);
   }
-
-  // reload() {
-  //   //@ts-expect-error
-  //   const plugins: Plugin = this.app.plugins;
-  //   if (!plugins) return;
-  //
-  //   const plugin = this.app.plugins.getPlugin("orchard");
-  // }
 }
 
 export default Orchard;

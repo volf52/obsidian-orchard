@@ -3,19 +3,21 @@ import type Orchard from "@/plugin";
 import ky, { type KyInstance } from "ky";
 import type { ChannelResp, VideoMetadata, YtSearchResponse } from "./types";
 import { extractChapters, toVideoMeta } from "./utils";
+import { onSettingUpdate } from "@/events/settings-store";
 
 class YtServ {
-  http: KyInstance;
+  #http: KyInstance;
+  #unsub: () => void;
 
   constructor(
     private apiKey: string,
     readonly plugin: Orchard,
   ) {
-    this.plugin.et.onSettingUpdate((s) => {
+    this.#unsub = onSettingUpdate((s) => {
       this.updateApiKey(s.googleApiKey);
     });
 
-    this.http = ky.extend({
+    this.#http = ky.extend({
       prefixUrl: "https://www.googleapis.com/youtube/v3",
       searchParams: { key: apiKey },
     });
@@ -23,13 +25,13 @@ class YtServ {
 
   updateApiKey(newKey: string) {
     this.apiKey = newKey;
-    this.http = this.http.extend({
+    this.#http = this.#http.extend({
       searchParams: { key: this.apiKey },
     });
   }
 
   async fetchVideoDetails(videoId: string): Promise<VideoMetadata | null> {
-    const detailRes = await this.http.get("videos", {
+    const detailRes = await this.#http.get("videos", {
       searchParams: { id: videoId, part: "snippet,contentDetails" },
     });
     const data: YtSearchResponse = await detailRes.json();
@@ -58,7 +60,7 @@ class YtServ {
   }
 
   async getChannelHandle(channelId: string): Promise<string | null> {
-    const res = await this.http.get("channels", {
+    const res = await this.#http.get("channels", {
       searchParams: { id: channelId, part: "snippet" },
     });
     const data: ChannelResp = await res.json();
@@ -69,6 +71,10 @@ class YtServ {
     }
 
     return data.items[0].snippet.customUrl;
+  }
+
+  destroy() {
+    this.#unsub();
   }
 }
 
