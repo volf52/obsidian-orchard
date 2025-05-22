@@ -20,6 +20,7 @@ class OrchardSettingsTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
+    const currentSettings = this.plugin.settings;
 
     new Setting(containerEl).setName("Latex Snippets").setHeading();
 
@@ -30,24 +31,31 @@ class OrchardSettingsTab extends PluginSettingTab {
       .setDesc("For fetching video and book data")
       .setTooltip("AI....")
       .addText((txt) =>
-        txt.onChange((key) => {
+        txt.setValue(currentSettings.googleApiKey).onChange((key) => {
           this.plugin.settings.googleApiKey = key;
           this.plugin.settingsUpdated();
         }),
       );
 
-    new Setting(containerEl)
-      .setName("Video Note Folder")
-      .addDropdown((dropdown) => {
-        const folders = this.app.vault.getAllFolders(false);
+    // new Setting(containerEl)
+    //   .setName("Video Note Folder")
+    //   .addDropdown((dropdown) => {
+    //     const folders = this.app.vault.getAllFolders(false);
+    //
+    //     for (const folder of folders) {
+    //       dropdown.addOption(folder.path, folder.name);
+    //     }
+    //     dropdown.onChange((newVal) => {
+    //       console.log("Selected folder", newVal);
+    //     });
+    //   });
 
-        for (const folder of folders) {
-          dropdown.addOption(folder.path, folder.name);
-        }
-        dropdown.onChange((newVal) => {
-          console.log("Selected folder", newVal);
-        });
+    new Setting(containerEl).addButton((b) => {
+      b.buttonEl.style.width = "100%";
+      b.setButtonText("Save Settings").onClick(() => {
+        this.plugin.saveSettings();
       });
+    });
   }
 }
 
