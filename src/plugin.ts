@@ -10,6 +10,10 @@ import OrchardSettingsTab, {
   type OrchardSettings,
 } from "./settings";
 import "../styles.css";
+import { videoMetaToContent } from "./services/yt/utils";
+import { moment } from "obsidian";
+import { cleanTitle } from "./utils";
+import { notifySuccess } from "./notify";
 
 class Orchard extends Plugin {
   settings: OrchardSettings;
@@ -115,14 +119,37 @@ class Orchard extends Plugin {
   }
 
   private addVideo() {
-    new YtInputModal(this.app, (videoId) => {
-      this.ytServ.fetchVideoDetails(videoId);
+    new YtInputModal(this.app, async (videoId) => {
+      const meta = await this.ytServ.fetchVideoDetails(videoId);
+      if (!meta) return;
+
+      // const now = moment().format("DD/MM/YYYY HH:mm");
+      const now = new Date().toISOString();
+      console.log(now);
+      const content = videoMetaToContent(videoId, meta, now);
+      const title = cleanTitle(meta.title);
+      const file = await this.app.vault.create(
+        `/500Videos/${title}.md`,
+        content,
+      );
+      notifySuccess("Video imported");
+
+      const leaf = this.app.workspace.getLeaf("tab");
+      await leaf.openFile(file);
     }).open();
   }
 
   settingsUpdated() {
     this.et.notifySettingUpdate(this.settings);
   }
+
+  // reload() {
+  //   //@ts-expect-error
+  //   const plugins: Plugin = this.app.plugins;
+  //   if (!plugins) return;
+  //
+  //   const plugin = this.app.plugins.getPlugin("orchard");
+  // }
 }
 
 export default Orchard;

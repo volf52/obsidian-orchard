@@ -6,3 +6,8 @@ export const notifyErr = (message: string, err?: unknown) => {
   const notice = new Notice(message);
   notice.messageEl.style.color = "red";
 };
+
+export const notifySuccess = (message: string) => {
+  const notice = new Notice(message, 5000);
+  notice.messageEl.style.color = "green";
+};
