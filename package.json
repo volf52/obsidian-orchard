@@ -17,13 +17,13 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "^2.0.0-beta.5",
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.36.8",
     "@tsconfig/bun": "^1.0.7",
     "@types/bun": "^1.2.14",
     "builtin-modules": "^5.0.0",
-    "svelte": "^5.32.1",
+    "svelte": "^5.33.1",
     "svelte-check": "^4.2.1",
     "typescript": "^5.8.3"
   },

@@ -1,4 +1,5 @@
-import { sveltePlugin } from "./svelte-plugin";
+import builtins from "builtin-modules"
+import { sveltePlugin } from "./svelte-plugin"
 
 Bun.build({
   entrypoints: ["./src/plugin.ts"],
@@ -8,7 +9,7 @@ Bun.build({
   format: "cjs",
   splitting: false,
   sourcemap: "inline",
-  minify: false,
+  minify: true,
   external: [
     "obsidian",
     "electron",
@@ -23,6 +24,7 @@ Bun.build({
     "@lezer/common",
     "@lezer/highlight",
     "@lezer/lr",
+    ...builtins,
   ],
   plugins: [sveltePlugin],
-});
+})

@@ -1,5 +1,5 @@
 {
-  // "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  // "$schema": "https://biomejs.dev/schemas/2.0.0-beta.5/schema.json",
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "vcs": {
     "enabled": true,
@@ -9,32 +9,35 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "ignore": ["./dist"]
+    "includes": [
+      "src/**/*.{js,ts,svelte,css,json}",
+      "*.ts",
+      "*.json",
+      "*.jsonc"
+    ]
   },
   "formatter": {
     "enabled": true,
-    "indentStyle": "space"
-  },
-  "organizeImports": {
-    "enabled": true
+    "indentStyle": "space",
+    "useEditorconfig": false
   },
   "linter": {
     "enabled": true,
     "rules": {
       "recommended": true
-    }
+    },
+    "domains": {}
   },
   "javascript": {
     "formatter": {
       "quoteStyle": "double",
       "semicolons": "asNeeded",
-      "indentWidth": 2,
-      "indentStyle": "space"
+      "indentWidth": 2
     }
   },
   "overrides": [
     {
-      "include": ["*.svelte"],
+      "includes": ["*.svelte"],
       "linter": {
         "rules": {
           "style": {
@@ -44,5 +47,13 @@
         }
       }
     }
-  ]
+  ],
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  }
 }
