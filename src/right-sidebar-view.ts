@@ -7,7 +7,7 @@ import type Orchard from "./plugin";
 import { getActiveEditor } from "./utils";
 
 class RightSidebarView extends ItemView {
-  counter: ReturnType<typeof Counter>;
+  counter!: ReturnType<typeof Counter>;
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -24,13 +24,17 @@ class RightSidebarView extends ItemView {
     return "Orchard";
   }
 
-  getIcon(): string {
+  override getIcon(): string {
     return ICON;
   }
 
-  async onOpen(): Promise<void> {
+  override async onOpen(): Promise<void> {
     const app = this.app;
     const container = this.containerEl.children[1];
+    if (!container) {
+      return;
+    }
+
     container.empty();
 
     container.createEl("h1", { text: "Orchard", cls: "orchard-modal-title" });
@@ -66,7 +70,7 @@ class RightSidebarView extends ItemView {
     });
   }
 
-  async onClose(): Promise<void> {
+  override async onClose(): Promise<void> {
     if (this.counter) {
       unmount(this.counter);
     }

@@ -1,5 +1,5 @@
 import type { OrchardSettings } from "@/settings/types";
-import { GlobalEventBus, type AllowedEvents } from "./app-event-target";
+import { type AllowedEvents, GlobalEventBus } from "./app-event-target";
 
 const Event: AllowedEvents = "SETTINGS_UPDATED";
 

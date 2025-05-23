@@ -5,21 +5,21 @@ import { ICON, ORCHAR_RSB_VIEW_TYPE } from "./constants";
 import OrchardModal from "./latex/modal";
 import RightSidebarView from "./right-sidebar-view";
 import OrchardSettingsTab, { DEFAULT_SETTINGS } from "./settings";
-import "../styles.css";
-import { videoMetaToContent } from "./services/yt/utils";
-import { cleanTitle } from "./utils";
-import { notifySuccess } from "./notify";
-import type { OrchardSettings } from "./settings/types";
+import "./styles.css";
 import {
   clearAllSettingUpdates,
   notifySettingUpdate,
 } from "./events/settings-store";
+import { notifySuccess } from "./notify";
+import { videoMetaToContent } from "./services/yt/utils";
+import type { OrchardSettings } from "./settings/types";
+import { cleanTitle } from "./utils";
 
 class Orchard extends Plugin {
-  settings: OrchardSettings;
-  ytServ: YtServ;
+  settings!: OrchardSettings;
+  ytServ!: YtServ;
 
-  async onload(): Promise<void> {
+  override async onload(): Promise<void> {
     await this.loadSettings();
     this.ytServ = new YtServ(this.settings.googleApiKey, this);
 
@@ -69,7 +69,8 @@ class Orchard extends Plugin {
       id: "orchard-recenter",
       name: "Recenter",
       callback: () => {
-        this.centerView();
+        this.ytServ.destroy();
+        // this.centerView();
       },
     });
 
@@ -82,7 +83,7 @@ class Orchard extends Plugin {
     });
   }
 
-  onunload() {
+  override onunload() {
     clearAllSettingUpdates();
   }
 
@@ -102,6 +103,7 @@ class Orchard extends Plugin {
 
   async activateView() {
     const leaf = await RightSidebarView.getOrCreateLeaf(this.app);
+    if (!leaf) return;
     await this.app.workspace.revealLeaf(leaf);
   }
 

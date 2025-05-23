@@ -1,18 +1,23 @@
-type CustomEventListener<T> = (evt: CustomEvent<T>) => void;
-
 export type AllowedEvents = "SETTINGS_UPDATED";
 
 class AppEventTarget {
   private readonly evtTarget = new EventTarget();
 
   subscribe<T>(event: AllowedEvents, onEvent: (data: T) => void) {
-    const handler: CustomEventListener<T> = (e) => {
-      onEvent(e.detail);
-    };
-    this.evtTarget.addEventListener(event, handler);
+    const controller = new AbortController();
+
+    this.evtTarget.addEventListener(
+      event,
+      //@ts-expect-error
+      (e: CustomEvent<T>) => onEvent(e.detail),
+      {
+        signal: controller.signal,
+      },
+    );
 
     return () => {
-      this.evtTarget.removeEventListener(event, handler);
+      console.log("Unsubbing");
+      controller.abort();
     };
   }
 

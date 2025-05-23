@@ -1,6 +1,6 @@
 import { notifyErr } from "@/notify";
-import type { Chapter, VideoMetadata, YtSearchItem } from "./types";
 import { cleanTag } from "@/utils";
+import type { Chapter, VideoMetadata, YtSearchItem } from "./types";
 
 export const extractYtId = (url: string) => {
   if (!url) return null;
@@ -34,6 +34,7 @@ export function extractChapters(
     const match = line.match(TIME_REGEX);
     if (match) {
       const timestamp = match[1];
+      if (!timestamp) continue;
 
       let name = line.replace(timestamp, "").trim();
       if (name.startsWith("-")) name = name.slice(1).trim();

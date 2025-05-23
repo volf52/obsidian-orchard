@@ -1,9 +1,9 @@
+import { onSettingUpdate } from "@/events/settings-store";
 import { notifyErr } from "@/notify";
 import type Orchard from "@/plugin";
 import ky, { type KyInstance } from "ky";
 import type { ChannelResp, VideoMetadata, YtSearchResponse } from "./types";
 import { extractChapters, toVideoMeta } from "./utils";
-import { onSettingUpdate } from "@/events/settings-store";
 
 class YtServ {
   #http: KyInstance;
@@ -36,12 +36,12 @@ class YtServ {
     });
     const data: YtSearchResponse = await detailRes.json();
 
-    if (data.items.length !== 1) {
-      notifyErr("Got more than 1 results");
+    const item = data.items[0];
+    if (!item) {
+      notifyErr("Got >< 1 results");
       return null;
     }
 
-    const item = data.items[0];
     const meta = toVideoMeta(item);
 
     const channelHandle = await this.getChannelHandle(meta.channelId);
@@ -70,7 +70,7 @@ class YtServ {
       return null;
     }
 
-    return data.items[0].snippet.customUrl;
+    return data.items[0]?.snippet?.customUrl || null;
   }
 
   destroy() {
