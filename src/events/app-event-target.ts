@@ -1,10 +1,10 @@
-export type AllowedEvents = "SETTINGS_UPDATED";
+export type AllowedEvents = "SETTINGS_UPDATED"
 
 class AppEventTarget {
-  private readonly evtTarget = new EventTarget();
+  private readonly evtTarget = new EventTarget()
 
   subscribe<T>(event: AllowedEvents, onEvent: (data: T) => void) {
-    const controller = new AbortController();
+    const controller = new AbortController()
 
     this.evtTarget.addEventListener(
       event,
@@ -13,20 +13,20 @@ class AppEventTarget {
       {
         signal: controller.signal,
       },
-    );
+    )
 
     return () => {
-      console.log("Unsubbing");
-      controller.abort();
-    };
+      console.log("Unsubbing")
+      controller.abort()
+    }
   }
 
   dispatch<T>(event: AllowedEvents, data: T) {
     const evt = new CustomEvent<T>(event, {
       detail: data,
-    });
-    this.evtTarget.dispatchEvent(evt);
+    })
+    this.evtTarget.dispatchEvent(evt)
   }
 }
 
-export const GlobalEventBus = new AppEventTarget();
+export const GlobalEventBus = new AppEventTarget()

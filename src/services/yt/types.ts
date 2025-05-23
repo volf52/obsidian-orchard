@@ -1,65 +1,65 @@
 type Thumbnail = {
-  url: string;
-};
+  url: string
+}
 
 type Thumbnails = {
-  default: Thumbnail;
-  medium: Thumbnail;
-  high: Thumbnail;
-  standard: Thumbnail;
-  maxres: Thumbnail;
-};
+  default: Thumbnail
+  medium: Thumbnail
+  high: Thumbnail
+  standard: Thumbnail
+  maxres: Thumbnail
+}
 
 type Snippet = {
-  title: string;
-  description: string;
-  channelTitle: string;
-  channelId: string;
-  publishedAt: string;
-  tags: string[];
-  thumbnails: Thumbnails;
-};
+  title: string
+  description: string
+  channelTitle: string
+  channelId: string
+  publishedAt: string
+  tags: string[]
+  thumbnails: Thumbnails
+}
 
 type ContentDetails = {
-  duration: string;
-};
+  duration: string
+}
 
 export type YtSearchItem = {
-  contentDetails: ContentDetails;
-  snippet: Snippet;
-};
+  contentDetails: ContentDetails
+  snippet: Snippet
+}
 
 export type YtSearchResponse = {
-  items: Array<YtSearchItem>;
-};
+  items: Array<YtSearchItem>
+}
 
 export type Chapter = {
-  link: string;
-  start: string;
-  name: string;
-};
+  link: string
+  start: string
+  name: string
+}
 
 export type ChannelSnippet = {
-  customUrl: string;
-};
+  customUrl: string
+}
 
 export type ChannelItem = {
-  snippet: ChannelSnippet;
-};
+  snippet: ChannelSnippet
+}
 
 export type ChannelResp = {
-  items: ChannelItem[];
-};
+  items: ChannelItem[]
+}
 
 export type VideoMetadata = {
-  title: string;
-  description: string;
-  duration: string;
-  uploadedAt: string;
-  channel: string;
-  channelId: string;
-  channelHandle: string;
-  thumbnail: string;
-  chapters: Chapter[];
-  tags: string[];
-};
+  title: string
+  description: string
+  duration: string
+  uploadedAt: string
+  channel: string
+  channelId: string
+  channelHandle: string
+  thumbnail: string
+  chapters: Chapter[]
+  tags: string[]
+}

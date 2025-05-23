@@ -1,3 +1,3 @@
 export type OrchardSettings = {
-  googleApiKey: string;
-};
+  googleApiKey: string
+}

@@ -1,3 +1,3 @@
-import YtInputModal from "./modal";
+import YtInputModal from "./modal"
 
-export { YtInputModal };
+export { YtInputModal }

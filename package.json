@@ -5,10 +5,10 @@
   "main": "index.js",
   "scripts": {
     "build": "bun --bun run build.ts",
-    "dev": "rsbuild b",
     "tc": "tsc --noEmit --pretty",
     "version": "node version-bump.mjs && git add manifest.json versions.json",
     "lint": "biome check src",
+    "lint:staged": "biome check --staged",
     "lint:fix": "biome check src --write --unsafe",
     "fmt": "biome format src --write",
     "check": "svelte-check --tsconfig tsconfig.json"

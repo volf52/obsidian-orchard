@@ -1,28 +1,28 @@
-import type Orchard from "@/plugin";
-import { type App, PluginSettingTab } from "obsidian";
-import type { OrchardSettings } from "./types";
-import { createCenterBtn, createHeading, createTextSetting } from "./utils";
+import type Orchard from "@/plugin"
+import { type App, PluginSettingTab } from "obsidian"
+import type { OrchardSettings } from "./types"
+import { createCenterBtn, createHeading, createTextSetting } from "./utils"
 
 export const DEFAULT_SETTINGS: OrchardSettings = {
   googleApiKey: "",
-};
+}
 
 class OrchardSettingsTab extends PluginSettingTab {
-  plugin: Orchard;
+  plugin: Orchard
 
   constructor(app: App, plugin: Orchard) {
-    super(app, plugin);
-    this.plugin = plugin;
+    super(app, plugin)
+    this.plugin = plugin
   }
 
   display(): void {
-    const { containerEl } = this;
-    containerEl.empty();
-    const pluginSettings = this.plugin.settings;
+    const { containerEl } = this
+    containerEl.empty()
+    const pluginSettings = this.plugin.settings
 
     // new Setting(containerEl).setName("Latex Snippets").setHeading();
 
-    createHeading(containerEl, "Video and Book data");
+    createHeading(containerEl, "Video and Book data")
 
     createTextSetting({
       containerEl,
@@ -32,9 +32,9 @@ class OrchardSettingsTab extends PluginSettingTab {
       initialValue: pluginSettings.googleApiKey,
       fullWidth: true,
       onChange: (_txt, value) => {
-        pluginSettings.googleApiKey = value;
+        pluginSettings.googleApiKey = value
       },
-    });
+    })
 
     // new Setting(containerEl)
     //   .setName("Video Note Folder")
@@ -54,15 +54,15 @@ class OrchardSettingsTab extends PluginSettingTab {
       cta: true,
       text: "Save Settings",
       onClick: (b, e) => {
-        e.preventDefault();
+        e.preventDefault()
 
-        b.setDisabled(true);
+        b.setDisabled(true)
         this.plugin.saveSettings().finally(() => {
-          b.setDisabled(false);
-        });
+          b.setDisabled(false)
+        })
       },
-    });
+    })
   }
 }
 
-export default OrchardSettingsTab;
+export default OrchardSettingsTab

@@ -1,97 +1,97 @@
-import { type App, ItemView, Notice, type WorkspaceLeaf } from "obsidian";
-import { mount, unmount } from "svelte";
-import Counter from "./components/Counter.svelte";
-import { ICON, ORCHAR_RSB_VIEW_TYPE } from "./constants";
-import { PREDEFINED_LATEX, insertLatexItem } from "./latex";
-import type Orchard from "./plugin";
-import { getActiveEditor } from "./utils";
+import { type App, ItemView, Notice, type WorkspaceLeaf } from "obsidian"
+import { mount, unmount } from "svelte"
+import Counter from "./components/Counter.svelte"
+import { ICON, ORCHAR_RSB_VIEW_TYPE } from "./constants"
+import { PREDEFINED_LATEX, insertLatexItem } from "./latex"
+import type Orchard from "./plugin"
+import { getActiveEditor } from "./utils"
 
 class RightSidebarView extends ItemView {
-  counter!: ReturnType<typeof Counter>;
+  counter!: ReturnType<typeof Counter>
 
   constructor(
     leaf: WorkspaceLeaf,
     readonly plugin: Orchard,
   ) {
-    super(leaf);
+    super(leaf)
   }
 
   getViewType(): string {
-    return ORCHAR_RSB_VIEW_TYPE;
+    return ORCHAR_RSB_VIEW_TYPE
   }
 
   getDisplayText(): string {
-    return "Orchard";
+    return "Orchard"
   }
 
   override getIcon(): string {
-    return ICON;
+    return ICON
   }
 
   override async onOpen(): Promise<void> {
-    const app = this.app;
-    const container = this.containerEl.children[1];
+    const app = this.app
+    const container = this.containerEl.children[1]
     if (!container) {
-      return;
+      return
     }
 
-    container.empty();
+    container.empty()
 
-    container.createEl("h1", { text: "Orchard", cls: "orchard-modal-title" });
-    container.createEl("h2", { text: "Snippets" });
+    container.createEl("h1", { text: "Orchard", cls: "orchard-modal-title" })
+    container.createEl("h2", { text: "Snippets" })
 
-    const snippetsRoot = container.createDiv({ cls: "orchard-modal-list" });
+    const snippetsRoot = container.createDiv({ cls: "orchard-modal-list" })
 
     for (const lit of PREDEFINED_LATEX) {
       const itemEl = snippetsRoot.createDiv({
         text: lit.display,
         cls: "orchard-modal-item",
-      });
+      })
 
       itemEl.onClickEvent((_ev) => {
-        _ev.preventDefault();
+        _ev.preventDefault()
 
-        const editor = getActiveEditor(app);
+        const editor = getActiveEditor(app)
 
         if (!editor) {
-          new Notice("no active editor");
-          return;
+          new Notice("no active editor")
+          return
         }
 
-        insertLatexItem(lit, editor);
-      });
+        insertLatexItem(lit, editor)
+      })
     }
 
-    const counterEl = container.createDiv();
-    counterEl.id = "counterSv";
+    const counterEl = container.createDiv()
+    counterEl.id = "counterSv"
     this.counter = mount(Counter, {
       target: counterEl,
       props: { startCount: 5 },
-    });
+    })
   }
 
   override async onClose(): Promise<void> {
     if (this.counter) {
-      unmount(this.counter);
+      unmount(this.counter)
     }
   }
 
   static async getOrCreateLeaf(app: App) {
-    const { workspace } = app;
+    const { workspace } = app
 
-    const leaves = workspace.getLeavesOfType(ORCHAR_RSB_VIEW_TYPE);
+    const leaves = workspace.getLeavesOfType(ORCHAR_RSB_VIEW_TYPE)
 
     if (leaves.length > 0) {
-      return leaves[0];
+      return leaves[0]
     }
 
-    const leaf = workspace.getRightLeaf(false);
-    if (!leaf) throw new Error("couldn't create leaf");
+    const leaf = workspace.getRightLeaf(false)
+    if (!leaf) throw new Error("couldn't create leaf")
 
-    await leaf.setViewState({ type: ORCHAR_RSB_VIEW_TYPE, active: true });
+    await leaf.setViewState({ type: ORCHAR_RSB_VIEW_TYPE, active: true })
 
-    return leaf;
+    return leaf
   }
 }
 
-export default RightSidebarView;
+export default RightSidebarView
