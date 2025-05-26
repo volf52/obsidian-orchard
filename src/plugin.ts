@@ -1,11 +1,12 @@
+import { MarkdownView, Plugin } from "obsidian"
 import { YtInputModal } from "@/services/yt"
 import YtServ from "@/services/yt/service"
-import { MarkdownView, Plugin } from "obsidian"
 import { ICON, ORCHAR_RSB_VIEW_TYPE } from "./constants"
 import OrchardModal from "./latex/modal"
 import RightSidebarView from "./right-sidebar-view"
 import OrchardSettingsTab, { DEFAULT_SETTINGS } from "./settings"
 import "./styles.css"
+import "./components/svelte.css"
 import {
   clearAllSettingUpdates,
   notifySettingUpdate,

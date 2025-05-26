@@ -1,5 +1,5 @@
-import type Orchard from "@/plugin"
 import { type App, PluginSettingTab } from "obsidian"
+import type Orchard from "@/plugin"
 import type { OrchardSettings } from "./types"
 import { createCenterBtn, createHeading, createTextSetting } from "./utils"
 

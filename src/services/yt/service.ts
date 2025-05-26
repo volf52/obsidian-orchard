@@ -1,7 +1,7 @@
+import ky, { type KyInstance } from "ky"
 import { onSettingUpdate } from "@/events/settings-store"
 import { notifyErr } from "@/notify"
 import type Orchard from "@/plugin"
-import ky, { type KyInstance } from "ky"
 import type { ChannelResp, VideoMetadata, YtSearchResponse } from "./types"
 import { extractChapters, toVideoMeta } from "./utils"
 

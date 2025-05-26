@@ -1,6 +1,6 @@
-import { createCenterBtn, createTextSetting } from "@/settings/utils"
-import { Modal } from "obsidian"
 import type { App } from "obsidian"
+import { Modal } from "obsidian"
+import { createCenterBtn, createTextSetting } from "@/settings/utils"
 import { extractYtId } from "./utils"
 
 type OnSubmit = (videoId: string) => void

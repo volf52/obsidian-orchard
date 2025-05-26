@@ -4,7 +4,7 @@ export const getActiveEditor = (app: App) => {
   return app.workspace.getActiveViewOfType(MarkdownView)?.editor ?? null
 }
 
-const FILENAME_FORBID_CHARS = /[*\/\\<>:|?"']/g
+const FILENAME_FORBID_CHARS = /[*/\\<>:|?"']/g
 export const cleanTitle = (title: string) =>
   title.replace(FILENAME_FORBID_CHARS, "_")
 

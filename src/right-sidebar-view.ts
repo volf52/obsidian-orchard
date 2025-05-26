@@ -2,7 +2,7 @@ import { type App, ItemView, Notice, type WorkspaceLeaf } from "obsidian"
 import { mount, unmount } from "svelte"
 import Counter from "./components/Counter.svelte"
 import { ICON, ORCHAR_RSB_VIEW_TYPE } from "./constants"
-import { PREDEFINED_LATEX, insertLatexItem } from "./latex"
+import { insertLatexItem, PREDEFINED_LATEX } from "./latex"
 import type Orchard from "./plugin"
 import { getActiveEditor } from "./utils"
 
@@ -38,7 +38,7 @@ class RightSidebarView extends ItemView {
     container.empty()
 
     container.createEl("h1", { text: "Orchard", cls: "orchard-modal-title" })
-    container.createEl("h2", { text: "Snippets" })
+    container.createEl("h2", { text: "Snippets", cls: "orchard-test" })
 
     const snippetsRoot = container.createDiv({ cls: "orchard-modal-list" })
 
