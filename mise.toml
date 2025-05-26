@@ -1,2 +1,20 @@
 [tools]
-node = "lts"
+bun = "latest"
+
+[env]
+'_'.file = ".env.json"
+
+[tasks.build]
+run = "bun --bun run build.ts"
+description = "Build the plugin"
+sources = ["./src/**/*.ts", "./src/**/*.svelte", "./src/**/*.css", "./src/*.ts"]
+alias = "b"
+depends_post = "copy"
+
+[tasks.copy]
+run = [
+  "cp dist/main.js {{env.OUTPUT_DIR}}/main.js",
+  "cp dist/main.css {{env.OUTPUT_DIR}}/styles.css",
+]
+description = "Copy output files to plugin dir"
+sources = ["./dist/main.css", "./dist/main.js"]
