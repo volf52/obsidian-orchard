@@ -20,7 +20,8 @@ export const extractYtId = (url: string) => {
   }
 }
 
-export const TIME_REGEX = /\b(\d{1,2}:\d{2})\b/
+export const TIME_REGEX = /\b(\d{1,2}(:\d{2})?:\d{2})\b/
+// export const TIME_REGEX = /\b(\d{1,2}:\d{2})\b/
 
 export function extractChapters(
   videoId: string,
