@@ -22,6 +22,7 @@
     "@codemirror/view": "^6.36.8",
     "@tsconfig/bun": "^1.0.7",
     "@types/bun": "^1.2.14",
+    "@typescript/native-preview": "^7.0.0-dev.20250527.1",
     "builtin-modules": "^5.0.0",
     "svelte": "^5.33.1",
     "svelte-check": "^4.2.1",

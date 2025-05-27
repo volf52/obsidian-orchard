@@ -3,7 +3,13 @@
   "docs": "https://bun.sh/docs/typescript",
   "extends": "@tsconfig/bun",
   "compilerOptions": {
-    "module": "Preserve",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "skipLibCheck": true,
+    "target": "ES2022",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
 
     "useDefineForClassFields": true,
     "noUncheckedIndexedAccess": true,
@@ -14,12 +20,14 @@
     "importHelpers": true,
     "isolatedModules": true,
     "strictNullChecks": true,
+    // "checkJs": false,
+    "allowJs": true,
     "plugins": [
       {
         "name": "typescript-svelte-plugin",
         // the following options can be set additionally; they are optional; their default values are listed here
         "enabled": true, // enables this plugin
-        "assumeIsSvelteProject": false // if true, skip detection and always assume it's a Svelte project
+        "assumeIsSvelteProject": true // if true, skip detection and always assume it's a Svelte project
       }
     ],
     "baseUrl": ".",
@@ -34,5 +42,5 @@
     "svelte-plugin.ts",
     "svelte-preload.ts"
   ],
-  "exclude": ["node_modules", "dist"]
+  "exclude": ["node_modules", "dist", "version-bump.mjs"]
 }

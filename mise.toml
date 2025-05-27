@@ -1,8 +1,14 @@
 [tools]
 bun = "latest"
+"npm:@typescript/native-preview" = "latest"
 
 [env]
 '_'.file = ".env.json"
+
+[tasks.typecheck]
+run = "bun --bun tsgo --noEmit --pretty -p ./tsconfig.json"
+description = "Typecheck the project using tsgo"
+alias = "tc"
 
 [tasks.build]
 run = "bun --bun run build.ts"
