@@ -1,11 +1,14 @@
 import type { App } from "obsidian"
 import { Modal } from "obsidian"
-import { createCenterBtn, createTextSetting } from "@/settings/utils"
+import { mount, unmount } from "svelte"
+import InputModal from "@/components/InputModal.svelte"
 import { extractYtId } from "./utils"
 
 type OnSubmit = (videoId: string) => void
 
 class YtInputModal extends Modal {
+  #sveltePart: ReturnType<typeof InputModal> | null = null
+
   constructor(app: App, onSubmit: OnSubmit) {
     super(app)
 
@@ -15,35 +18,31 @@ class YtInputModal extends Modal {
   init(onSubmit: OnSubmit) {
     this.contentEl.empty()
 
-    this.setTitle("Insert video note")
+    this.setTitle("Add Video Note")
 
-    let videoUrl = ""
+    this.#sveltePart = mount(InputModal, {
+      target: this.contentEl,
+      props: {
+        label: "Video URL",
+        onSubmit: (value: string, errFunc) => {
+          const id = extractYtId(value)
+          if (id === null) {
+            errFunc(value, "Invalid YouTube URL or ID")
+            return
+          }
 
-    createTextSetting({
-      name: "Video URL",
-      description: "",
-      containerEl: this.contentEl,
-      initialValue: "",
-      fullWidth: true,
-      onChange: (_txt, value) => {
-        videoUrl = value
+          this.close()
+          onSubmit(id)
+        },
       },
     })
+  }
 
-    createCenterBtn({
-      containerEl: this.contentEl,
-      cta: true,
-      text: "Submit",
-      onClick: (_b, e) => {
-        e.preventDefault()
-
-        const id = extractYtId(videoUrl)
-        if (!id) return
-
-        this.close()
-        onSubmit(id)
-      },
-    })
+  override onClose(): void {
+    if (this.#sveltePart) {
+      unmount(this.#sveltePart)
+      this.#sveltePart = null
+    }
   }
 }
 

@@ -37,12 +37,17 @@
   },
   "overrides": [
     {
-      "includes": ["*.svelte"],
+      "includes": ["**/*.svelte"],
+      "formatter": {},
       "linter": {
         "rules": {
           "style": {
             "useConst": "off",
             "useImportType": "off"
+          },
+          "correctness": {
+            "noUnusedImports": "off",
+            "noUnusedVariables": "off"
           }
         }
       }
