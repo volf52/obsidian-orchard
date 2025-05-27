@@ -1,29 +1,29 @@
 <script lang="ts">
-import SubmitButton from "./SubmitButton.svelte"
-import TextSettingItem from "./TextSettingItem.svelte"
+  import SubmitButton from "./SubmitButton.svelte";
+  import TextSettingItem from "./TextSettingItem.svelte";
 
-type InputModalProps = {
-  label: string
-  initialValue?: string
-  onSubmit: (
-    value: string,
-    onErr: (_data: string, err: unknown) => void,
-  ) => void
-}
+  type InputModalProps = {
+    label: string;
+    initialValue?: string;
+    onSubmit: (
+      value: string,
+      onErr: (_data: string, err: unknown) => void,
+    ) => void;
+  };
 
-const { label: name, initialValue, onSubmit }: InputModalProps = $props()
+  const { label: name, initialValue, onSubmit }: InputModalProps = $props();
 
-let value = $state(initialValue || "")
+  let value = $state(initialValue || "");
 
-const handleSubmit = () => {
-  const trimmedValue = value.trim()
+  const handleSubmit = () => {
+    const trimmedValue = value.trim();
 
-  if (!trimmedValue) {
-    return
-  }
+    if (!trimmedValue) {
+      return;
+    }
 
-  onSubmit(trimmedValue, (_errVal, _err) => {})
-}
+    onSubmit(trimmedValue, (_errVal, _err) => {});
+  };
 </script>
 
 <div class="modal-content">

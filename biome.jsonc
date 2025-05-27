@@ -38,7 +38,9 @@
   "overrides": [
     {
       "includes": ["**/*.svelte"],
-      "formatter": {},
+      "formatter": {
+        "enabled": false
+      },
       "linter": {
         "rules": {
           "style": {

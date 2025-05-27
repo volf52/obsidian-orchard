@@ -1,19 +1,14 @@
 <script lang="ts">
-type TextSettingItemProps = {
-  name: string
-  placeholder?: string
-  description?: string
-  value: string
-  fullWidth?: boolean
-}
+  type TextSettingItemProps = {
+    name: string;
+    placeholder?: string;
+    description?: string;
+    value: string;
+    fullWidth?: boolean;
+  };
 
-const {
-  name,
-  description,
-  placeholder,
-  value = $bindable(),
-  fullWidth,
-}: TextSettingItemProps = $props()
+  let { value = $bindable(), ...constProps }: TextSettingItemProps = $props();
+  const { fullWidth, name, description, placeholder } = constProps;
 </script>
 
 <div class="setting-item">
@@ -27,7 +22,7 @@ const {
   </div>
   <div class="setting-item-control">
     <input
-      class={fullWidth ? "full-width" : ""}
+      style:width={fullWidth ? "100%" : undefined}
       type="text"
       spellcheck="false"
       {placeholder}
@@ -35,9 +30,3 @@ const {
     />
   </div>
 </div>
-
-<style>
-  input.full-width {
-    width: 100%;
-  }
-</style>
