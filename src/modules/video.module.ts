@@ -7,10 +7,11 @@ import type { YoutubeApiService } from "@/services/video"
 import { extractYtId, videoMetaToContent } from "@/services/video/utils"
 import type { OrchardSettings } from "@/settings/types"
 import { cleanTitle } from "@/utils"
+import { addModal } from "./module.utils"
 
 class VideoModule {
   #ytServ: YoutubeApiService
-  #closeModal: (() => void) | null = null
+  // #closeModal: (() => void) | null = null
 
   constructor(
     readonly app: App,
@@ -35,14 +36,11 @@ class VideoModule {
   }
 
   private addVideo() {
-    const m = new Modal(this.app)
-
-    m.setTitle("Add Video Note")
-    m.contentEl.empty()
-
-    const svModal = mount(AddVideoModal, {
-      target: m.contentEl,
-      props: {
+    const m = addModal({
+      app: this.app,
+      title: "Add Video Note",
+      modalComponent: AddVideoModal,
+      componentProps: {
         onSubmit: async (value, errFunc) => {
           const videoId = extractYtId(value)
           if (videoId === null) {
@@ -50,8 +48,7 @@ class VideoModule {
             return
           }
 
-          this.#closeModal?.()
-
+          m.close()
           const videoFolder = this.settings.videoNoteFolder
 
           if (!videoFolder) {
@@ -79,12 +76,6 @@ class VideoModule {
         },
       },
     })
-
-    this.#closeModal = () => {
-      unmount(svModal).then(() => {
-        m.close()
-      })
-    }
 
     m.open()
   }
