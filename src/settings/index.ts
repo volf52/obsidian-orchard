@@ -1,4 +1,4 @@
-import { type App, PluginSettingTab } from "obsidian"
+import { type App, PluginSettingTab, Setting } from "obsidian"
 import type Orchard from "@/plugin"
 import type { OrchardSettings } from "./types"
 import { createCenterBtn, createHeading, createTextSetting } from "./utils"
@@ -36,18 +36,18 @@ class OrchardSettingsTab extends PluginSettingTab {
       },
     })
 
-    // new Setting(containerEl)
-    //   .setName("Video Note Folder")
-    //   .addDropdown((dropdown) => {
-    //     const folders = this.app.vault.getAllFolders(false);
-    //
-    //     for (const folder of folders) {
-    //       dropdown.addOption(folder.path, folder.name);
-    //     }
-    //     dropdown.onChange((newVal) => {
-    //       console.log("Selected folder", newVal);
-    //     });
-    //   });
+    new Setting(containerEl)
+      .setName("Video Note Folder")
+      .addDropdown((dropdown) => {
+        const folders = this.app.vault.getAllFolders(false)
+
+        for (const folder of folders) {
+          dropdown.addOption(folder.path, folder.name)
+        }
+        dropdown.onChange((newVal) => {
+          console.log("Selected folder", newVal)
+        })
+      })
 
     createCenterBtn({
       containerEl,

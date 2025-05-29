@@ -1,14 +1,11 @@
 import { type App, ItemView, Notice, type WorkspaceLeaf } from "obsidian"
 import { mount, unmount } from "svelte"
-import Counter from "./components/Counter.svelte"
 import { ICON, ORCHAR_RSB_VIEW_TYPE } from "./constants"
 import { insertLatexItem, PREDEFINED_LATEX } from "./latex"
 import type Orchard from "./plugin"
 import { getActiveEditor } from "./utils"
 
 class RightSidebarView extends ItemView {
-  counter!: ReturnType<typeof Counter>
-
   constructor(
     leaf: WorkspaceLeaf,
     readonly plugin: Orchard,
@@ -61,20 +58,9 @@ class RightSidebarView extends ItemView {
         insertLatexItem(lit, editor)
       })
     }
-
-    const counterEl = container.createDiv()
-    counterEl.id = "counterSv"
-    this.counter = mount(Counter, {
-      target: counterEl,
-      props: { startCount: 5 },
-    })
   }
 
-  override async onClose(): Promise<void> {
-    if (this.counter) {
-      unmount(this.counter)
-    }
-  }
+  override async onClose(): Promise<void> {}
 
   static async getOrCreateLeaf(app: App) {
     const { workspace } = app
