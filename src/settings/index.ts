@@ -5,6 +5,7 @@ import { createCenterBtn, createHeading, createTextSetting } from "./utils"
 
 export const DEFAULT_SETTINGS: OrchardSettings = {
   googleApiKey: "",
+  videoNoteFolder: "",
 }
 
 class OrchardSettingsTab extends PluginSettingTab {
@@ -19,8 +20,7 @@ class OrchardSettingsTab extends PluginSettingTab {
     const { containerEl } = this
     containerEl.empty()
     const pluginSettings = this.plugin.settings
-
-    // new Setting(containerEl).setName("Latex Snippets").setHeading();
+    console.log("Orchard Settings", pluginSettings)
 
     createHeading(containerEl, "Video and Book data")
 

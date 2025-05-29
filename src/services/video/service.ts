@@ -1,18 +1,14 @@
 import ky, { type KyInstance } from "ky"
 import { onSettingUpdate } from "@/events/settings-store"
 import { notifyErr } from "@/notify"
-import type Orchard from "@/plugin"
 import type { ChannelResp, VideoMetadata, YtSearchResponse } from "./types"
 import { extractChapters, toVideoMeta } from "./utils"
 
-class YtServ {
+class YoutubeApiService {
   #http: KyInstance
   #unsub: () => void
 
-  constructor(
-    private apiKey: string,
-    readonly plugin: Orchard,
-  ) {
+  constructor(private apiKey: string) {
     this.#unsub = onSettingUpdate((s) => {
       this.updateApiKey(s.googleApiKey)
     })
@@ -78,4 +74,4 @@ class YtServ {
   }
 }
 
-export default YtServ
+export default YoutubeApiService

@@ -11,7 +11,7 @@
 
 <div style:justify-content="center">
   <div class="setting-item-control">
-    <button style:width="100%" type="button" class="mod-cta" onclick={onSubmit}>
+    <button style:width="100%" type="submit" class="mod-cta" onclick={onSubmit}>
       {inner}
     </button>
   </div>

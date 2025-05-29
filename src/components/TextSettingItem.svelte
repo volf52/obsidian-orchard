@@ -1,26 +1,23 @@
 <script lang="ts">
-  type TextSettingItemProps = {
-    name: string;
+  import SettingItem, {
+    type SettingItemExtensionProps,
+  } from "./SettingItem.svelte";
+  type TextSettingItemProps = SettingItemExtensionProps & {
     placeholder?: string;
-    description?: string;
     value: string;
     fullWidth?: boolean;
   };
 
-  let { value = $bindable(), ...constProps }: TextSettingItemProps = $props();
-  const { fullWidth, name, description, placeholder } = constProps;
+  let {
+    value = $bindable(),
+    description = $bindable(""),
+    ...constProps
+  }: TextSettingItemProps = $props();
+  const { fullWidth, name, placeholder } = constProps;
 </script>
 
-<div class="setting-item">
-  <div class="setting-item-info">
-    <span class="setting-item-name">{name}</span>
-    {#if description}
-      <span class="setting-item-description">
-        {description}
-      </span>
-    {/if}
-  </div>
-  <div class="setting-item-control">
+<SettingItem {name} bind:description>
+  {#snippet controlItem()}
     <input
       style:width={fullWidth ? "100%" : undefined}
       type="text"
@@ -28,5 +25,5 @@
       {placeholder}
       bind:value
     />
-  </div>
-</div>
+  {/snippet}
+</SettingItem>

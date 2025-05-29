@@ -26,7 +26,14 @@
   };
 </script>
 
-<div class="modal-content">
-  <TextSettingItem {name} bind:value fullWidth />
-  <SubmitButton onSubmit={handleSubmit} />
-</div>
+<form
+  onsubmit={(e) => {
+    e.preventDefault();
+    handleSubmit();
+  }}
+>
+  <div class="modal-content">
+    <TextSettingItem {name} bind:value fullWidth />
+    <SubmitButton onSubmit={handleSubmit} />
+  </div>
+</form>

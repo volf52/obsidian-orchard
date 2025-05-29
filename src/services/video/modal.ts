@@ -6,7 +6,7 @@ import { extractYtId } from "./utils"
 
 type OnSubmit = (videoId: string) => void
 
-class YtInputModal extends Modal {
+class AddVideoModal extends Modal {
   #sveltePart: ReturnType<typeof InputModal> | null = null
 
   constructor(app: App, onSubmit: OnSubmit) {
@@ -46,4 +46,4 @@ class YtInputModal extends Modal {
   }
 }
 
-export default YtInputModal
+export default AddVideoModal
