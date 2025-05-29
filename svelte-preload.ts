@@ -1,4 +1,4 @@
-import { plugin } from "bun";
-import { sveltePlugin } from "./svelte-plugin";
+import { plugin } from "bun"
+import { sveltePlugin } from "./svelte-plugin"
 
-await plugin(sveltePlugin);
+await plugin(sveltePlugin)

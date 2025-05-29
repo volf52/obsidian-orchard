@@ -20,6 +20,7 @@ depends_post = "copy"
 [tasks.copy]
 run = [
   "cp dist/main.js {{env.OUTPUT_DIR}}/main.js",
+  "cp dist/main.js.map {{env.OUTPUT_DIR}}/main.js.map",
   "cp dist/main.css {{env.OUTPUT_DIR}}/styles.css",
 ]
 description = "Copy output files to plugin dir"

@@ -8,7 +8,6 @@ export const sveltePlugin: BunPlugin = {
     let cssOutput: string = ""
 
     build.onLoad({ filter: /\.svelte$/ }, async ({ path }) => {
-      // console.debug("Loading Svelte file:", path)
       const file = await Bun.file(path).text()
       const compiled = compile(file, {
         filename: path,
@@ -17,16 +16,14 @@ export const sveltePlugin: BunPlugin = {
       })
 
       if (compiled.css) {
-        // console.debug("Svelte CSS found", compiled.css.code)
         cssOutput += compiled.css.code
       }
 
       return { loader: "js", contents: compiled.js.code }
     })
 
-    build.onLoad({ filter: /svelte\.css$/ }, async ({ defer, path }) => {
+    build.onLoad({ filter: /svelte\.css$/ }, async ({ defer }) => {
       await defer()
-      // console.debug("Loading Svelte CSS file:", path)
 
       if (cssOutput) {
         return { loader: "css", contents: cssOutput }

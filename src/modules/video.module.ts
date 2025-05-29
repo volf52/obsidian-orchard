@@ -1,5 +1,4 @@
-import { type App, type Command, Modal } from "obsidian"
-import { mount, unmount } from "svelte"
+import type { App, Command } from "obsidian"
 import AddVideoModal from "@/components/AddVideoModal.svelte"
 import { notifyErr, notifySuccess } from "@/notify"
 import type { OrchardServices } from "@/services/utils"
@@ -11,7 +10,6 @@ import { addModal } from "./module.utils"
 
 class VideoModule {
   #ytServ: YoutubeApiService
-  // #closeModal: (() => void) | null = null
 
   constructor(
     readonly app: App,

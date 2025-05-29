@@ -1,5 +1,4 @@
 import { type App, ItemView, Notice, type WorkspaceLeaf } from "obsidian"
-import { mount, unmount } from "svelte"
 import { ICON, ORCHAR_RSB_VIEW_TYPE } from "./constants"
 import { insertLatexItem, PREDEFINED_LATEX } from "./latex"
 import type Orchard from "./plugin"

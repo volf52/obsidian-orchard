@@ -3,10 +3,10 @@
     type SettingItemExtensionProps,
   } from "./SettingItem.svelte";
 
-  type TextSettingItemProps = SettingItemExtensionProps & {
-    placeholder?: string;
+  export type DropdownSettingItemProps = SettingItemExtensionProps & {
     value: string;
     fullWidth?: boolean;
+    items: Array<{ label: string; value: string }>;
     onChange?: (value: string) => void;
   };
 
@@ -14,8 +14,8 @@
     value = $bindable(),
     description = $bindable(""),
     ...constProps
-  }: TextSettingItemProps = $props();
-  const { fullWidth, name, placeholder, onChange } = constProps;
+  }: DropdownSettingItemProps = $props();
+  const { name, items, onChange } = constProps;
 
   $effect(() => {
     onChange?.(value);
@@ -24,12 +24,10 @@
 
 <SettingItem {name} bind:description>
   {#snippet controlItem()}
-    <input
-      style:width={fullWidth ? "100%" : undefined}
-      type="text"
-      spellcheck="false"
-      {placeholder}
-      bind:value
-    />
+    <select class="dropdown" bind:value>
+      {#each items as item}
+        <option value={item.value}>{item.label}</option>
+      {/each}
+    </select>
   {/snippet}
 </SettingItem>
