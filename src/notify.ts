@@ -4,10 +4,10 @@ export const notifyErr = (message: string, err?: unknown) => {
   console.error(message)
   if (err) console.error(err)
   const notice = new Notice(message)
-  notice.messageEl.style.color = "red"
+  notice.messageEl.style.color = "var(--text-error)"
 }
 
 export const notifySuccess = (message: string) => {
   const notice = new Notice(message, 5000)
-  notice.messageEl.style.color = "green"
+  notice.messageEl.style.color = "var(--text-success)"
 }

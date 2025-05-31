@@ -38,6 +38,9 @@
   "overrides": [
     {
       "includes": ["**/*.svelte"],
+      "assist": {
+        "actions": { "source": { "organizeImports": "off" } }
+      },
       "formatter": {
         "enabled": false
       },

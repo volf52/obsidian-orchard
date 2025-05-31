@@ -46,4 +46,9 @@
   bind:value={videoNoteFolder}
   items={dropdownItems}
 />
-<SubmitButton name="Save Settings" onSubmit={handleSubmit} />
+
+<SubmitButton
+  --padding-top="2rem"
+  name="Save Settings"
+  onSubmit={handleSubmit}
+/>

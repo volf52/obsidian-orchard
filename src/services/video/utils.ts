@@ -1,4 +1,5 @@
 import { notifyErr } from "@/notify"
+import type { Prettify } from "@/types"
 import { cleanTag } from "@/utils"
 import type { Chapter, VideoMetadata, YtSearchItem } from "./types"
 
@@ -161,3 +162,25 @@ export const videoMetaToContent = (
 
   return out.join("\n")
 }
+
+type RightData<T> = {
+  [K in keyof T as K extends `right${string}` ? K : never]: T[K]
+}
+
+class BaseClass {
+  wrong!: number
+  rightAA!: Date
+
+  // @ts-expect-error
+  serialize<ThisT>(this: ThisT): Prettify<RightData<ThisT>> {}
+}
+
+const _tt = new BaseClass().serialize()
+//    ^?
+
+class Sub extends BaseClass {
+  rightB!: string
+}
+
+const _tu = new Sub().serialize()
+//    ^?

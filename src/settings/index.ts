@@ -20,7 +20,6 @@ class OrchardSettingsTab extends PluginSettingTab {
   }
 
   display(): void {
-    this.containerEl.id = "cont"
     const { containerEl } = this
     containerEl.empty()
 

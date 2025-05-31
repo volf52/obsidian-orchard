@@ -1,22 +1,24 @@
 import { type Command, Plugin } from "obsidian"
-import { ICON, ORCHAR_RSB_VIEW_TYPE } from "./constants"
-import RightSidebarView from "./right-sidebar-view"
-import OrchardSettingsTab, { DEFAULT_SETTINGS } from "./settings"
+import { ICON, ORCHAR_RSB_VIEW_TYPE } from "@/constants"
+import RightSidebarView from "@/right-sidebar-view"
+import OrchardSettingsTab, { DEFAULT_SETTINGS } from "@/settings"
 import "./styles.css"
 import "./components/svelte.css"
 import {
   clearAllSettingUpdates,
   notifySettingUpdate,
-} from "./events/settings-store"
-import VideoModule from "./modules/video.module"
-import { type OrchardServices, wireUpServices } from "./services/utils"
-import type { OrchardSettings } from "./settings/types"
+} from "@/events/settings-store"
+import VideoModule from "@/modules/video.module"
+import { type OrchardServices, wireUpServices } from "@/services/utils"
+import type { OrchardSettings } from "@/settings/types"
+import TranscriptionModule from "./modules/transcribe.module"
 
 class Orchard extends Plugin {
   settings!: OrchardSettings
   services!: OrchardServices
 
   videoModule!: VideoModule
+  transcriptionModule!: TranscriptionModule
 
   override async onload(): Promise<void> {
     await this.loadSettings()
@@ -24,6 +26,11 @@ class Orchard extends Plugin {
     this.services = wireUpServices(this.settings)
 
     this.videoModule = new VideoModule(this.app, this.settings, this.services)
+    this.transcriptionModule = new TranscriptionModule(
+      this.app,
+      this.settings,
+      this.services,
+    )
 
     this.addRibbonIcon(ICON, "Open Orchard", (_evt) => {
       this.activateView()
@@ -51,6 +58,10 @@ class Orchard extends Plugin {
 
     const videoCommands = await this.videoModule.registerCommands()
     commands.push(...videoCommands)
+
+    const transcriptionCommands =
+      await this.transcriptionModule.registerCommands()
+    commands.push(...transcriptionCommands)
 
     // this.addCommand({
     //   id: "orchard-picker",

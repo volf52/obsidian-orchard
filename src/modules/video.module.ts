@@ -1,12 +1,13 @@
 import type { App, Command } from "obsidian"
+import { mount, unmount } from "svelte"
 import AddVideoModal from "@/components/AddVideoModal.svelte"
 import { notifyErr, notifySuccess } from "@/notify"
+import BetterModal from "@/obsidian-extended/better-modal"
 import type { OrchardServices } from "@/services/utils"
 import type { YoutubeApiService } from "@/services/video"
 import { extractYtId, videoMetaToContent } from "@/services/video/utils"
 import type { OrchardSettings } from "@/settings/types"
 import { cleanTitle } from "@/utils"
-import { addModal } from "./module.utils"
 
 class VideoModule {
   #ytServ: YoutubeApiService
@@ -34,19 +35,19 @@ class VideoModule {
   }
 
   private addVideo() {
-    const m = addModal({
-      app: this.app,
-      title: "Add Video Note",
-      modalComponent: AddVideoModal,
-      componentProps: {
+    const m = new BetterModal(this.app, "Add Video Note")
+
+    const svelteModal = mount(AddVideoModal, {
+      target: m.contentEl,
+      props: {
         onSubmit: async (value, errFunc) => {
+          m.disableClose()
           const videoId = extractYtId(value)
           if (videoId === null) {
             errFunc(value, "Invalid YouTube URL or ID")
             return
           }
 
-          m.close()
           const videoFolder = this.settings.videoNoteFolder
 
           if (!videoFolder) {
@@ -71,8 +72,15 @@ class VideoModule {
           const leaf = this.app.workspace.getLeaf("tab")
           notifySuccess("Video imported")
           await leaf.openFile(file)
+
+          m.enableClose()
+          m.close()
         },
       },
+    })
+
+    m.registerOnClose(async () => {
+      await unmount(svelteModal)
     })
 
     m.open()
