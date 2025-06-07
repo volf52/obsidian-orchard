@@ -1,37 +1,33 @@
 <script lang="ts">
-  import type { OrchardSettings } from "@/settings/types";
-  import DropdownSettingItem, {
-    type DropdownSettingItemProps,
-  } from "./primitives/DropdownSettingItem.svelte";
-  import SettingHeading from "./primitives/SettingHeading.svelte";
-  import SubmitButton from "./primitives/SubmitButton.svelte";
-  import TextSettingItem from "./primitives/TextSettingItem.svelte";
+import type { OrchardSettings } from "@/settings/types"
+import DropdownSettingItem, {
+  type DropdownSettingItemProps,
+} from "./primitives/DropdownSettingItem.svelte"
+import SettingHeading from "./primitives/SettingHeading.svelte"
+import SubmitButton from "./primitives/SubmitButton.svelte"
+import TextSettingItem from "./primitives/TextSettingItem.svelte"
 
-  type SettingsPageProps = {
-    heading: string;
-    initialSettings: OrchardSettings;
-    dropdownItems: DropdownSettingItemProps["items"];
-    onSubmit: (newSettings: OrchardSettings) => void;
-  };
+type SettingsPageProps = {
+  heading: string
+  initialSettings: OrchardSettings
+  dropdownItems: DropdownSettingItemProps["items"]
+  onSubmit: (newSettings: OrchardSettings) => void
+}
 
-  const {
-    heading,
-    initialSettings,
-    dropdownItems,
-    onSubmit,
-  }: SettingsPageProps = $props();
+const { heading, initialSettings, dropdownItems, onSubmit }: SettingsPageProps =
+  $props()
 
-  let apiKey = $state(initialSettings.googleApiKey);
-  let videoNoteFolder = $state(initialSettings.videoNoteFolder);
+let apiKey = $state(initialSettings.googleApiKey)
+let videoNoteFolder = $state(initialSettings.videoNoteFolder)
 
-  const handleSubmit = () => {
-    const newSettings: OrchardSettings = {
-      googleApiKey: apiKey,
-      videoNoteFolder: videoNoteFolder,
-    };
+const handleSubmit = () => {
+  const newSettings: OrchardSettings = {
+    googleApiKey: apiKey,
+    videoNoteFolder: videoNoteFolder,
+  }
 
-    onSubmit(newSettings);
-  };
+  onSubmit(newSettings)
+}
 </script>
 
 <SettingHeading {heading} />
@@ -44,7 +40,8 @@
 <DropdownSettingItem
   name="Video Notes Folder"
   bind:value={videoNoteFolder}
-  items={dropdownItems}
+  isPromise
+  itemLoader={async () => []}
 />
 
 <SubmitButton

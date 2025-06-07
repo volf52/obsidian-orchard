@@ -1,29 +1,26 @@
 <script lang="ts">
-  import FileSettingItem from "./primitives/FileSettingItem.svelte";
-  import ModalContent from "./primitives/ModalContent.svelte";
+import FileSettingItem from "./primitives/FileSettingItem.svelte"
+import ModalContent from "./primitives/ModalContent.svelte"
 
-  type TranscribeFileModalProps = {
-    onSubmit: (
-      file: File,
-      onErr: (_data: string, err: unknown) => void,
-    ) => void;
-  };
+type TranscribeFileModalProps = {
+  onSubmit: (file: File, onErr: (_data: string, err: unknown) => void) => void
+}
 
-  const { onSubmit }: TranscribeFileModalProps = $props();
+const { onSubmit }: TranscribeFileModalProps = $props()
 
-  let file = $state<File | null>(null);
+let file = $state<File | null>(null)
 
-  const handleSubmit = () => {
-    if (!file) {
-      return;
-    }
+const handleSubmit = () => {
+  if (!file) {
+    return
+  }
 
-    onSubmit(file, (_errVal, _err) => {});
-  };
+  onSubmit(file, (_errVal, _err) => {})
+}
 
-  const setFile = (selectedFile: File) => {
-    file = selectedFile;
-  };
+const setFile = (selectedFile: File) => {
+  file = selectedFile
+}
 </script>
 
 <ModalContent onSubmit={handleSubmit}>

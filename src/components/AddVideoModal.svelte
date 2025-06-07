@@ -1,36 +1,37 @@
 <script lang="ts">
-  import ModalContent from "./primitives/ModalContent.svelte";
-  import TextSettingItem from "./primitives/TextSettingItem.svelte";
-  import TabPanel from "./tabs/TabPanel.svelte";
-  import Tabs from "./tabs/Tabs.svelte";
+import ModalContent from "./primitives/ModalContent.svelte"
+import TextSettingItem from "./primitives/TextSettingItem.svelte"
+import TabPanel from "./tabs/TabPanel.svelte"
+import Tabs from "./tabs/Tabs.svelte"
 
-  type AddVideoModalProps = {
-    onSubmit: (
-      value: string,
-      onErr: (_data: string, err: unknown) => void,
-    ) => void;
-  };
+type AddVideoModalProps = {
+  onSubmit: (
+    value: string,
+    onErr: (_data: string, err: unknown) => void,
+  ) => void
+}
 
-  const { onSubmit }: AddVideoModalProps = $props();
+const { onSubmit }: AddVideoModalProps = $props()
 
-  let value = $state("");
+let value = $state("")
 
-  const handleSubmit = () => {
-    const trimmedValue = value.trim();
+const handleSubmit = () => {
+  const trimmedValue = value.trim()
 
-    if (!trimmedValue) {
-      return;
-    }
+  if (!trimmedValue) {
+    return
+  }
 
-    onSubmit(trimmedValue, (_errVal, _err) => {});
-  };
+  onSubmit(trimmedValue, (_errVal, _err) => {})
+}
 </script>
 
 <ModalContent onSubmit={handleSubmit}>
-  <Tabs>
-    <TabPanel label="Random stuff">Hello there</TabPanel>
-    <TabPanel label="Video">
-      <TextSettingItem name="Video URL" bind:value fullWidth />
-    </TabPanel>
-  </Tabs>
+  <TextSettingItem name="Video URL" bind:value fullWidth />
+  <!-- <Tabs> -->
+  <!--   <TabPanel label="Random stuff">Hello there</TabPanel> -->
+  <!--   <TabPanel label="Video"> -->
+  <!--     <TextSettingItem name="Video URL" bind:value fullWidth /> -->
+  <!--   </TabPanel> -->
+  <!-- </Tabs> -->
 </ModalContent>

@@ -1,33 +1,59 @@
 <script lang="ts">
-  import SettingItem, {
-    type SettingItemExtensionProps,
-  } from "./SettingItem.svelte";
+import SettingItem, {
+  type SettingItemExtensionProps,
+} from "./SettingItem.svelte"
+import Spinner from "./Spinner.svelte"
 
-  export type DropdownSettingItemProps = SettingItemExtensionProps & {
-    value: string;
-    fullWidth?: boolean;
-    items: Array<{ label: string; value: string }>;
-    onChange?: (value: string) => void;
-  };
+type DropdownItem = {
+  label: string
+  value: string
+}
 
-  let {
-    value = $bindable(),
-    description = $bindable(""),
-    ...constProps
-  }: DropdownSettingItemProps = $props();
-  const { name, items, onChange } = constProps;
+type NoPromise = {
+  isPromise: false
+  items: DropdownItem[]
+}
 
-  $effect(() => {
-    onChange?.(value);
-  });
+type WithPromise = {
+  isPromise: true
+  itemLoader: () => Promise<DropdownItem[]>
+}
+
+type ItemProps = NoPromise | WithPromise
+
+export type DropdownSettingItemProps = SettingItemExtensionProps &
+  ItemProps & {
+    value: string
+    fullWidth?: boolean
+    onChange?: (value: string) => void
+  }
+
+let {
+  value = $bindable(),
+  description = $bindable(""),
+  ...constProps
+}: DropdownSettingItemProps = $props()
+const { name, onChange } = constProps
+
+$effect(() => {
+  onChange?.(value)
+})
 </script>
+
+{#snippet dropdown(items: DropdownItem[])}
+  <select class="dropdown" bind:value>
+    {#each items as item}
+      <option value={item.value}>{item.label}</option>
+    {/each}
+  </select>
+{/snippet}
 
 <SettingItem {name} bind:description>
   {#snippet controlItem()}
-    <select class="dropdown" bind:value>
-      {#each items as item}
-        <option value={item.value}>{item.label}</option>
-      {/each}
-    </select>
+    {#if constProps.isPromise}
+      <Spinner />
+    {:else}
+      {@render dropdown(constProps.items)}
+    {/if}
   {/snippet}
 </SettingItem>

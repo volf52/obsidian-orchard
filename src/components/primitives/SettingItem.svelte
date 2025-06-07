@@ -1,28 +1,27 @@
 <script lang="ts">
-  import type { Snippet } from "svelte";
+import type { Snippet } from "svelte"
 
-  export type SettingItemExtensionProps = {
-    name: string;
-    description?: string;
-    ariaLabel?: string;
-    removeInfo?: boolean;
-    cls?: string;
-  };
+export type SettingItemExtensionProps = {
+  name: string
+  description?: string
+  ariaLabel?: string
+  removeInfo?: boolean
+  cls?: string
+}
 
-  type SettingItemNoCtrl = SettingItemExtensionProps & {
-    removeCtrl: true;
-  };
+type SettingItemNoCtrl = SettingItemExtensionProps & {
+  removeCtrl: true
+}
 
-  type SettingItemWithCtrl = SettingItemExtensionProps & {
-    removeCtrl?: false;
-    controlItem: Snippet;
-  };
+type SettingItemWithCtrl = SettingItemExtensionProps & {
+  removeCtrl?: false
+  controlItem: Snippet
+}
 
-  type SettingItemProps = SettingItemNoCtrl | SettingItemWithCtrl;
+type SettingItemProps = SettingItemNoCtrl | SettingItemWithCtrl
 
-  let { description = $bindable(""), ...constProps }: SettingItemProps =
-    $props();
-  const { ariaLabel, name, removeInfo = false, cls = "" } = constProps;
+let { description = $bindable(""), ...constProps }: SettingItemProps = $props()
+const { ariaLabel, name, removeInfo = false, cls = "" } = constProps
 </script>
 
 <div

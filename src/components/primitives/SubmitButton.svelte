@@ -1,13 +1,13 @@
 <script lang="ts">
-  type SubmitButtonProps = {
-    name?: string;
-    onSubmit: () => void;
-    cls?: string;
-  };
+type SubmitButtonProps = {
+  name?: string
+  onSubmit: () => void
+  cls?: string
+}
 
-  const { name, onSubmit, cls }: SubmitButtonProps = $props();
+const { name, onSubmit, cls }: SubmitButtonProps = $props()
 
-  const inner = name || "Submit";
+const inner = name || "Submit"
 </script>
 
 <div style:justify-content="center" class:cls class="submit-btn-div">

@@ -1,37 +1,37 @@
 <script lang="ts">
-  import { getContext, onMount, type Snippet } from "svelte";
+import { getContext, onMount, type Snippet } from "svelte"
 
-  type TabsContext = {
-    activeTabId: string;
-    registerTab: (id: string, label: string, disabled?: boolean) => void;
-    setActiveTab: (id: string) => void;
-  };
-  const ctx = getContext<TabsContext>("tabs-ctx");
-  if (!ctx) {
-    throw new Error("TabPanel must be used within a Tabs context");
-  }
+type TabsContext = {
+  activeTabId: string
+  registerTab: (id: string, label: string, disabled?: boolean) => void
+  setActiveTab: (id: string) => void
+}
+const ctx = getContext<TabsContext>("tabs-ctx")
+if (!ctx) {
+  throw new Error("TabPanel must be used within a Tabs context")
+}
 
-  type TabPanelProps = {
-    children: Snippet;
-    label: string;
-    id?: string;
-    disabled?: boolean;
-    class?: string;
-  };
+type TabPanelProps = {
+  children: Snippet
+  label: string
+  id?: string
+  disabled?: boolean
+  class?: string
+}
 
-  const {
-    children,
-    label,
-    id = crypto.randomUUID(),
-    disabled = false,
-    class: className = "",
-  }: TabPanelProps = $props();
+const {
+  children,
+  label,
+  id = crypto.randomUUID(),
+  disabled = false,
+  class: className = "",
+}: TabPanelProps = $props()
 
-  onMount(() => {
-    ctx.registerTab(id, label, disabled);
-  });
+onMount(() => {
+  ctx.registerTab(id, label, disabled)
+})
 
-  const isActive = $derived(ctx.activeTabId === id);
+const isActive = $derived(ctx.activeTabId === id)
 </script>
 
 {#if isActive}

@@ -1,0 +1,16 @@
+/* .cm-s-obsidian .cm-header, .markdown-rendered :is(h1, h2) { */
+.cm-s-obsidian .cm-header-1, .markdown-rendered :is(h1) {
+  background: linear-gradient(to right, coral, gold);
+  /* background: linear-gradient(to right, gold, red); */
+  -webkit-background-clip: text;
+  color: transparent;
+  width: fit-content;
+}
+
+.cm-s-obsidian .cm-header-2, .markdown-rendered :is(h2) {
+  /* background: linear-gradient(to right, red, orange); */
+  background: red;
+  -webkit-background-clip: text;
+  color: transparent;
+  width: fit-content;
+}

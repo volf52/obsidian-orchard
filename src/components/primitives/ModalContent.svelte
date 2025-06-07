@@ -1,18 +1,18 @@
 <script lang="ts">
-  import type { Snippet } from "svelte";
-  import SubmitButton from "./SubmitButton.svelte";
+import type { Snippet } from "svelte"
+import SubmitButton from "./SubmitButton.svelte"
 
-  type ModalProps = {
-    children: Snippet;
+type ModalProps = {
+  children: Snippet
 
-    // onSubmit: <T, E = unknown>(
-    //   value: T,
-    //   errFunc: (data: T, err: E) => void,
-    // ) => void;
-    onSubmit: () => void;
-  };
+  // onSubmit: <T, E = unknown>(
+  //   value: T,
+  //   errFunc: (data: T, err: E) => void,
+  // ) => void;
+  onSubmit: () => void
+}
 
-  const { children, onSubmit }: ModalProps = $props();
+const { children, onSubmit }: ModalProps = $props()
 </script>
 
 <div class="modal-content">

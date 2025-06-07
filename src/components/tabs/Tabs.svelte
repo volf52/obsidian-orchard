@@ -1,59 +1,59 @@
 <script lang="ts">
-  import { setContext, type Snippet } from "svelte";
-  import { SvelteMap } from "svelte/reactivity";
+import { type Snippet, setContext } from "svelte"
+import { SvelteMap } from "svelte/reactivity"
 
-  type TabsProps = {
-    children: Snippet;
-    class?: string;
-    defaultTab?: string;
-  };
+type TabsProps = {
+  children: Snippet
+  class?: string
+  defaultTab?: string
+}
 
-  type TabData = {
-    id: string;
-    label: string;
-    disabled?: boolean;
-  };
+type TabData = {
+  id: string
+  label: string
+  disabled?: boolean
+}
 
-  type TabsContext = {
-    activeTabId: string;
-    tabs: Map<string, TabData>;
-    registerTab: (id: string, label: string, disabled?: boolean) => void;
-    setActiveTab: (id: string) => void;
-  };
+type TabsContext = {
+  activeTabId: string
+  tabs: Map<string, TabData>
+  registerTab: (id: string, label: string, disabled?: boolean) => void
+  setActiveTab: (id: string) => void
+}
 
-  const { children, defaultTab, class: className = "" }: TabsProps = $props();
+const { children, defaultTab, class: className = "" }: TabsProps = $props()
 
-  let activeTab = $state<string>(defaultTab || "");
-  let tabsData = new SvelteMap<string, TabData>();
+let activeTab = $state<string>(defaultTab || "")
+let tabsData = new SvelteMap<string, TabData>()
 
-  const tabsContext: TabsContext = {
-    get activeTabId() {
-      return activeTab;
-    },
-    get tabs() {
-      return tabsData;
-    },
-    registerTab: (id, label, disabled = false) => {
-      const newTab: TabData = { id, label, disabled };
+const tabsContext: TabsContext = {
+  get activeTabId() {
+    return activeTab
+  },
+  get tabs() {
+    return tabsData
+  },
+  registerTab: (id, label, disabled = false) => {
+    const newTab: TabData = { id, label, disabled }
 
-      tabsData.set(id, newTab);
+    tabsData.set(id, newTab)
 
-      if (!activeTab && !disabled) {
-        activeTab = id;
-      }
-    },
-    setActiveTab: (id) => {
-      const tab = tabsData.get(id);
+    if (!activeTab && !disabled) {
+      activeTab = id
+    }
+  },
+  setActiveTab: (id) => {
+    const tab = tabsData.get(id)
 
-      if (tab && !tab.disabled) {
-        activeTab = id;
-      }
-    },
-  };
+    if (tab && !tab.disabled) {
+      activeTab = id
+    }
+  },
+}
 
-  setContext("tabs-ctx", tabsContext);
+setContext("tabs-ctx", tabsContext)
 
-  const tabsArr = $derived<TabData[]>(Array.from(tabsData.values()));
+const tabsArr = $derived<TabData[]>(Array.from(tabsData.values()))
 </script>
 
 <div class="tabs-container {className}">
@@ -81,6 +81,7 @@
 <style>
   .tabs-container {
     width: 100%;
+    background-color: var(--tab-container-background);
   }
 
   .tab-headers {
@@ -94,20 +95,23 @@
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 1rem;
-    font-weight: 500;
-    color: #64748b;
+    font-size: var(--tab-font-size, 1rem);
+    font-weight: var(--tab-font-weight, 500);
+    color: var(--tab-text-color-focused, #64748b);
     border-bottom: 2px solid transparent;
     transition: all 0.2s ease;
   }
 
   .tab-header:hover:not(.disabled) {
-    color: #1e293b;
-    background-color: #f8fafc;
+    /* color: #1e293b; */
+    /* background-color: #f8fafc; */
+    color: var(--text-color-active, #1e293b);
+    background-color: --var(--tab-background-active, #f8fafc);
   }
 
   .tab-header.active {
-    color: #3b82f6;
+    /* color: #3b82f6; */
+    color: var(--tab-text-color-focused-active-current, #3b82f6);
     border-bottom-color: #3b82f6;
   }
 

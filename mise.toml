@@ -25,3 +25,6 @@ run = [
 ]
 description = "Copy output files to plugin dir"
 sources = ["./dist/main.css", "./dist/main.js"]
+
+[tasks.css]
+run = "cp ./custom-css/*.css {{env.CSS_DIR}}"
