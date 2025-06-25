@@ -11,7 +11,9 @@
     "lint:staged": "biome check --staged",
     "lint:fix": "biome check src --write --unsafe",
     "fmt": "biome format src --write",
-    "check": "svelte-check --tsconfig tsconfig.json"
+    "check": "svelte-check --tsconfig tsconfig.json",
+    "test": "bun test",
+    "test:watch": "bun test --watch"
   },
   "keywords": [],
   "author": "",

@@ -1,5 +1,5 @@
 import { type App, FuzzySuggestModal, Notice } from "obsidian"
-import { getActiveEditor } from "../utils"
+import { getActiveEditor } from "../obsidian-utils"
 import { insertLatexItem, type LatexItem, PREDEFINED_LATEX } from "./latexitem"
 
 class OrchardSuggestionsModal extends FuzzySuggestModal<LatexItem> {

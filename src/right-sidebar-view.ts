@@ -1,8 +1,8 @@
 import { type App, ItemView, Notice, type WorkspaceLeaf } from "obsidian"
 import { ICON, ORCHAR_RSB_VIEW_TYPE } from "./constants"
 import { insertLatexItem, PREDEFINED_LATEX } from "./latex"
+import { getActiveEditor } from "./obsidian-utils"
 import type Orchard from "./plugin"
-import { getActiveEditor } from "./utils"
 
 class RightSidebarView extends ItemView {
   constructor(
