@@ -8,10 +8,10 @@ If your plugin does not need CSS, delete this file.
 */
 
 .orchard-modal-title {
-  border-bottom: 1px solid var(--background-modifier-border);
-  margin-bottom: 1rem;
   padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
   text-align: center;
+  border-bottom: 1px solid var(--background-modifier-border);
 }
 
 .orchard-modal-list {
@@ -24,11 +24,11 @@ If your plugin does not need CSS, delete this file.
 
 .orchard-modal-item {
   padding: 0.5rem 0.75rem;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
   color: var(--text-normal);
+  cursor: pointer;
   background-color: var(--background-secondary);
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
 
   &:hover {
     background-color: var(--background-modifier-hover);

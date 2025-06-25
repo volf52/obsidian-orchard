@@ -11,7 +11,7 @@ description = "Typecheck the project using tsgo"
 alias = "tc"
 
 [tasks.build]
-run = "bun --bun run build.ts"
+run = "bun run build.ts"
 description = "Build the plugin"
 sources = ["./src/**/*.ts", "./src/**/*.svelte", "./src/**/*.css", "./src/*.ts"]
 alias = "b"
@@ -19,6 +19,7 @@ depends_post = "copy"
 
 [tasks.copy]
 run = [
+  "eza --color=always --group-directories-first --icons -l dist",
   "cp dist/main.js {{env.OUTPUT_DIR}}/main.js",
   "cp dist/main.js.map {{env.OUTPUT_DIR}}/main.js.map",
   "cp dist/main.css {{env.OUTPUT_DIR}}/styles.css",

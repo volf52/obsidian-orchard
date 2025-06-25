@@ -1,4 +1,5 @@
 <script lang="ts">
+import DropdownSettingItem from "./primitives/DropdownSettingItem.svelte"
 import FileSettingItem from "./primitives/FileSettingItem.svelte"
 import ModalContent from "./primitives/ModalContent.svelte"
 
