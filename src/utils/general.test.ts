@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { cleanTag, cleanTitle, jsonToMdFrontmatter } from "./utils"
+import { cleanTag, cleanTitle, jsonToMdFrontmatter } from "./general"
 
 describe("jsonToMdFrontmatter", () => {
   test("should return empty string for empty object", () => {

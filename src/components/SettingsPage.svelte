@@ -1,7 +1,7 @@
 <script lang="ts">
 import type { OrchardSettings } from "@/settings/types"
 import DropdownSettingItem, {
-  type DropdownSettingItemProps,
+  type DropdownItem,
 } from "./primitives/DropdownSettingItem.svelte"
 import SettingHeading from "./primitives/SettingHeading.svelte"
 import SubmitButton from "./primitives/SubmitButton.svelte"
@@ -10,7 +10,7 @@ import TextSettingItem from "./primitives/TextSettingItem.svelte"
 type SettingsPageProps = {
   heading: string
   initialSettings: OrchardSettings
-  dropdownItems: DropdownSettingItemProps["items"]
+  dropdownItems: DropdownItem[]
   onSubmit: (newSettings: OrchardSettings) => void
 }
 
@@ -22,6 +22,7 @@ let videoNoteFolder = $state(initialSettings.videoNoteFolder)
 
 const handleSubmit = () => {
   const newSettings: OrchardSettings = {
+    ...initialSettings,
     googleApiKey: apiKey,
     videoNoteFolder: videoNoteFolder,
   }
@@ -42,6 +43,13 @@ const handleSubmit = () => {
   bind:value={videoNoteFolder}
   isPromise
   itemLoader={async () => []}
+/>
+<TextSettingItem 
+  value={initialSettings.serverApiKey} 
+  name="Server API Key" 
+  disabled 
+  description="REST Server API Key" 
+  ariaLabel="Server API Key"
 />
 
 <SubmitButton

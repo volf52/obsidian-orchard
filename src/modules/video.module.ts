@@ -7,7 +7,7 @@ import type { OrchardServices } from "@/services/utils"
 import type { YoutubeApiService } from "@/services/video"
 import { extractYtId, videoMetaToContent } from "@/services/video/utils"
 import type { OrchardSettings } from "@/settings/types"
-import { cleanTitle } from "@/utils"
+import { cleanTitle } from "@/utils/general"
 
 class VideoModule {
   #ytServ: YoutubeApiService

@@ -4,7 +4,7 @@ import SettingItem, {
 } from "./SettingItem.svelte"
 import Spinner from "./Spinner.svelte"
 
-type DropdownItem = {
+export type DropdownItem = {
   label: string
   value: string
 }

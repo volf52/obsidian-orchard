@@ -1,6 +1,6 @@
 import { notifyErr } from "@/notify"
 import type { Prettify } from "@/types"
-import { cleanTag } from "@/utils"
+import { cleanTag } from "@/utils/general"
 import type { Chapter, VideoMetadata, YtSearchItem } from "./types"
 
 export const extractYtId = (url: string) => {

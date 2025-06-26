@@ -9,6 +9,7 @@ type TextSettingItemProps = SettingItemExtensionProps & {
   value: string
   fullWidth?: boolean
   onChange?: (value: string) => void
+  disabled?: boolean
 }
 
 let {
@@ -16,7 +17,7 @@ let {
   description = $bindable(""),
   ...constProps
 }: TextSettingItemProps = $props()
-const { fullWidth, name, placeholder, onChange } = constProps
+const { fullWidth, name, placeholder, disabled, onChange } = constProps
 
 $effect(() => {
   onChange?.(value)
@@ -37,6 +38,7 @@ onMount(() => {
       type="text"
       spellcheck="false"
       {placeholder}
+      {disabled}
       bind:value
     />
   {/snippet}

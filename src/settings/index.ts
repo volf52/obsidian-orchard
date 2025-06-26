@@ -8,6 +8,7 @@ import type { OrchardSettings } from "./types"
 export const DEFAULT_SETTINGS: OrchardSettings = {
   googleApiKey: "",
   videoNoteFolder: "",
+  serverApiKey: "",
 }
 
 class OrchardSettingsTab extends PluginSettingTab {
