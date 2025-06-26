@@ -1,5 +1,3 @@
-vim.cmd([[set runtimepath+=.nvim]])
-
 local tsgopath = vim.fn.executable("tsgo")
 
 local tsgo_enabled = false

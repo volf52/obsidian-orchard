@@ -8,7 +8,6 @@ import type { OrchardSettings } from "./types"
 export const DEFAULT_SETTINGS: OrchardSettings = {
   googleApiKey: "",
   videoNoteFolder: "",
-  serverApiKey: "",
 }
 
 class OrchardSettingsTab extends PluginSettingTab {
@@ -32,7 +31,7 @@ class OrchardSettingsTab extends PluginSettingTab {
         dropdownItems: this.app.vault
           .getAllFolders(false)
           .map((folder) => ({ label: folder.path, value: folder.path })),
-        onSubmit: (newSettings) => {
+        onSubmit: (newSettings: OrchardSettings) => {
           this.plugin.settings = newSettings
           this.plugin
             .saveSettings()

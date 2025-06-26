@@ -11,7 +11,6 @@ import {
 import VideoModule from "@/modules/video.module"
 import { type OrchardServices, wireUpServices } from "@/services/utils"
 import type { OrchardSettings } from "@/settings/types"
-import { ServerModule } from "./modules/server.module"
 import TranscriptionModule from "./modules/transcribe.module"
 
 class Orchard extends Plugin {
@@ -20,7 +19,6 @@ class Orchard extends Plugin {
 
   videoModule!: VideoModule
   transcriptionModule!: TranscriptionModule
-  serverModule!: ServerModule
 
   override async onload(): Promise<void> {
     await this.loadSettings()
@@ -33,7 +31,6 @@ class Orchard extends Plugin {
       this.settings,
       this.services,
     )
-    this.serverModule = new ServerModule(this.app, this.settings, this.services)
 
     this.addRibbonIcon(ICON, "Open Orchard", (_evt) => {
       this.activateView()
@@ -48,8 +45,6 @@ class Orchard extends Plugin {
     this.registerView(ORCHAR_RSB_VIEW_TYPE, (leaf) => {
       return new RightSidebarView(leaf, this)
     })
-
-    await this.serverModule.loadServer()
   }
 
   private async registerCommands() {
@@ -101,7 +96,6 @@ class Orchard extends Plugin {
 
   override onunload() {
     clearAllSettingUpdates()
-    this.serverModule?.closeServer()
   }
 
   private async loadSettings() {
@@ -110,10 +104,6 @@ class Orchard extends Plugin {
     const settings = {
       ...DEFAULT_SETTINGS,
       ...loadedSettings,
-    }
-
-    if (!settings.serverApiKey) {
-      settings.serverApiKey = ServerModule.getApiKey()
     }
 
     this.settings = settings

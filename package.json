@@ -1,44 +1,26 @@
 {
-  "name": "obsidian-orchard",
+  "name": "obsidian-orchard-monorepo",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "My obsidian plugins for personal use",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "build": "bun --bun run build.ts",
-    "tc": "tsc --noEmit --pretty",
-    "version": "node version-bump.mjs && git add manifest.json versions.json",
-    "lint": "biome check src",
-    "lint:staged": "biome check --staged",
-    "lint:fix": "biome check src --write --unsafe",
-    "fmt": "biome format src --write",
-    "check": "svelte-check --tsconfig tsconfig.json",
-    "test": "bun test",
-    "test:watch": "bun test --watch"
+    "build": "bun run --filter '*' build",
+    "tc": "bun run --filter '*' tc",
+    "lint": "bun run --filter '*' lint",
+    "lint:fix": "bun run --filter '*' lint:fix",
+    "fmt": "bun run --filter '*' fmt",
+    "check": "bun run --filter '*' check",
+    "test": "bun run --filter '*' test",
+    "test:watch": "bun run --filter '*' test:watch",
+    "clean": "bun run --filter '*' clean"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "devDependencies": {
-    "@biomejs/biome": "^2.0.4",
-    "@codemirror/state": "^6.5.2",
-    "@codemirror/view": "^6.37.2",
-    "@tsconfig/bun": "^1.0.8",
-    "@types/bun": "^1.2.17",
-    "@typescript/native-preview": "^7.0.0-dev.20250621.1",
-    "builtin-modules": "^5.0.0",
-    "oxlint": "^1.2.0",
-    "svelte": "^5.34.7",
-    "svelte-check": "^4.2.2",
-    "taze": "^19.1.0",
-    "tslib": "^2.8.1",
-    "typescript": "^5.8.3"
+    "taze": "^19.1.0"
   },
-  "dependencies": {
-    "@hono/node-server": "^1.14.4",
-    "@scalar/hono-api-reference": "^0.9.7",
-    "hono": "^4.8.3",
-    "ky": "^1.8.1",
-    "obsidian": "^1.8.7",
-    "zustand": "^5.0.5"
+  "engines": {
+    "bun": ">=1.0.0"
   }
 }

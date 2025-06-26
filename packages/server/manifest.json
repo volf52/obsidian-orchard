@@ -1,0 +1,12 @@
+{
+  "manifest_version": 2,
+  "id": "orchard-server",
+  "name": "Orchard Server",
+  "version": "1.0.0",
+  "minAppVersion": "0.15.0",
+  "description": "HTTP/2 server for Orchard with API endpoints",
+  "author": "Arslan",
+  "authorUrl": "https://github.com/volf52",
+  "fundingUrl": "https://github.com/volf52",
+  "isDesktopOnly": true
+}

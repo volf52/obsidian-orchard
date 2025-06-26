@@ -1,0 +1,30 @@
+[tools]
+bun = "1.2.17"
+
+[env]
+_.file = ".env.json"
+
+[tasks.typecheck]
+run = "bun --bun tsgo --noEmit --pretty -p ./tsconfig.json"
+description = "Typecheck the project using tsgo"
+alias = "tc"
+
+[tasks.build]
+run = "bun run build.ts"
+description = "Build the plugin"
+sources = ["./src/**/*.ts", "./src/**/*.svelte", "./src/**/*.css", "./src/*.ts"]
+alias = "b"
+depends_post = "copy"
+
+[tasks.copy]
+run = [
+  "eza --color=always --group-directories-first --icons -l dist",
+  "cp dist/main.js {{env.OUTPUT_DIR}}/main.js",
+  "cp dist/main.js.map {{env.OUTPUT_DIR}}/main.js.map",
+  "cp dist/main.css {{env.OUTPUT_DIR}}/styles.css",
+]
+description = "Copy output files to plugin dir"
+sources = ["./dist/main.css", "./dist/main.js"]
+
+[tasks.css]
+run = "cp ./custom-css/*.css {{env.CSS_DIR}}"

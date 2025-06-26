@@ -16,5 +16,7 @@ export const initRouter = (apiKey: string) => {
 const initApiRouter = () => {
   const apiRouter = new Hono()
 
+  apiRouter.get("/status", c => c.json({ status: "API is running" }))
+
   return apiRouter
 }
