@@ -1,4 +1,4 @@
-import { Plugin } from "obsidian"
+import { Notice, Plugin } from "obsidian"
 import { ServerModule } from "./server-module"
 
 interface ServerSettings {
@@ -29,7 +29,7 @@ export default class OrchardServerPlugin extends Plugin {
 
     // Add command to regenerate API key
     this.addCommand({
-      id: "regenerate-api-key",
+      id: "orchard-server-regenerate-apikey",
       name: "Regenerate Server API Key",
       callback: async () => {
         this.settings.apiKey = ServerModule.generateApiKey()
@@ -44,7 +44,30 @@ export default class OrchardServerPlugin extends Plugin {
       },
     })
 
-    console.log("Orchard Server Plugin loaded with API Key:", this.settings.apiKey)
+    this.addCommand({
+      id: "orchard-server-show-apikey",
+      name: "Show Server API Key",
+      callback: () => {
+        new Notice(`Server API Key: ${this.settings.apiKey}`)
+        console.log("Current Server API Key:", this.settings.apiKey)
+
+        // COpy to clipboard
+        navigator.clipboard
+          .writeText(this.settings.apiKey)
+          .then(() => {
+            new Notice("API Key copied to clipboard!")
+          })
+          .catch((err) => {
+            console.error("Failed to copy API Key:", err)
+            new Notice("Failed to copy API Key")
+          })
+      },
+    })
+
+    console.log(
+      "Orchard Server Plugin loaded with API Key:",
+      this.settings.apiKey,
+    )
   }
 
   override async onunload() {
