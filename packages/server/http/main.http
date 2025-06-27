@@ -1,0 +1,24 @@
+### Variables
+@baseUrl = http://localhost:27125
+@apiKey = {{$dotenv API_KEY}}
+
+### Health Check (No Auth Required)
+GET {{baseUrl}}/health
+
+### API Documentation
+GET {{baseUrl}}/
+
+### API Status (Requires Auth)
+GET {{baseUrl}}/api/status
+Authorization: Bearer {{apiKey}}
+
+### Test Invalid Auth
+GET {{baseUrl}}/api/status
+Authorization: Bearer invalid-key
+
+### CORS Preflight Check
+OPTIONS {{baseUrl}}/api/status
+Origin: http://localhost:3000
+Access-Control-Request-Method: GET
+Access-Control-Request-Headers: Authorization
+
