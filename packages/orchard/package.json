@@ -16,12 +16,7 @@
     "test:watch": "bun test --watch",
     "clean": "rm -rf dist"
   },
-  "keywords": [
-    "obsidian",
-    "plugin",
-    "video",
-    "transcription"
-  ],
+  "keywords": ["obsidian", "plugin", "video", "transcription"],
   "author": "",
   "license": "ISC",
   "devDependencies": {

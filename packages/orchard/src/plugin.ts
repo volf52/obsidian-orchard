@@ -4,13 +4,14 @@ import RightSidebarView from "@/right-sidebar-view"
 import OrchardSettingsTab, { DEFAULT_SETTINGS } from "@/settings"
 import "./styles.css"
 import "./components/svelte.css"
-import {
-  clearAllSettingUpdates,
-  notifySettingUpdate,
-} from "@/events/settings-store"
 import VideoModule from "@/modules/video.module"
 import { type OrchardServices, wireUpServices } from "@/services/utils"
 import type { OrchardSettings } from "@/settings/types"
+import {
+  clearAllSubscriptions,
+  initializeSettingsStore,
+  updateSettings,
+} from "@/stores/settings"
 import TranscriptionModule from "./modules/transcribe.module"
 
 class Orchard extends Plugin {
@@ -22,6 +23,9 @@ class Orchard extends Plugin {
 
   override async onload(): Promise<void> {
     await this.loadSettings()
+
+    // Initialize the signal-based settings store
+    initializeSettingsStore(this.settings)
 
     this.services = wireUpServices(this.settings)
 
@@ -95,7 +99,7 @@ class Orchard extends Plugin {
   }
 
   override onunload() {
-    clearAllSettingUpdates()
+    clearAllSubscriptions()
   }
 
   private async loadSettings() {
@@ -110,7 +114,7 @@ class Orchard extends Plugin {
   }
 
   async saveSettings() {
-    notifySettingUpdate(this.settings)
+    updateSettings(this.settings)
     await this.saveData(this.settings)
   }
 
