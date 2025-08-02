@@ -23,7 +23,7 @@ export class ServerModule {
       {
         fetch: this.router.fetch,
         port: PORT,
-        hostname: '0.0.0.0',
+        hostname: "0.0.0.0",
       },
       (info) => {
         console.log(`🚀 Server started on http://localhost:${info.port}`)
