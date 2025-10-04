@@ -1,62 +1,77 @@
 import { Plugin, Notice } from "obsidian"
 import { McpServer } from "./mcp-server"
+import { createEventBus, NoteService, createMemoryAdapter } from "@orchard/core"
+import { TFile, type Vault } from "obsidian"
 
-// @ts-ignore ambient for Obsidian environment
-declare const window: any;
+function createObsidianVaultAdapter(vault: Vault) {
+  function normalize(id: string): string {
+    let n = id.trim();
+    if (!n.endsWith(".md")) n = `${n}.md`;
+    n = n.replace(/\\+/g, "/").toLowerCase();
+    return n;
+  }
+  return {
+    async readFile(id: string) {
+      const file = vault.getAbstractFileByPath(id);
+      if (file instanceof TFile && file.extension === "md") return vault.read(file);
+      const t = vault.getAbstractFileByPath(normalize(id));
+      if (t instanceof TFile) return vault.read(t);
+      return null;
+    },
+    async writeFile(id: string, data: string) {
+      const existing = vault.getAbstractFileByPath(id);
+      if (existing instanceof TFile) {
+        await vault.modify(existing, data);
+        return;
+      }
+      await vault.create(id, data);
+    },
+    async fileInfo(id: string) {
+      const file = vault.getAbstractFileByPath(id);
+      if (!(file instanceof TFile)) return null;
+      return { id, mtime: file.stat.mtime, size: file.stat.size };
+    },
+    async list() {
+      return vault
+        .getFiles()
+        .filter((f): f is TFile => f instanceof TFile && f.extension === "md")
+        .map((f) => ({ id: f.path, mtime: f.stat.mtime, size: f.stat.size }));
+    },
+    async deleteFile(id: string) {
+      const file = vault.getAbstractFileByPath(id);
+      if (!(file instanceof TFile)) return false;
+      await vault.delete(file);
+      return true;
+    },
+  };
+}
+
 
 interface McpSettings {
   enabled: boolean
   apiKey: string
+  storage: "vault" | "memory"
 }
 
-const DEFAULT_SETTINGS: McpSettings = { enabled: true, apiKey: "" }
+const DEFAULT_SETTINGS: McpSettings = { enabled: true, apiKey: "", storage: "vault" }
 
 export default class OrchardMcpPlugin extends Plugin {
   settings!: McpSettings
   mcp: McpServer | null = null
 
   override async onload() {
-    console.log("Orchard MCP Plugin loading...")
+    console.log("Orchard MCP Plugin (standalone) loading...")
     await this.loadSettings()
 
     if (this.settings.enabled) {
-      if (!this.settings.apiKey) {
-        this.settings.apiKey = this.generateKey()
-        await this.saveSettings()
-        console.log(`[MCP] Generated new API key ***${this.settings.apiKey.slice(-6)}`)
-      }
-      console.log("[MCP] Starting HTTP/SSE server (no stdio)...")
-      const { noteService, events } = this.extractNoteInfra()
-      this.mcp = new McpServer({ noteService: noteService ?? undefined, apiKey: this.settings.apiKey })
-      await this.mcp.start()
-      if (events && this.mcp) {
-        events.subscribe((evt: any) => {
-          if (!this.mcp) return
-          if (evt.type === "note.created") this.mcp.broadcast("note.created", { id: evt.note.id, version: evt.note.version })
-          else if (evt.type === "note.updated") this.mcp.broadcast("note.updated", { id: evt.note.id, version: evt.note.version, previousVersion: evt.previousVersion })
-          else if (evt.type === "note.deleted") this.mcp.broadcast("note.deleted", { id: evt.id, previousVersion: evt.previousVersion })
-        })
-      }
+      await this.startServer()
     }
 
     this.addCommand({
       id: "orchard-mcp-restart",
       name: "Restart MCP Server",
       callback: async () => {
-        if (this.mcp) await this.mcp.stop()
-        console.log("[MCP] Restarting...")
-        const { noteService, events } = this.extractNoteInfra()
-        this.mcp = new McpServer({ noteService: noteService ?? undefined, apiKey: this.settings.apiKey || undefined })
-        await this.mcp.start()
-        if (events && this.mcp) {
-          events.subscribe((evt: any) => {
-            if (!this.mcp) return
-            if (evt.type === "note.created") this.mcp.broadcast("note.created", { id: evt.note.id, version: evt.note.version })
-            else if (evt.type === "note.updated") this.mcp.broadcast("note.updated", { id: evt.note.id, version: evt.note.version, previousVersion: evt.previousVersion })
-            else if (evt.type === "note.deleted") this.mcp.broadcast("note.deleted", { id: evt.id, previousVersion: evt.previousVersion })
-          })
-        }
-        console.log("[MCP] Restart complete")
+        await this.restartServer()
       },
     })
 
@@ -65,35 +80,18 @@ export default class OrchardMcpPlugin extends Plugin {
       name: "Toggle MCP Server",
       callback: async () => {
         if (this.mcp) {
-          await this.mcp.stop()
-          this.mcp = null
+          await this.stopServer()
           this.settings.enabled = false
           console.log("[MCP] Disabled")
         } else {
-          const { noteService, events } = this.extractNoteInfra()
-          if (!this.settings.apiKey) {
-            this.settings.apiKey = this.generateKey()
-            await this.saveSettings()
-            console.log(`[MCP] Generated new API key ***${this.settings.apiKey.slice(-6)}`)
-          }
-          this.mcp = new McpServer({ noteService: noteService ?? undefined, apiKey: this.settings.apiKey })
-          await this.mcp.start()
-          if (events && this.mcp) {
-            events.subscribe((evt: any) => {
-              if (!this.mcp) return
-              if (evt.type === "note.created") this.mcp.broadcast("note.created", { id: evt.note.id, version: evt.note.version })
-              else if (evt.type === "note.updated") this.mcp.broadcast("note.updated", { id: evt.note.id, version: evt.note.version, previousVersion: evt.previousVersion })
-              else if (evt.type === "note.deleted") this.mcp.broadcast("note.deleted", { id: evt.id, previousVersion: evt.previousVersion })
-            })
-          }
           this.settings.enabled = true
+          await this.startServer()
           console.log("[MCP] Enabled")
         }
         await this.saveSettings()
       },
     })
 
-    // Show API Key command
     this.addCommand({
       id: "orchard-mcp-show-key",
       name: "Show MCP API Key",
@@ -105,10 +103,11 @@ export default class OrchardMcpPlugin extends Plugin {
         const tail = this.settings.apiKey.slice(-6)
         new Notice(`MCP API Key: ${this.settings.apiKey}`)
         console.log(`[MCP] API key shown to user ***${tail}`)
+        await (navigator as any).clipboard?.writeText?.(this.settings.apiKey)
+        new Notice("MCP API Key copied to clipboard")
       },
     })
 
-    // Regenerate API Key
     this.addCommand({
       id: "orchard-mcp-regenerate-key",
       name: "Regenerate MCP API Key",
@@ -118,28 +117,44 @@ export default class OrchardMcpPlugin extends Plugin {
         const tail = this.settings.apiKey.slice(-6)
         new Notice("MCP API Key regenerated")
         console.log(`[MCP] API key regenerated ***${tail}`)
-        if (this.mcp) {
-          await this.mcp.stop()
-          const { noteService, events } = this.extractNoteInfra()
-          this.mcp = new McpServer({ noteService: noteService ?? undefined, apiKey: this.settings.apiKey })
-          await this.mcp.start()
-          if (events && this.mcp) {
-            events.subscribe((evt: any) => {
-              if (!this.mcp) return
-              if (evt.type === "note.created") this.mcp.broadcast("note.created", { id: evt.note.id, version: evt.note.version })
-              else if (evt.type === "note.updated") this.mcp.broadcast("note.updated", { id: evt.note.id, version: evt.note.version, previousVersion: evt.previousVersion })
-              else if (evt.type === "note.deleted") this.mcp.broadcast("note.deleted", { id: evt.id, previousVersion: evt.previousVersion })
-            })
-          }
-          console.log("[MCP] Server restarted with new key")
-        }
+        await this.restartServer()
       },
     })
-
   }
 
   override async onunload() {
-    if (this.mcp) await this.mcp.stop()
+    await this.stopServer()
+  }
+
+  private async startServer() {
+    if (!this.settings.apiKey) {
+      this.settings.apiKey = this.generateKey()
+      await this.saveSettings()
+      console.log(`[MCP] Generated new API key ***${this.settings.apiKey.slice(-6)}`)
+    }
+
+    const events = createEventBus()
+    const adapter = this.settings.storage === "vault"
+      ? createObsidianVaultAdapter(this.app.vault)
+      : createMemoryAdapter()
+    const noteService = new NoteService({ adapter, events })
+
+    this.mcp = new McpServer({ noteService, apiKey: this.settings.apiKey })
+    await this.mcp.start()
+    console.log(`[MCP] Server started (storage=${this.settings.storage})`)
+  }
+
+  private async stopServer() {
+    if (this.mcp) {
+      await this.mcp.stop()
+      this.mcp = null
+    }
+  }
+
+  private async restartServer() {
+    await this.stopServer()
+    await this.startServer()
+    console.log("[MCP] Restart complete")
   }
 
   private async loadSettings() {
@@ -151,24 +166,13 @@ export default class OrchardMcpPlugin extends Plugin {
     await this.saveData(this.settings)
   }
 
-  private extractNoteInfra(): { noteService: any | null; events: any | null } {
-    try {
-      const plugins = (this.app as any).plugins
-      if (!plugins?.plugins) return { noteService: null, events: null }
-      const orchard = plugins.plugins["orchard-obsidian"]
-      if (orchard?.instance?.noteService) {
-        return { noteService: orchard.instance.noteService, events: orchard.instance.events ?? null }
-      }
-    } catch (e) {
-      console.warn("[MCP] Failed to extract Note infra", e)
-    }
-    return { noteService: null, events: null }
-  }
-
   private generateKey(): string {
     const arr = new Uint8Array(24)
-    // use browser crypto in Obsidian renderer environment
-    ;(window.crypto || (window as any).require?.("crypto")).getRandomValues(arr)
+    if (typeof crypto !== "undefined" && typeof (crypto as any).getRandomValues === "function") {
+      (crypto as any).getRandomValues(arr)
+    } else {
+      for (let i = 0; i < arr.length; i++) arr[i] = Math.floor(Math.random() * 256)
+    }
     return Array.from(arr).map((b) => b.toString(16).padStart(2, "0")).join("")
   }
 }

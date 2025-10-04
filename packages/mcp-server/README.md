@@ -16,6 +16,28 @@ Minimal HTTP JSON-RPC endpoint exposing Orchard note CRUD via MCP Streamable HTT
   - `delete_note` (id, version)
   - `metrics` (note count + uptime flag)
 
+### Health Endpoint
+`GET /health` returns readiness fields:
+```jsonc
+{ "ok": true, "noteServiceReady": true, "apiKeyConfigured": true, "running": true }
+```
+`ok` is true only if both note service and API key are configured. If `ok` is false the status code is 503.
+
+### Standalone Note Service
+The MCP Obsidian plugin is now fully standalone: it always provisions its own `NoteService` on startup.
+
+Storage modes:
+- `vault` (default): Uses the active Obsidian vault (markdown files reflect create/update/delete operations).
+- `memory`: Ephemeral in-memory adapter (no files written). Useful for transient experimentation.
+
+Health semantics:
+- `/health` returns `200` (`ok: true`) once both the API key and internal note service are initialized (normally immediate).
+- `noteServiceReady` should always be `true` unless something failed catastrophically during initialization.
+
+To switch storage mode (future): adjust plugin settings (planned). Currently the default is `vault`.
+
+If embedding outside Obsidian you can still construct a server with your own adapter via `createMcpServer` or by instantiating `McpServer` directly.
+
 ## Environment Variables
 | Name | Purpose | Default |
 |------|---------|---------|
@@ -72,20 +94,43 @@ List tools:
 { "jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {} }
 ```
 
-Responses follow standard JSON-RPC 2.0. Tool results embed a `result` with shape `{ content: [...], isError? }`. A JSON content part uses `{ type: "json", data: {...} }`.
+Responses follow standard JSON-RPC 2.0. Tool results embed a `result` with shape `{ content: [...], isError? }`.
+
+Note: Success responses now always use a single `text` content part whose `text` field is a JSON string. This avoids SDK type overloading issues with `{ type: "json" }` parts while keeping payloads consistent. Parse the string as JSON client-side.
 
 ### Response Content Format
-All tool success responses now emit exactly one JSON content part:
+All tool success responses emit exactly one text content part whose `text` value is a JSON string:
 ```jsonc
 {
   "jsonrpc": "2.0",
   "id": 7,
   "result": {
-    "content": [ { "type": "json", "data": { "note": { /* ... */ } } } ]
+    "content": [ { "type": "text", "text": "{\"note\":{...}}" } ]
   }
 }
 ```
-Errors set `isError: true` and typically return a single `text` content part with a machine-parseable message (e.g., `NoteNotFound`, concurrency conflict message).
+Client helpers should extract the first text part and `JSON.parse` it.
+
+### Error Format
+Tool errors use a single `text` content part plus `isError: true`.
+The first token of the text string is a machine-stable error code; any additional JSON (optional) after a space may contain details.
+Example:
+```jsonc
+{
+  "jsonrpc": "2.0",
+  "id": 8,
+  "result": {
+    "content": [ { "type": "text", "text": "NoteNotFound" } ],
+    "isError": true
+  }
+}
+```
+Common error codes:
+- `NoteAlreadyExists`
+- `NoteNotFound`
+- `VersionConflict`
+- `NoteServiceUnavailable`
+Other unexpected errors are normalized (non-alphanumeric replaced by `_`).
 
 ## Development
 ```
@@ -103,6 +148,18 @@ xh post :27126/mcp key==devkey jsonrpc=2.0 id=2 method=tools/call params:='{"nam
 # get note
 xh post :27126/mcp key==devkey jsonrpc=2.0 id=3 method=tools/call params:='{"name":"get_note","arguments":{"id":"alpha.md"}}'
 ```
+
+### Factory Helper
+You can bootstrap an in-memory server quickly:
+```ts
+import { createMcpServer } from "@orchard/mcp-server";
+
+const { server, noteService, start, stop } = await createMcpServer({ apiKey: process.env.MCP_API_KEY });
+await start();
+console.log("Health at http://localhost:27126/health");
+// Later: await stop();
+```
+Provide `noteService` directly or a custom `createAdapter` if you need a different backing store.
 
 ## Roadmap Ideas
 - Adopt official MCP transport once stable in this context

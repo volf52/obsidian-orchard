@@ -2,7 +2,7 @@ import { describe, expect, it, beforeAll, afterAll } from "bun:test";
 import { McpServer } from "./mcp-server";
 import { NoteService, createMemoryAdapter } from "@orchard/core";
 
-import { initialize, callTool, listTools, extractJsonContent, isErrorResult, resetSessionForTests, rpcCall, TestProtocolVersion } from "./test-utils";
+import { initialize, callTool, listTools, extractJsonContent, resetSessionForTests, rpcCall, TestProtocolVersion, extractErrorCode } from "./test-utils";
 
 /**
  * Test order rationale:
@@ -36,6 +36,9 @@ describe("McpServer (MCP SDK HTTP Transport)", () => {
     expect(res.status).toBe(200);
     const data: any = await res.json();
     expect(data.ok).toBe(true);
+    expect(data.noteServiceReady).toBe(true);
+    expect(data.apiKeyConfigured).toBe(true);
+    expect(data.running).toBe(true);
   });
 
   it("rejects call without Accept header (expects 4xx)", async () => {
@@ -94,7 +97,8 @@ describe("McpServer (MCP SDK HTTP Transport)", () => {
     const createdData = extractJsonContent(created.body.result);
     expect(createdData.note.id).toBe("mixedcase.md");
     const dup = await callTool(testKey, "create_note", { id: "MixedCase", body: "C" });
-    expect(isErrorResult(dup.body.result)).toBe(true);
+    const dupCode = extractErrorCode(dup.body.result);
+    expect(dupCode).toBe("NoteAlreadyExists");
   });
 
   it("updates note with version and enforces conflicts", async () => {
@@ -105,7 +109,8 @@ describe("McpServer (MCP SDK HTTP Transport)", () => {
     const updData = extractJsonContent(upd.body.result);
     expect(updData.note.body).toBe("Hello2");
     const conflict = await callTool(testKey, "update_note", { id: "alpha.md", version: v, body: "X" });
-    expect(isErrorResult(conflict.body.result)).toBe(true);
+    const conflictCode = extractErrorCode(conflict.body.result);
+    expect(conflictCode).toBe("VersionConflict");
   });
 
   it("deletes note with version", async () => {
@@ -115,7 +120,8 @@ describe("McpServer (MCP SDK HTTP Transport)", () => {
     const delData = extractJsonContent(del.body.result);
     expect(delData.ok).toBe(true);
     const missing = await callTool(testKey, "get_note", { id: "alpha.md" });
-    expect(isErrorResult(missing.body.result)).toBe(true);
+    const missingCode = extractErrorCode(missing.body.result);
+    expect(missingCode).toBe("NoteNotFound");
   });
 
   it("metrics tool returns counts", async () => {

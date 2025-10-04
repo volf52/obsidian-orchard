@@ -20,6 +20,12 @@ await svc.delete("hello.md", updated.version)
 ## Events
 Subscribe via the adapter/service event emitter (see tests) for `note.created`, `note.updated`, `note.deleted` payloads.
 
+## Layering
+This package is intentionally free of orchestration concerns (no polling, server wiring, or host plugin assumptions). Utilities that adapt the domain to runtime environments live in `@orchard/runtime` (e.g. late attachment polling, event bridging, in‑memory env helpers). Keeping the core pure:
+- Improves determinism and test coverage.
+- Avoids churn when host integration patterns change.
+- Encourages small focused abstractions.
+
 ## Development
 ```
 bun test packages/orchard-core/src/note-service.test.ts

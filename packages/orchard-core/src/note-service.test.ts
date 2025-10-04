@@ -125,10 +125,12 @@ describe("NoteService", () => {
     await svc.create({ id: "TagB", tags: ["beta"], body: "Second body with word" })
     const tagFiltered = await svc.list({ tag: "alpha" })
     expect(tagFiltered.length).toBe(1)
-    expect(tagFiltered[0].id).toBe("taga.md")
+    const tagMatch = tagFiltered[0]!
+    expect(tagMatch.id).toBe("taga.md")
     const searchFiltered = await svc.list({ search: "second" })
     expect(searchFiltered.length).toBe(1)
-    expect(searchFiltered[0].id).toBe("tagb.md")
+    const searchMatch = searchFiltered[0]!
+    expect(searchMatch.id).toBe("tagb.md")
   })
 
   it("list preserves array/object frontmatter", async () => {
@@ -138,9 +140,10 @@ describe("NoteService", () => {
     await svc.create({ id: "Complex", body: "Hello", tags: ["one", "two"], frontmatter: { meta: { deep: true }, count: 3 } })
     const listed = await svc.list({ search: "hello" })
     expect(listed.length).toBe(1)
-    const fm = listed[0].frontmatter as any
-    expect(Array.isArray(listed[0].tags)).toBe(true)
-    expect(listed[0].tags).toEqual(["one", "two"])
+    const first = listed[0]!
+    const fm = first.frontmatter as any
+    expect(Array.isArray(first.tags)).toBe(true)
+    expect(first.tags).toEqual(["one", "two"])
     expect(fm.meta).toEqual({ deep: true })
     expect(fm.count).toBe(3)
   })

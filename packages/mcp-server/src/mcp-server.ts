@@ -29,6 +29,7 @@ export class McpServer {
   private running = false;
   private readonly sdk: SdkMcpServer;
   private readonly transport: StreamableHTTPServerTransport;
+  setApiKey(key: string) { this.apiKey = key; }
 
   constructor(opts: { port?: number; noteService?: NoteService; apiKey?: string } = {}) {
     const envPort = typeof process !== "undefined" ? Number(process.env.MCP_PORT || process.env.PORT) : undefined;
@@ -65,37 +66,65 @@ export class McpServer {
   }
 
   private registerTools() {
+    const formatError = (code: string, details?: Record<string, unknown>) => {
+      if (!details || Object.keys(details).length === 0) return code;
+      // Append a compact JSON payload after a single space for optional details.
+      return `${code} ${JSON.stringify(details)}`;
+    };
+
+    const errorContent = (code: string, details?: Record<string, unknown>) => ({
+      content: [{ type: "text" as const, text: formatError(code, details) }],
+      isError: true,
+    });
+
+    const mapError = (e: unknown): { code: string; details?: Record<string, unknown> } => {
+      if (e instanceof McpError) return { code: e.message || "McpError" };
+      const msg = (e as Error)?.message || "UnknownError";
+      if (/already exists/i.test(msg)) return { code: "NoteAlreadyExists" };
+      if (/Note missing/i.test(msg)) return { code: "NoteNotFound" };
+      if (/VersionConflict/i.test(msg)) return { code: "VersionConflict" };
+      if (/NoteNotFound/i.test(msg)) return { code: "NoteNotFound" };
+      return { code: msg.replace(/[^A-Za-z0-9_.-]/g, "_").slice(0, 60) || "UnknownError" };
+    };
+
     // list_notes
     this.sdk.tool(
       "list_notes",
-      "List notes (optional tag/search filters). Returns slim metadata.",
-       { tag: z.string().optional(), search: z.string().optional() },
+      { tag: z.string().optional(), search: z.string().optional() },
       async (args: { tag?: string; search?: string }) => {
         const svc = this.requireService();
-        const notes = await svc.list({ tag: args.tag, search: args.search } as any);
-        const slim = notes.map((n) => ({ id: n.id, title: n.title, version: n.version }));
-        return { content: [{ type: "json", data: { notes: slim } }] };
+        try {
+          const notes = await svc.list({ tag: args.tag, search: args.search } as any);
+          const slim = notes.map((n) => ({ id: n.id, title: n.title, version: n.version }));
+          return { content: [{ type: "text", text: JSON.stringify({ notes: slim }) }] };
+        } catch (e) {
+          const mapped = mapError(e);
+          return errorContent(mapped.code, mapped.details);
+        }
       },
     );
 
     // get_note
     this.sdk.tool(
       "get_note",
-      "Fetch full note by id.",
-       { id: z.string() },
+      { id: z.string() },
       async (args: { id: string }) => {
         const svc = this.requireService();
-        const note = await svc.read(args.id as any);
-        if (!note) throw new McpError(ErrorCode.InvalidParams, "NoteNotFound");
-        return { content: [{ type: "json", data: { note } }] };
+        try {
+          const note = await svc.read(args.id as any);
+          if (!note) return errorContent("NoteNotFound");
+          return { content: [{ type: "text", text: JSON.stringify({ note }) }] };
+        } catch (e) {
+          const mapped = mapError(e);
+          return errorContent(mapped.code, mapped.details);
+        }
       },
     );
 
     // create_note
     this.sdk.tool(
       "create_note",
-      "Create a note; id normalized + .md appended if missing.",
-       {
+      {
         id: z.string(),
         title: z.string().optional(),
         body: z.string().optional(),
@@ -112,9 +141,10 @@ export class McpServer {
             tags: input.tags,
             frontmatter: input.frontmatter as any,
           });
-          return { content: [{ type: "json", data: { note: created } }] };
+          return { content: [{ type: "text", text: JSON.stringify({ note: created }) }] };
         } catch (e) {
-          return { content: [{ type: "text", text: (e as Error).message }], isError: true };
+          const mapped = mapError(e);
+          return errorContent(mapped.code, mapped.details);
         }
       },
     );
@@ -122,8 +152,7 @@ export class McpServer {
     // update_note
     this.sdk.tool(
       "update_note",
-      "Update fields of a note with optimistic version.",
-       {
+      {
         id: z.string(),
         version: z.string(),
         title: z.string().optional(),
@@ -140,9 +169,10 @@ export class McpServer {
             tags: input.tags,
             frontmatter: input.frontmatter as any,
           }, input.version as any);
-          return { content: [{ type: "json", data: { note: updated } }] };
+          return { content: [{ type: "text", text: JSON.stringify({ note: updated }) }] };
         } catch (e) {
-          return { content: [{ type: "text", text: (e as Error).message }], isError: true };
+          const mapped = mapError(e);
+          return errorContent(mapped.code, mapped.details);
         }
       },
     );
@@ -150,16 +180,16 @@ export class McpServer {
     // delete_note
     this.sdk.tool(
       "delete_note",
-      "Delete a note by id+version.",
-       { id: z.string(), version: z.string() },
+      { id: z.string(), version: z.string() },
       async (input: { id: string; version: string }) => {
         const svc = this.requireService();
         try {
           const ok = await svc.delete(input.id as any, input.version as any);
-            if (!ok) return { content: [{ type: "text", text: "NoteNotFound" }], isError: true };
-            return { content: [{ type: "json", data: { ok: true } }] };
+          if (!ok) return errorContent("NoteNotFound");
+          return { content: [{ type: "text", text: JSON.stringify({ ok: true }) }] };
         } catch (e) {
-          return { content: [{ type: "text", text: (e as Error).message }], isError: true };
+          const mapped = mapError(e);
+          return errorContent(mapped.code, mapped.details);
         }
       },
     );
@@ -167,12 +197,11 @@ export class McpServer {
     // metrics
     this.sdk.tool(
       "metrics",
-      "Basic metrics: note count + uptime.",
       {},
       async () => {
         const svc = this.requireService();
         const notes = await svc.list({} as any);
-        return { content: [{ type: "json", data: { notes: notes.length, uptimeMs: Date.now(), serverRunning: this.running } }] };
+        return { content: [{ type: "text", text: JSON.stringify({ notes: notes.length, uptimeMs: Date.now(), serverRunning: this.running }) }] };
       },
     );
   }
@@ -187,6 +216,9 @@ export class McpServer {
   }
 
   async start(): Promise<void> {
+    if (!this.noteService) {
+      log.info("Starting without NoteService; /health ok=false until setNoteService().")
+    }
     if (this.running) return;
     this.running = true;
 
@@ -197,9 +229,65 @@ export class McpServer {
       const url = new URL(req.url || "/", `http://localhost:${this.port}`);
 
       if (url.pathname === "/health") {
-        res.statusCode = 200;
+        const payload = {
+          ok: !!this.noteService && !!this.apiKey,
+          noteServiceReady: !!this.noteService,
+          apiKeyConfigured: !!this.apiKey,
+          running: this.running,
+        };
+        res.statusCode = payload.ok ? 200 : 503;
         res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify({ ok: true }));
+        res.end(JSON.stringify(payload));
+        return;
+      }
+
+      if (url.pathname === "/config/key" && req.method === "POST") {
+        let body = ""; req.on("data", (c) => (body += c)); req.on("end", () => {
+          if (!this.authOk(url, new Headers(req.headers as any))) {
+            res.statusCode = this.apiKey ? 401 : 503;
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ error: { code: this.apiKey ? "Unauthorized" : "ServerNotReady" } }));
+            return;
+          }
+          try {
+            const parsed = body ? JSON.parse(body) : {};
+            const schema = z.object({ rotate: z.boolean().optional(), newKey: z.string().optional() });
+            const cfg = schema.parse(parsed);
+            if (cfg.rotate || cfg.newKey) {
+              this.apiKey = cfg.newKey || Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2);
+            }
+            res.statusCode = 200;
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ ok: true }));
+          } catch (e) {
+            res.statusCode = 400; res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ error: { code: "BadRequest" } }));
+          }
+        });
+        return;
+      }
+
+      if (url.pathname === "/config/storage" && req.method === "POST") {
+        let body = ""; req.on("data", (c) => (body += c)); req.on("end", () => {
+          if (!this.authOk(url, new Headers(req.headers as any))) {
+            res.statusCode = this.apiKey ? 401 : 503;
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ error: { code: this.apiKey ? "Unauthorized" : "ServerNotReady" } }));
+            return;
+          }
+          try {
+            const parsed = body ? JSON.parse(body) : {};
+            const schema = z.object({ mode: z.enum(["memory", "vault"]) });
+            const cfg = schema.parse(parsed);
+            // Caller (plugin) will handle actual restart; here we just acknowledge
+            res.statusCode = 200;
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ ok: true, mode: cfg.mode }));
+          } catch {
+            res.statusCode = 400; res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ error: { code: "BadRequest" } }));
+          }
+        });
         return;
       }
 
@@ -235,4 +323,32 @@ export class McpServer {
     this.httpServer = null;
     log.stop("MCP server stopped");
   }
+}
+
+export interface CreateMcpServerOptions {
+  port?: number;
+  apiKey?: string;
+  noteService?: NoteService;
+  createAdapter?: () => { adapter: any; events?: any };
+}
+
+export async function createMcpServer(opts: CreateMcpServerOptions = {}) {
+  let noteService = opts.noteService || null;
+  if (!noteService) {
+    try {
+      const core = await import("@orchard/core");
+      const adapterFactory: () => { adapter: any; events?: any } = opts.createAdapter || (() => ({ adapter: core.createMemoryAdapter() }));
+      const { adapter, events } = adapterFactory();
+      noteService = new core.NoteService({ adapter, events });
+    } catch (e) {
+      throw new Error(`Failed to construct NoteService for MCP server: ${(e as Error).message}`);
+    }
+  }
+  const server = new McpServer({ port: opts.port, apiKey: opts.apiKey, noteService });
+  return {
+    server,
+    noteService,
+    start: () => server.start(),
+    stop: () => server.stop(),
+  } as const;
 }

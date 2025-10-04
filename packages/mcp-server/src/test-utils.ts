@@ -59,12 +59,23 @@ export async function listTools(key: string) {
 export function extractJsonContent(result: any): any {
   if (!result) return undefined;
   const content = result.content ?? [];
+  const textPart = content.find((c: any) => c.type === "text");
+  if (textPart && typeof textPart.text === "string") {
+    try { return JSON.parse(textPart.text); } catch { /* fallthrough */ }
+  }
   const jsonPart = content.find((c: any) => c.type === "json");
   return jsonPart ? jsonPart.data : content;
 }
 
 export function isErrorResult(result: any): boolean {
   return !!result?.isError;
+}
+
+export function extractErrorCode(result: any): string | undefined {
+  if (!result) return undefined;
+  const part = (result.content || []).find((c: any) => c.type === "text");
+  if (!part || typeof part.text !== "string") return undefined;
+  return part.text.split(/\s+/)[0];
 }
 
 export function resetSessionForTests() {
