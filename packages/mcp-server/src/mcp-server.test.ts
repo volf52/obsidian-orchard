@@ -50,14 +50,37 @@ describe("McpServer", () => {
   })
 
   it("creates and lists notes", async () => {
-    const c = await j("POST", "/mcp/notes", { id: "Alpha", body: "Hello" })
+    const c = await j("POST", "/mcp/notes", { id: "Alpha", body: "Hello", tags: ["tagA"] })
     expect(c.status).toBe(201)
     expect(c.body.note.id).toBe("alpha.md")
+
+    // additional notes for filtering
+    const c2 = await j("POST", "/mcp/notes", { id: "Beta", body: "Searchable Body", tags: ["tagB"] })
+    expect(c2.status).toBe(201)
+    const c3 = await j("POST", "/mcp/notes", { id: "Gamma", body: "Mixed Search Text", tags: ["tagA", "tagB"] })
+    expect(c3.status).toBe(201)
 
     const list = await j("GET", "/mcp/notes")
     expect(list.status).toBe(200)
     expect(Array.isArray(list.body.notes)).toBe(true)
     expect(list.body.notes.find((n: any) => n.id === "alpha.md")).toBeTruthy()
+    expect(list.body.notes.length).toBeGreaterThanOrEqual(3)
+
+    // tag filter
+    const tagAList = await j("GET", "/mcp/notes?tag=tagA")
+    expect(tagAList.status).toBe(200)
+    expect(tagAList.body.notes.every((n: any) => ["alpha.md", "gamma.md"].includes(n.id))).toBe(true)
+
+    const tagBList = await j("GET", "/mcp/notes?tag=tagB")
+    expect(tagBList.status).toBe(200)
+    expect(tagBList.body.notes.every((n: any) => ["beta.md", "gamma.md"].includes(n.id))).toBe(true)
+
+    // search filter (case-insensitive substring)
+    const searchList = await j("GET", "/mcp/notes?search=search")
+    expect(searchList.status).toBe(200)
+    // should include beta + gamma (body contains 'Search' or 'search')
+    const ids = searchList.body.notes.map((n: any) => n.id).sort()
+    expect(ids).toEqual(["beta.md", "gamma.md"]) // alpha excluded
   })
 
   it("reads a note", async () => {

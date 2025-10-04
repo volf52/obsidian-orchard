@@ -62,10 +62,15 @@ export class McpServer {
       await next()
     })
 
-    // List notes
+    // List notes (optional filters: ?tag=foo&search=q)
     this.app.get("/mcp/notes", async (c) => {
       if (!this.noteService) return c.json({ error: "NoteServiceUnavailable" }, 503)
-      const notes = await this.noteService.list()
+      const tag = c.req.query("tag")
+      const search = c.req.query("search")
+      const notes = await this.noteService.list({
+        tag: tag ? tag.toString() : undefined,
+        search: search ? search.toString() : undefined,
+      } as any)
       const slim = notes.map((n) => ({ id: n.id, title: n.title, version: n.version }))
       return c.json({ notes: slim })
     })
