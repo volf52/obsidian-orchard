@@ -48,23 +48,24 @@ export class McpServer {
   setNoteService(svc: NoteService) { this.noteService = svc }
 
   private configureRoutes() {
+    const formatError = (code: string, message?: string) => ({ error: { code, message: message ?? code } })
     // Health (no auth)
     this.app.get("/health", (c) => c.json({ ok: true }))
 
     // Auth middleware for /mcp/* (except health)
     this.app.use("/mcp/*", async (c, next) => {
-      if (!this.apiKey) return c.json({ error: "ServerNotReady" }, 503)
+      if (!this.apiKey) return c.json(formatError("ServerNotReady"), 503)
       const auth = c.req.header("authorization") || ""
       const bearer = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : null
       const q = c.req.query("key")
       const provided = bearer || q || null
-      if (!provided || provided !== this.apiKey) return c.json({ error: "Unauthorized" }, 401)
+      if (!provided || provided !== this.apiKey) return c.json(formatError("Unauthorized"), 401)
       await next()
     })
 
     // List notes (optional filters: ?tag=foo&search=q)
     this.app.get("/mcp/notes", async (c) => {
-      if (!this.noteService) return c.json({ error: "NoteServiceUnavailable" }, 503)
+      if (!this.noteService) return c.json(formatError("NoteServiceUnavailable"), 503)
       const tag = c.req.query("tag")
       const search = c.req.query("search")
       const notes = await this.noteService.list({
@@ -77,23 +78,23 @@ export class McpServer {
 
     // Read note
     this.app.get("/mcp/notes/:id", async (c) => {
-      if (!this.noteService) return c.json({ error: "NoteServiceUnavailable" }, 503)
+      if (!this.noteService) return c.json(formatError("NoteServiceUnavailable"), 503)
       const id = decodeURIComponent(c.req.param("id"))
       const note = await this.noteService.read(id as any)
-      if (!note) return c.json({ error: "NotFound" }, 404)
+      if (!note) return c.json(formatError("NotFound"), 404)
       return c.json({ note })
     })
 
     // Create note
     this.app.post("/mcp/notes", async (c) => {
-      if (!this.noteService) return c.json({ error: "NoteServiceUnavailable" }, 503)
+      if (!this.noteService) return c.json(formatError("NoteServiceUnavailable"), 503)
       let body: any
-      try { body = await c.req.json() } catch { return c.json({ error: "InvalidBody" }, 400) }
+      try { body = await c.req.json() } catch { return c.json(formatError("InvalidBody"), 400) }
       const { id, title, tags, frontmatter, body: content } = body || {}
-      if (typeof id !== "string" || id.trim() === "") return c.json({ error: "MissingId" }, 400)
+      if (typeof id !== "string" || id.trim() === "") return c.json(formatError("MissingId"), 400)
       if (tags !== undefined) {
-        if (!Array.isArray(tags)) return c.json({ error: "InvalidTags" }, 400)
-        if (!tags.every((t: unknown) => typeof t === "string")) return c.json({ error: "InvalidTagsElement" }, 400)
+        if (!Array.isArray(tags)) return c.json(formatError("InvalidTags"), 400)
+        if (!tags.every((t: unknown) => typeof t === "string")) return c.json(formatError("InvalidTagsElement"), 400)
       }
       try {
         const created = await this.noteService.create({
@@ -105,21 +106,21 @@ export class McpServer {
         })
         return c.json({ note: created }, 201)
       } catch (e) {
-        return c.json({ error: (e as Error).message }, 409)
+        return c.json(formatError("CreateConflict", (e as Error).message), 409)
       }
     })
 
     // Update note
     this.app.put("/mcp/notes/:id", async (c) => {
-      if (!this.noteService) return c.json({ error: "NoteServiceUnavailable" }, 503)
+      if (!this.noteService) return c.json(formatError("NoteServiceUnavailable"), 503)
       let body: any
-      try { body = await c.req.json() } catch { return c.json({ error: "InvalidBody" }, 400) }
+      try { body = await c.req.json() } catch { return c.json(formatError("InvalidBody"), 400) }
       const id = decodeURIComponent(c.req.param("id"))
       const { version, title, tags, frontmatter, body: content } = body || {}
-      if (typeof version !== "string") return c.json({ error: "MissingVersion" }, 400)
+      if (typeof version !== "string") return c.json(formatError("MissingVersion"), 400)
       if (tags !== undefined) {
-        if (!Array.isArray(tags)) return c.json({ error: "InvalidTags" }, 400)
-        if (!tags.every((t: unknown) => typeof t === "string")) return c.json({ error: "InvalidTagsElement" }, 400)
+        if (!Array.isArray(tags)) return c.json(formatError("InvalidTags"), 400)
+        if (!tags.every((t: unknown) => typeof t === "string")) return c.json(formatError("InvalidTagsElement"), 400)
       }
       try {
         const updated = await this.noteService.update(id as any, {
@@ -131,26 +132,26 @@ export class McpServer {
         return c.json({ note: updated })
       } catch (e) {
         const msg = (e as Error).message
-        if (msg.startsWith("VersionConflict")) return c.json({ error: msg }, 409)
-        if (msg.includes("Note missing")) return c.json({ error: msg }, 404)
-        return c.json({ error: msg }, 500)
+        if (msg.startsWith("VersionConflict")) return c.json(formatError("VersionConflict", msg), 409)
+        if (msg.includes("Note missing")) return c.json(formatError("NotFound", msg), 404)
+        return c.json(formatError("UpdateError", msg), 500)
       }
     })
 
     // Delete note
     this.app.delete("/mcp/notes/:id", async (c) => {
-      if (!this.noteService) return c.json({ error: "NoteServiceUnavailable" }, 503)
+      if (!this.noteService) return c.json(formatError("NoteServiceUnavailable"), 503)
       const id = decodeURIComponent(c.req.param("id"))
       const version = c.req.query("version")
-      if (!version) return c.json({ error: "MissingVersion" }, 400)
+      if (!version) return c.json(formatError("MissingVersion"), 400)
       try {
         const ok = await this.noteService.delete(id as any, version as any)
-        if (!ok) return c.json({ error: "NotFound" }, 404)
+        if (!ok) return c.json(formatError("NotFound"), 404)
         return c.json({ ok: true })
       } catch (e) {
         const msg = (e as Error).message
-        if (msg.startsWith("VersionConflict")) return c.json({ error: msg }, 409)
-        return c.json({ error: msg }, 500)
+        if (msg.startsWith("VersionConflict")) return c.json(formatError("VersionConflict", msg), 409)
+        return c.json(formatError("DeleteError", msg), 500)
       }
     })
 

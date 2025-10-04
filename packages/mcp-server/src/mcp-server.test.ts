@@ -46,7 +46,7 @@ describe("McpServer", () => {
     const res = await fetch("http://localhost:27126/mcp/notes")
     expect(res.status).toBe(401)
     const bad = await res.json()
-    expect(bad.error).toBe("Unauthorized")
+    expect(bad.error.code).toBe("Unauthorized")
   })
 
   it("creates and lists notes", async () => {
@@ -92,15 +92,16 @@ describe("McpServer", () => {
   it("denies wrong key", async () => {
     const wrong = await j("GET", "/mcp/notes/alpha.md", undefined, "badkey")
     expect(wrong.status).toBe(401)
+    expect(wrong.body.error.code).toBe("Unauthorized")
   })
 
   it("rejects invalid tag payloads on create", async () => {
     const bad1 = await j("POST", "/mcp/notes", { id: "Bad1", tags: "oops" })
     expect(bad1.status).toBe(400)
-    expect(bad1.body.error).toBe("InvalidTags")
+    expect(bad1.body.error.code).toBe("InvalidTags")
     const bad2 = await j("POST", "/mcp/notes", { id: "Bad2", tags: ["ok", 123] })
     expect(bad2.status).toBe(400)
-    expect(bad2.body.error).toBe("InvalidTagsElement")
+    expect(bad2.body.error.code).toBe("InvalidTagsElement")
   })
 
   it("normalizes id casing and missing extension", async () => {
@@ -110,7 +111,7 @@ describe("McpServer", () => {
     // duplicate create should 409
     const dup = await j("POST", "/mcp/notes", { id: "MixedCase", body: "C" })
     expect(dup.status).toBe(409)
-    expect(String(dup.body.error)).toContain("already exists")
+    expect(dup.body.error.code).toBe("CreateConflict"); expect(String(dup.body.error.message)).toContain("already exists")
   })
 
   it("updates a note and enforces version", async () => {
@@ -123,7 +124,7 @@ describe("McpServer", () => {
     // version conflict using old version
     const conflict = await j("PUT", "/mcp/notes/alpha.md", { version: v, body: "Fail" })
     expect(conflict.status).toBe(409)
-    expect(conflict.body.error).toContain("VersionConflict")
+    expect(conflict.body.error.code).toBe("VersionConflict")
   })
 
   it("deletes a note with version", async () => {
@@ -135,6 +136,7 @@ describe("McpServer", () => {
 
     const missing = await j("GET", "/mcp/notes/alpha.md")
     expect(missing.status).toBe(404)
+    expect(missing.body.error.code).toBe("NotFound")
   })
 
   it("SSE connection emits ready + receives broadcast", async () => {
