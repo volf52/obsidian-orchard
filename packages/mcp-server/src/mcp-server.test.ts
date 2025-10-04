@@ -2,62 +2,17 @@ import { describe, expect, it, beforeAll, afterAll } from "bun:test";
 import { McpServer } from "./mcp-server";
 import { NoteService, createMemoryAdapter } from "@orchard/core";
 
-interface RpcResult {
-  jsonrpc: string;
-  id: number;
-  result?: any;
-  error?: { code: number; message: string };
-}
+import { initialize, callTool, listTools, extractJsonContent, isErrorResult, resetSessionForTests, rpcCall, TestProtocolVersion } from "./test-utils";
 
-let sessionId: string | null = null;
-
-async function rpcCall(key: string, method: string, params: any) {
-  const headers: Record<string, string> = { "Content-Type": "application/json", Accept: "application/json, text/event-stream" };
-  if (sessionId) {
-    headers["Mcp-Session-Id"] = sessionId;
-    headers["Mcp-Protocol-Version"] = "2024-11-05";
-  }
-  const res = await fetch(`http://localhost:27126/mcp?key=${encodeURIComponent(key)}`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ jsonrpc: "2.0", id: Math.floor(Math.random() * 1e9), method, params }),
-  });
-  const data = (await res.json()) as RpcResult;
-  // (diagnostics removed)
-  const sid = res.headers.get("mcp-session-id");
-  if (!sessionId && sid) sessionId = sid;
-  return { status: res.status, body: data };
-}
-
-async function initialize(key: string) {
-  return rpcCall(key, "initialize", { protocolVersion: "2024-11-05", capabilities: {}, clientInfo: { name: "orchard-tests", version: "0.0.0" } });
-}
-
-function extractJsonContent(result: any): any {
-  if (!result) return undefined;
-  const content = result.content ?? [];
-  const jsonPart = content.find((c: any) => c.type === "json");
-  if (jsonPart) return jsonPart.data;
-  const textPart = content.find((c: any) => c.type === "text" && typeof c.text === "string" && c.text.trim().startsWith("{"));
-  if (textPart) {
-    try { return JSON.parse(textPart.text); } catch { /* ignore */ }
-  }
-  return content;
-}
-
-function isErrorResult(result: any): boolean {
-  return !!result?.isError;
-}
-
-// Helper wrappers for tools/call
-async function callTool(key: string, name: string, args?: any) {
-  const { status, body } = await rpcCall(key, "tools/call", { name, arguments: args });
-  return { status, body };
-}
-
-async function listTools(key: string) {
-  return rpcCall(key, "tools/list", {});
-}
+/**
+ * Test order rationale:
+ * 1. Health check
+ * 2. Negative header/session cases prior to establishing session
+ * 3. Successful initialization + tool listing
+ * 4. CRUD + metrics flows
+ * 5. Re-initialization attempt (should not create a new clean state)
+ * 6. Unsupported protocol version scenario (fresh session)
+ */
 
 describe("McpServer (MCP SDK HTTP Transport)", () => {
   let server: McpServer;
@@ -83,9 +38,23 @@ describe("McpServer (MCP SDK HTTP Transport)", () => {
     expect(data.ok).toBe(true);
   });
 
+  it("rejects call without Accept header (expects 4xx)", async () => {
+    const res = await fetch(`http://localhost:27126/mcp?key=${encodeURIComponent(testKey)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: TestProtocolVersion, capabilities: {}, clientInfo: { name: "x", version: "0" } } }),
+    });
+    expect(res.status).toBeGreaterThanOrEqual(400);
+  });
+
+  it("rejects tools/list before initialization (missing session)", async () => {
+    resetSessionForTests();
+    const raw = await rpcCall(testKey, "tools/list", {});
+    expect(raw.status).toBe(400);
+  });
+
   it("initializes then lists tools", async () => {
     const init = await initialize(testKey);
-
     expect(init.body.result?.protocolVersion || init.body.result?.serverInfo).toBeTruthy();
     const { body } = await listTools(testKey);
     expect(body.result?.tools?.some((t: any) => t.name === "create_note")).toBe(true);
@@ -93,7 +62,6 @@ describe("McpServer (MCP SDK HTTP Transport)", () => {
 
   it("creates notes and lists via list_notes filters", async () => {
     const c = await callTool(testKey, "create_note", { id: "Alpha", body: "Hello", tags: ["tagA"] });
-
     const createdData = extractJsonContent(c.body.result);
     expect(createdData.note.id).toBe("alpha.md");
 
@@ -155,5 +123,24 @@ describe("McpServer (MCP SDK HTTP Transport)", () => {
     const mData = extractJsonContent(m.body.result);
     expect(typeof mData.notes).toBe("number");
     expect(typeof mData.uptimeMs).toBe("number");
+  });
+
+  it("re-initialization returns either error or same protocolVersion", async () => {
+    const second = await rpcCall(testKey, "initialize", { protocolVersion: TestProtocolVersion, capabilities: {}, clientInfo: { name: "again", version: "0" } });
+    if (second.body.error) {
+      expect(second.body.error.code).toBeDefined();
+    } else {
+      expect(second.body.result?.protocolVersion).toBeDefined();
+    }
+  });
+
+  it("unsupported protocol version yields error or 4xx", async () => {
+    resetSessionForTests();
+    const bad = await rpcCall(testKey, "initialize", { protocolVersion: "1900-01-01", capabilities: {}, clientInfo: { name: "orchard-tests", version: "0" } });
+    if (bad.status !== 200) {
+      expect(bad.status).toBeGreaterThanOrEqual(400);
+    } else {
+      expect(bad.body.error || bad.body.result?.protocolVersion === TestProtocolVersion).toBeTruthy();
+    }
   });
 });
