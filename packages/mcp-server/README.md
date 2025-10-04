@@ -74,6 +74,19 @@ List tools:
 
 Responses follow standard JSON-RPC 2.0. Tool results embed a `result` with shape `{ content: [...], isError? }`. A JSON content part uses `{ type: "json", data: {...} }`.
 
+### Response Content Format
+All tool success responses now emit exactly one JSON content part:
+```jsonc
+{
+  "jsonrpc": "2.0",
+  "id": 7,
+  "result": {
+    "content": [ { "type": "json", "data": { "note": { /* ... */ } } } ]
+  }
+}
+```
+Errors set `isError: true` and typically return a single `text` content part with a machine-parseable message (e.g., `NoteNotFound`, concurrency conflict message).
+
 ## Development
 ```
 bun test packages/mcp-server/src/mcp-server.test.ts
