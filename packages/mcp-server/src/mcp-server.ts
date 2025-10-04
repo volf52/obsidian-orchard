@@ -160,6 +160,17 @@ export class McpServer {
       }
     })
 
+    // Metrics (simple JSON, auth required)
+    this.app.get("/mcp/metrics", async (c) => {
+      const notes = this.noteService ? await this.noteService.list({} as any) : []
+      return c.json({
+        uptimeMs: this.running ? Date.now() : Date.now(),
+        clients: this.clients.size,
+        notes: notes.length,
+        pingIntervalMs: this.pingIntervalMs,
+      })
+    })
+
     // SSE events
     this.app.get("/mcp/events", (c) => streamSSE(c, async (stream) => {
       const client: SseClient = {

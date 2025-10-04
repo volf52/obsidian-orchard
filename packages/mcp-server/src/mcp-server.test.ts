@@ -241,6 +241,14 @@ describe("McpServer", () => {
     await envServer.stop()
   })
 
+  it("metrics endpoint reports counts", async () => {
+    const m = await j("GET", "/mcp/metrics")
+    expect(m.status).toBe(200)
+    expect(typeof m.body.notes).toBe("number")
+    expect(typeof m.body.clients).toBe("number")
+    expect(m.body.pingIntervalMs).toBeGreaterThanOrEqual(1000)
+  })
+
   it("graceful broadcast guard after stop", async () => {
     const gs = new McpServer({ noteService: svc, apiKey: testKey, port: 27129 })
     await gs.start(); await new Promise(r=>setTimeout(r,20))
