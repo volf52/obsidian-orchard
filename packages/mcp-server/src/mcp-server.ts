@@ -91,11 +91,15 @@ export class McpServer {
       try { body = await c.req.json() } catch { return c.json({ error: "InvalidBody" }, 400) }
       const { id, title, tags, frontmatter, body: content } = body || {}
       if (typeof id !== "string" || id.trim() === "") return c.json({ error: "MissingId" }, 400)
+      if (tags !== undefined) {
+        if (!Array.isArray(tags)) return c.json({ error: "InvalidTags" }, 400)
+        if (!tags.every((t: unknown) => typeof t === "string")) return c.json({ error: "InvalidTagsElement" }, 400)
+      }
       try {
         const created = await this.noteService.create({
-          id,
-            title: typeof title === "string" ? title : undefined,
-          tags: Array.isArray(tags) ? (tags.filter((t) => typeof t === "string") as string[]) : undefined,
+          id: id,
+          title: typeof title === "string" ? title : undefined,
+          tags: Array.isArray(tags) ? (tags as string[]) : undefined,
           frontmatter: typeof frontmatter === "object" && frontmatter ? (frontmatter as Record<string, unknown>) : undefined,
           body: typeof content === "string" ? content : undefined,
         })
@@ -113,10 +117,14 @@ export class McpServer {
       const id = decodeURIComponent(c.req.param("id"))
       const { version, title, tags, frontmatter, body: content } = body || {}
       if (typeof version !== "string") return c.json({ error: "MissingVersion" }, 400)
+      if (tags !== undefined) {
+        if (!Array.isArray(tags)) return c.json({ error: "InvalidTags" }, 400)
+        if (!tags.every((t: unknown) => typeof t === "string")) return c.json({ error: "InvalidTagsElement" }, 400)
+      }
       try {
         const updated = await this.noteService.update(id as any, {
           title: typeof title === "string" ? title : undefined,
-          tags: Array.isArray(tags) ? (tags.filter((t) => typeof t === "string") as string[]) : undefined,
+          tags: Array.isArray(tags) ? (tags as string[]) : undefined,
           frontmatter: typeof frontmatter === "object" && frontmatter ? (frontmatter as Record<string, unknown>) : undefined,
           body: typeof content === "string" ? content : undefined,
         }, version as any)

@@ -94,6 +94,25 @@ describe("McpServer", () => {
     expect(wrong.status).toBe(401)
   })
 
+  it("rejects invalid tag payloads on create", async () => {
+    const bad1 = await j("POST", "/mcp/notes", { id: "Bad1", tags: "oops" })
+    expect(bad1.status).toBe(400)
+    expect(bad1.body.error).toBe("InvalidTags")
+    const bad2 = await j("POST", "/mcp/notes", { id: "Bad2", tags: ["ok", 123] })
+    expect(bad2.status).toBe(400)
+    expect(bad2.body.error).toBe("InvalidTagsElement")
+  })
+
+  it("normalizes id casing and missing extension", async () => {
+    const created = await j("POST", "/mcp/notes", { id: "MixedCase", body: "C" })
+    expect(created.status).toBe(201)
+    expect(created.body.note.id).toBe("mixedcase.md")
+    // duplicate create should 409
+    const dup = await j("POST", "/mcp/notes", { id: "MixedCase", body: "C" })
+    expect(dup.status).toBe(409)
+    expect(String(dup.body.error)).toContain("already exists")
+  })
+
   it("updates a note and enforces version", async () => {
     const current = await j("GET", "/mcp/notes/alpha.md")
     const v = current.body.note.version
