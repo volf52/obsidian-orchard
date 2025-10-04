@@ -182,6 +182,14 @@ function parseRaw(raw: string): ParsedRaw {
         else if (value === "true") value = true
         else if (value === "false") value = false
         else if (!Number.isNaN(Number(value))) value = Number(value)
+        else if (typeof value === "string" && /^(\[|\{)/.test(value.trim())) {
+          try {
+            const parsed = JSON.parse(value)
+            value = parsed
+          } catch {
+            // leave as string if JSON.parse fails
+          }
+        }
         frontmatter[key] = value
       }
       return { frontmatter, body }

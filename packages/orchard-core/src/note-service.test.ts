@@ -6,12 +6,22 @@ import {
   NoteService,
 } from "@/index"
 
-function _delay(ms: number) {
-  return new Promise((r) => setTimeout(r, ms))
+const c = {
+  green: (s: string) => `\x1b[32m${s}\x1b[0m`,
+  cyan: (s: string) => `\x1b[36m${s}\x1b[0m`,
+  yellow: (s: string) => `\x1b[33m${s}\x1b[0m`,
+  magenta: (s: string) => `\x1b[35m${s}\x1b[0m`,
+  red: (s: string) => `\x1b[31m${s}\x1b[0m`,
+}
+
+function banner(title: string) {
+  // eslint-disable-next-line no-console
+  console.log(c.magenta(`\n=== ${title} ===`))
 }
 
 describe("NoteService", () => {
   it("creates and reads a note", async () => {
+    banner("create/read")
     const adapter = createMemoryAdapter()
     const svc = new NoteService({ adapter })
     const created = await svc.create({ id: "Test", body: "Hello" })
@@ -22,6 +32,7 @@ describe("NoteService", () => {
   })
 
   it("enforces optimistic concurrency on update", async () => {
+    banner("update concurrency")
     const adapter = createMemoryAdapter()
     const svc = new NoteService({ adapter })
     const n1 = await svc.create({ id: "t", body: "One" })
@@ -35,6 +46,7 @@ describe("NoteService", () => {
   })
 
   it("is idempotent when no changes", async () => {
+    banner("idempotent update")
     const adapter = createMemoryAdapter()
     const svc = new NoteService({ adapter })
     const n = await svc.create({ id: "a", body: "Body" })
@@ -43,6 +55,7 @@ describe("NoteService", () => {
   })
 
   it("deletes with version check", async () => {
+    banner("delete")
     const adapter = createMemoryAdapter()
     const svc = new NoteService({ adapter })
     const n = await svc.create({ id: "d", body: "Delete" })
@@ -52,7 +65,8 @@ describe("NoteService", () => {
     expect(again).toBeNull()
   })
 
-  it("emits events", async () => {
+  it("emit events for create/update/delete", async () => {
+    banner("events")
     const adapter = createMemoryAdapter()
     const events: string[] = []
     const bus = createEventBus()
@@ -64,5 +78,35 @@ describe("NoteService", () => {
     if (!final) throw new Error("missing")
     await svc.delete("e.md", final.version)
     expect(events).toEqual(["note.created", "note.updated", "note.deleted"])
+  })
+
+  it("rejects duplicate create", async () => {
+    banner("duplicate create")
+    const svc = new NoteService({ adapter: createMemoryAdapter() })
+    await svc.create({ id: "dup", body: "one" })
+    await expect(svc.create({ id: "dup", body: "two" })).rejects.toThrow(
+      /already exists/i,
+    )
+  })
+
+  it("delete returns false on missing note", async () => {
+    banner("delete missing")
+    const svc = new NoteService({ adapter: createMemoryAdapter() })
+    const ok = await svc.delete("missing.md" as any, "v" as any)
+    expect(ok).toBe(false)
+  })
+
+  it("list applies tag & search filters", async () => {
+    banner("filters")
+    const adapter = createMemoryAdapter()
+    const svc = new NoteService({ adapter })
+    await svc.create({ id: "TagA", tags: ["alpha", "beta"], body: "First body" })
+    await svc.create({ id: "TagB", tags: ["beta"], body: "Second body with word" })
+    const tagFiltered = await svc.list({ tag: "alpha" })
+    expect(tagFiltered.length).toBe(1)
+    expect(tagFiltered[0].id).toBe("taga.md")
+    const searchFiltered = await svc.list({ search: "second" })
+    expect(searchFiltered.length).toBe(1)
+    expect(searchFiltered[0].id).toBe("tagb.md")
   })
 })
