@@ -44,13 +44,6 @@ const handleSubmit = () => {
   isPromise
   itemLoader={async () => []}
 />
-<TextSettingItem 
-  value={initialSettings.serverApiKey} 
-  name="Server API Key" 
-  disabled 
-  description="REST Server API Key" 
-  ariaLabel="Server API Key"
-/>
 
 <SubmitButton
   --padding-top="2rem"

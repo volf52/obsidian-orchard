@@ -1,7 +1,7 @@
 {
-  "name": "@orchard/server",
-  "version": "1.0.0",
-  "description": "Obsidian plugin with HTTP/2 server for Orchard",
+  "name": "@orchard/mcp-server",
+  "version": "0.1.0",
+  "description": "Obsidian plugin exposing Orchard core via MCP",
   "main": "dist/plugin.js",
   "scripts": {
     "build": "bun --bun run build.ts",
@@ -12,7 +12,7 @@
     "test": "echo \"No tests yet\"",
     "clean": "rm -rf dist"
   },
-  "keywords": ["obsidian", "plugin", "server", "http2"],
+  "keywords": ["obsidian", "plugin", "mcp", "orchard"],
   "author": "",
   "license": "ISC",
   "devDependencies": {
@@ -21,13 +21,9 @@
     "@types/bun": "^1.2.23",
     "@typescript/native-preview": "^7.0.0-dev.20251004.1",
     "builtin-modules": "^5.0.0",
-    "oxlint": "^1.19.0",
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@hono/node-server": "^1.19.5",
-    "@scalar/hono-api-reference": "^0.9.20",
-    "hono": "^4.9.9",
     "obsidian": "^1.10.0"
   }
 }

@@ -1,16 +1,6 @@
 import builtins from "builtin-modules"
-import type { BunPlugin } from "bun"
 import { sveltePlugin } from "./svelte-plugin"
-
-// Alias @orchard/core to source (avoid needing prebuilt dist or version bumps)
-const coreAliasPlugin: BunPlugin = {
-  name: "core-alias",
-  setup(build) {
-    build.onResolve({ filter: /^@orchard\/core$/ }, () => ({
-      path: new URL("../orchard-core/src/index.ts", import.meta.url).pathname,
-    }))
-  },
-}
+import { coreAliasPlugin } from "../orchard-core/build-utils/core-alias-plugin"
 
 Bun.build({
   entrypoints: ["./src/plugin.ts"],
@@ -37,5 +27,5 @@ Bun.build({
     "@lezer/lr",
     ...builtins,
   ],
-  plugins: [coreAliasPlugin, sveltePlugin],
+  plugins: [coreAliasPlugin(), sveltePlugin],
 })
