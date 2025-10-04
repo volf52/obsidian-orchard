@@ -7,6 +7,23 @@
         "taze": "^19.7.0",
       },
     },
+    "packages/mcp-server": {
+      "name": "@orchard/mcp-server",
+      "version": "0.1.0",
+      "dependencies": {
+        "@hono/node-server": "^1.19.5",
+        "hono": "^4.9.9",
+        "obsidian": "^1.10.0",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "^2.2.5",
+        "@tsconfig/bun": "^1.0.8",
+        "@types/bun": "^1.2.23",
+        "@typescript/native-preview": "^7.0.0-dev.20251004.1",
+        "builtin-modules": "^5.0.0",
+        "typescript": "^5.9.3",
+      },
+    },
     "packages/orchard": {
       "name": "@orchard/plugin",
       "version": "1.0.0",
@@ -105,6 +122,8 @@
     "@marijn/find-cluster-break": ["@marijn/find-cluster-break@1.0.2", "", {}, "sha512-l0h88YhZFyKdXIFNfSWpyjStDjGHwZ/U7iobcK1cQQD8sejsONdQtTVU+1wVN1PBw40PiiHB1vA5S7VTfQiP9g=="],
 
     "@orchard/core": ["@orchard/core@workspace:packages/orchard-core"],
+
+    "@orchard/mcp-server": ["@orchard/mcp-server@workspace:packages/mcp-server"],
 
     "@orchard/plugin": ["@orchard/plugin@workspace:packages/orchard"],
 

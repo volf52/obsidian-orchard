@@ -6,5 +6,6 @@
   "description": "Expose Orchard notes via Model Context Protocol",
   "author": "",
   "authorUrl": "",
-  "isDesktopOnly": true
+  "isDesktopOnly": true,
+  "main": "dist/main.js"
 }
