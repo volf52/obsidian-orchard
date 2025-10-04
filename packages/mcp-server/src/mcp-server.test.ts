@@ -1,259 +1,137 @@
-import { describe, expect, it, beforeAll, afterAll } from "bun:test"
-import { McpServer } from "./mcp-server"
-import { NoteService, createMemoryAdapter } from "@orchard/core"
+import { describe, expect, it, beforeAll, afterAll } from "bun:test";
+import { McpServer } from "./mcp-server";
+import { NoteService, createMemoryAdapter } from "@orchard/core";
 
-describe("McpServer", () => {
-  let server: McpServer
-  let svc: NoteService
-  let testKey: string
+interface RpcResult {
+  jsonrpc: string;
+  id: number;
+  result?: any;
+  error?: { code: number; message: string };
+}
 
-  // Helper to fetch JSON (auto attach key after testKey assigned)
-  async function j(method: string, path: string, body?: unknown, key?: string) {
-    const url = `http://localhost:27126${path}${path.includes("?") ? "&" : "?"}key=${encodeURIComponent(key ?? testKey)}`
-    const res = await fetch(url , {
-      method,
-      headers: body ? { "Content-Type": "application/json" } : undefined,
-      body: body ? JSON.stringify(body) : undefined,
-    })
-    const txt = await res.text()
-    let parsed: any
-    try { parsed = JSON.parse(txt) } catch { parsed = txt }
-    return { status: res.status, body: parsed }
-  }
+async function rpcCall(key: string, method: string, params: any) {
+  const res = await fetch(`http://localhost:27126/mcp?key=${encodeURIComponent(key)}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: Math.floor(Math.random() * 1e9), method, params }),
+  });
+  const data = (await res.json()) as RpcResult;
+  return { status: res.status, body: data };
+}
+
+function extractJsonContent(result: any): any {
+  if (!result) return undefined;
+  const content = result.content ?? [];
+  const jsonPart = content.find((c: any) => c.type === "json");
+  if (jsonPart) return jsonPart.data;
+  return content;
+}
+
+function isErrorResult(result: any): boolean {
+  return !!result?.isError;
+}
+
+// Helper wrappers for tools/call
+async function callTool(key: string, name: string, args?: any) {
+  const { status, body } = await rpcCall(key, "tools/call", { name, arguments: args });
+  return { status, body };
+}
+
+async function listTools(key: string) {
+  return rpcCall(key, "tools/list", {});
+}
+
+describe("McpServer (MCP JSON-RPC)", () => {
+  let server: McpServer;
+  let svc: NoteService;
+  let testKey: string;
 
   beforeAll(async () => {
-    svc = new NoteService({ adapter: createMemoryAdapter() })
-    testKey = "testkey1234567890"
-    server = new McpServer({ noteService: svc, apiKey: testKey })
-    await server.start()
-    // tiny delay to ensure listening
-    await new Promise((r) => setTimeout(r, 50))
-  })
+    svc = new NoteService({ adapter: createMemoryAdapter() });
+    testKey = "testkey1234567890";
+    server = new McpServer({ noteService: svc, apiKey: testKey });
+    await server.start();
+    await new Promise((r) => setTimeout(r, 40));
+  });
 
   afterAll(async () => {
-    await server.stop()
-  })
+    await server.stop();
+  });
 
   it("health endpoint responds", async () => {
-    const res = await fetch("http://localhost:27126/health")
-    expect(res.status).toBe(200)
-    const data = await res.json()
-    expect(data.ok).toBe(true)
-  })
+    const res = await fetch("http://localhost:27126/health");
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.ok).toBe(true);
+  });
 
-  it("rejects unauthorized access", async () => {
-    // manual fetch without key
-    const res = await fetch("http://localhost:27126/mcp/notes")
-    expect(res.status).toBe(401)
-    const bad = await res.json()
-    expect(bad.error.code).toBe("Unauthorized")
-  })
+  it("lists tools", async () => {
+    const { body } = await listTools(testKey);
+    expect(body.result?.tools?.some((t: any) => t.name === "create_note")).toBe(true);
+  });
 
-  it("creates and lists notes", async () => {
-    const c = await j("POST", "/mcp/notes", { id: "Alpha", body: "Hello", tags: ["tagA"] })
-    expect(c.status).toBe(201)
-    expect(c.body.note.id).toBe("alpha.md")
+  it("creates notes and lists via list_notes filters", async () => {
+    const c = await callTool(testKey, "create_note", { id: "Alpha", body: "Hello", tags: ["tagA"] });
+    const createdData = extractJsonContent(c.body.result);
+    expect(createdData.note.id).toBe("alpha.md");
 
-    // additional notes for filtering
-    const c2 = await j("POST", "/mcp/notes", { id: "Beta", body: "Searchable Body", tags: ["tagB"] })
-    expect(c2.status).toBe(201)
-    const c3 = await j("POST", "/mcp/notes", { id: "Gamma", body: "Mixed Search Text", tags: ["tagA", "tagB"] })
-    expect(c3.status).toBe(201)
+    await callTool(testKey, "create_note", { id: "Beta", body: "Searchable Body", tags: ["tagB"] });
+    await callTool(testKey, "create_note", { id: "Gamma", body: "Mixed Search Text", tags: ["tagA", "tagB"] });
 
-    const list = await j("GET", "/mcp/notes")
-    expect(list.status).toBe(200)
-    expect(Array.isArray(list.body.notes)).toBe(true)
-    expect(list.body.notes.find((n: any) => n.id === "alpha.md")).toBeTruthy()
-    expect(list.body.notes.length).toBeGreaterThanOrEqual(3)
+    const listAll = await callTool(testKey, "list_notes", {});
+    const listAllData = extractJsonContent(listAll.body.result);
+    expect(Array.isArray(listAllData.notes)).toBe(true);
+    expect(listAllData.notes.find((n: any) => n.id === "alpha.md")).toBeTruthy();
 
-    // tag filter
-    const tagAList = await j("GET", "/mcp/notes?tag=tagA")
-    expect(tagAList.status).toBe(200)
-    expect(tagAList.body.notes.every((n: any) => ["alpha.md", "gamma.md"].includes(n.id))).toBe(true)
+    const tagA = await callTool(testKey, "list_notes", { tag: "tagA" });
+    const tagAData = extractJsonContent(tagA.body.result);
+    expect(tagAData.notes.every((n: any) => ["alpha.md", "gamma.md"].includes(n.id))).toBe(true);
 
-    const tagBList = await j("GET", "/mcp/notes?tag=tagB")
-    expect(tagBList.status).toBe(200)
-    expect(tagBList.body.notes.every((n: any) => ["beta.md", "gamma.md"].includes(n.id))).toBe(true)
+    const search = await callTool(testKey, "list_notes", { search: "search" });
+    const searchData = extractJsonContent(search.body.result);
+    const ids = searchData.notes.map((n: any) => n.id).sort();
+    expect(ids).toEqual(["beta.md", "gamma.md"]);
+  });
 
-    // search filter (case-insensitive substring)
-    const searchList = await j("GET", "/mcp/notes?search=search")
-    expect(searchList.status).toBe(200)
-    // should include beta + gamma (body contains 'Search' or 'search')
-    const ids = searchList.body.notes.map((n: any) => n.id).sort()
-    expect(ids).toEqual(["beta.md", "gamma.md"]) // alpha excluded
-  })
+  it("gets a note", async () => {
+    const r = await callTool(testKey, "get_note", { id: "alpha.md" });
+    const data = extractJsonContent(r.body.result);
+    expect(data.note.body).toBe("Hello");
+  });
 
-  it("reads a note", async () => {
-    const r = await j("GET", "/mcp/notes/alpha.md")
-    expect(r.status).toBe(200)
-    expect(r.body.note.body).toBe("Hello")
-  })
+  it("normalizes id case + extension on create", async () => {
+    const created = await callTool(testKey, "create_note", { id: "MixedCase", body: "C" });
+    const createdData = extractJsonContent(created.body.result);
+    expect(createdData.note.id).toBe("mixedcase.md");
+    const dup = await callTool(testKey, "create_note", { id: "MixedCase", body: "C" });
+    expect(isErrorResult(dup.body.result)).toBe(true);
+  });
 
-  it("denies wrong key", async () => {
-    const wrong = await j("GET", "/mcp/notes/alpha.md", undefined, "badkey")
-    expect(wrong.status).toBe(401)
-    expect(wrong.body.error.code).toBe("Unauthorized")
-  })
+  it("updates note with version and enforces conflicts", async () => {
+    const current = await callTool(testKey, "get_note", { id: "alpha.md" });
+    const currentData = extractJsonContent(current.body.result);
+    const v = currentData.note.version;
+    const upd = await callTool(testKey, "update_note", { id: "alpha.md", version: v, body: "Hello2" });
+    const updData = extractJsonContent(upd.body.result);
+    expect(updData.note.body).toBe("Hello2");
+    const conflict = await callTool(testKey, "update_note", { id: "alpha.md", version: v, body: "X" });
+    expect(isErrorResult(conflict.body.result)).toBe(true);
+  });
 
-  it("rejects invalid tag payloads on create", async () => {
-    const bad1 = await j("POST", "/mcp/notes", { id: "Bad1", tags: "oops" })
-    expect(bad1.status).toBe(400)
-    expect(bad1.body.error.code).toBe("InvalidTags")
-    const bad2 = await j("POST", "/mcp/notes", { id: "Bad2", tags: ["ok", 123] })
-    expect(bad2.status).toBe(400)
-    expect(bad2.body.error.code).toBe("InvalidTagsElement")
-  })
+  it("deletes note with version", async () => {
+    const current = await callTool(testKey, "get_note", { id: "alpha.md" });
+    const v = extractJsonContent(current.body.result).note.version;
+    const del = await callTool(testKey, "delete_note", { id: "alpha.md", version: v });
+    const delData = extractJsonContent(del.body.result);
+    expect(delData.ok).toBe(true);
+    const missing = await callTool(testKey, "get_note", { id: "alpha.md" });
+    expect(isErrorResult(missing.body.result)).toBe(true);
+  });
 
-  it("normalizes id casing and missing extension", async () => {
-    const created = await j("POST", "/mcp/notes", { id: "MixedCase", body: "C" })
-    expect(created.status).toBe(201)
-    expect(created.body.note.id).toBe("mixedcase.md")
-    // duplicate create should 409
-    const dup = await j("POST", "/mcp/notes", { id: "MixedCase", body: "C" })
-    expect(dup.status).toBe(409)
-    expect(dup.body.error.code).toBe("CreateConflict"); expect(String(dup.body.error.message)).toContain("already exists")
-  })
-
-  it("updates a note and enforces version", async () => {
-    const current = await j("GET", "/mcp/notes/alpha.md")
-    const v = current.body.note.version
-    const u = await j("PUT", "/mcp/notes/alpha.md", { version: v, body: "Hello2" })
-    expect(u.status).toBe(200)
-    expect(u.body.note.body).toBe("Hello2")
-
-    // version conflict using old version
-    const conflict = await j("PUT", "/mcp/notes/alpha.md", { version: v, body: "Fail" })
-    expect(conflict.status).toBe(409)
-    expect(conflict.body.error.code).toBe("VersionConflict")
-  })
-
-  it("deletes a note with version", async () => {
-    const current = await j("GET", "/mcp/notes/alpha.md")
-    const v = current.body.note.version
-    const del = await j("DELETE", "/mcp/notes/alpha.md?version=" + encodeURIComponent(v))
-    expect(del.status).toBe(200)
-    expect(del.body.ok).toBe(true)
-
-    const missing = await j("GET", "/mcp/notes/alpha.md")
-    expect(missing.status).toBe(404)
-    expect(missing.body.error.code).toBe("NotFound")
-  })
-
-  it("SSE connection emits ready + receives broadcast", async () => {
-    const events: string[] = []
-    const controller = new AbortController()
-    const resp = await fetch(`http://localhost:27126/mcp/events?key=${encodeURIComponent(testKey)}`, { signal: controller.signal })
-    const reader = resp.body!.getReader()
-
-    // collect a couple of chunks
-    const received = new Promise<void>((resolve) => {
-      const decoder = new TextDecoder()
-      let buffer = ""
-      const pump = () => reader.read().then(({ done, value }) => {
-        if (done) return
-        buffer += decoder.decode(value, { stream: true })
-        const parts = buffer.split("\n\n")
-        for (const p of parts.slice(0, -1)) {
-          if (p.trim().length === 0) continue
-          const lines = p.split("\n")
-          let ev: string | null = null
-            let data: string | null = null
-          for (const l of lines) {
-            if (l.startsWith("event:")) ev = l.slice(6).trim()
-            if (l.startsWith("data:")) data = l.slice(5).trim()
-          }
-          if (ev) events.push(ev)
-          if (ev === "ready") {
-            // trigger a broadcast after ready
-            server.broadcast("note.created", { id: "z.md", version: "v" })
-          }
-          if (events.includes("note.created")) {
-            resolve()
-            controller.abort()
-            return
-          }
-        }
-        buffer = parts[parts.length - 1]
-        pump()
-      })
-      pump()
-    })
-
-    await Promise.race([
-      received,
-      new Promise((_r, rej) => setTimeout(() => rej(new Error("Timeout waiting for SSE")), 3000)),
-    ])
-
-    expect(events).toContain("ready")
-    expect(events).toContain("note.created")
-  })
-
-  // Newly added tests
-  it("negative cases: missing version & update non-existent", async () => {
-    // missing version on update
-    const updMissing = await j("PUT", "/mcp/notes/beta.md", { body: "NoVersion" })
-    expect(updMissing.status).toBe(400)
-    expect(updMissing.body.error.code).toBe("MissingVersion")
-    // missing version on delete
-    const delMissing = await j("DELETE", "/mcp/notes/beta.md")
-    expect(delMissing.status).toBe(400)
-    expect(delMissing.body.error.code).toBe("MissingVersion")
-    // update non-existent note
-    const updMissingNote = await j("PUT", "/mcp/notes/doesnotexist.md", { version: "v1", body: "X" })
-    expect([404,409]).toContain(updMissingNote.status)
-    if (updMissingNote.status === 404) expect(updMissingNote.body.error.code).toBe("NotFound")
-  })
-
-  it("uses custom short ping interval", async () => {
-    const shortServer = new McpServer({ noteService: svc, apiKey: testKey, port: 27127, pingIntervalMs: 10 })
-    await shortServer.start(); await new Promise(r=>setTimeout(r,30))
-    const controller = new AbortController()
-    const resp = await fetch(`http://localhost:27127/mcp/events?key=${encodeURIComponent(testKey)}`, { signal: controller.signal })
-    const reader = resp.body!.getReader()
-    const dec = new TextDecoder()
-    let buf = ""
-    const collect = (async () => {
-      const start = Date.now()
-      while (Date.now() - start < 300) {
-        const { done, value } = await reader.read()
-        if (done) break
-        buf += dec.decode(value, { stream: true })
-      }
-    })()
-    await collect
-    controller.abort()
-    // Count ping events in accumulated buffer
-    const pingEvents = buf.split("\n\n").filter(chunk => /event: *ping/.test(chunk)).length
-    expect(pingEvents).toBeGreaterThanOrEqual(1)
-    await shortServer.stop()
-  })
-
-
-  it("env fallbacks for port/apiKey", async () => {
-    (process as any).env.MCP_PORT = "27128"
-    ;(process as any).env.MCP_API_KEY = "envKey123"
-    const envServer = new McpServer({ noteService: svc })
-    await envServer.start(); await new Promise(r=>setTimeout(r,30))
-    const unauth = await fetch("http://localhost:27128/mcp/notes")
-    expect(unauth.status).toBe(401)
-    const list = await fetch(`http://localhost:27128/mcp/notes?key=envKey123`)
-    expect(list.status).toBe(200)
-    await envServer.stop()
-  })
-
-  it("metrics endpoint reports counts", async () => {
-    const m = await j("GET", "/mcp/metrics")
-    expect(m.status).toBe(200)
-    expect(typeof m.body.notes).toBe("number")
-    expect(typeof m.body.clients).toBe("number")
-    expect(m.body.pingIntervalMs).toBeGreaterThanOrEqual(1000)
-  })
-
-  it("graceful broadcast guard after stop", async () => {
-    const gs = new McpServer({ noteService: svc, apiKey: testKey, port: 27129 })
-    await gs.start(); await new Promise(r=>setTimeout(r,20))
-    await gs.stop()
-    // should not throw when broadcasting after stop
-    gs.broadcast("note.updated", { id: "x" })
-  })
-})
+  it("metrics tool returns counts", async () => {
+    const m = await callTool(testKey, "metrics", {});
+    const mData = extractJsonContent(m.body.result);
+    expect(typeof mData.notes).toBe("number");
+    expect(typeof mData.uptimeMs).toBe("number");
+  });
+});

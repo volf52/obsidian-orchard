@@ -1,34 +1,41 @@
 # Orchard MCP Server
 
-Minimal HTTP + SSE server exposing Orchard note CRUD and real‑time events for MCP tooling / external automation.
+Minimal HTTP JSON-RPC endpoint exposing Orchard note CRUD as MCP-style tools (no SSE yet).
 
 ## Features
 - Health check: `GET /health` (no auth)
-- Authenticated endpoints under `/mcp/*` using API key (query `?key=` or `Authorization: Bearer`)
-- Note operations:
-  - `GET /mcp/notes` (filters: `?tag=foo`, `?search=substr`)
-  - `GET /mcp/notes/:id`
-  - `POST /mcp/notes` (create)
-  - `PUT /mcp/notes/:id` (update with `version` for optimistic concurrency)
-  - `DELETE /mcp/notes/:id?version=<v>`
-- SSE stream: `GET /mcp/events?key=...` emits:
-  - `ready`
-  - heartbeat `ping` (interval configurable)
-  - note events: `note.created`, `note.updated`, `note.deleted`
-- Metrics: `GET /mcp/metrics` (counts clients, notes, ping interval)
-- Graceful broadcast guard (no throw after stop)
+- Single authenticated JSON-RPC endpoint: `POST /mcp` (API key via `?key=` or `Authorization: Bearer <key>`)
+- Supported JSON-RPC methods:
+  - `tools/list` → lists available tools
+  - `tools/call` → invoke a tool by name with arguments
+- Tools implemented:
+  - `list_notes` (filters: `tag`, `search`)
+  - `get_note` (id)
+  - `create_note` (id, title?, body?, tags?, frontmatter?)
+  - `update_note` (id, version, optional fields)
+  - `delete_note` (id, version)
+  - `metrics` (note count + uptime flag)
 
 ## Environment Variables
 | Name | Purpose | Default |
 |------|---------|---------|
 | `MCP_PORT` / `PORT` | Listening port | `27126` |
 | `MCP_API_KEY` / `API_KEY` | API key for auth | (none) |
-| `MCP_PING_INTERVAL_MS` | Heartbeat interval (ms). Values <1000 clamped to 1000; <1000 triggers immediate extra ping (tests) | `30000` |
 
 Constructor options override env vars.
 
-## Error Shape
-All errors use `{ error: { code, message } }` with stable codes (e.g. `Unauthorized`, `MissingVersion`, `VersionConflict`, `NotFound`).
+## JSON-RPC Request Format
+Send a POST to `/mcp` with body:
+```jsonc
+{ "jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": { "name": "create_note", "arguments": { "id": "Test", "body": "Hello" } } }
+```
+
+List tools:
+```jsonc
+{ "jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {} }
+```
+
+Responses follow standard JSON-RPC 2.0. Tool results embed a `result` with shape `{ content: [...], isError? }`. A JSON content part uses `{ type: "json", data: {...} }`.
 
 ## Development
 ```
@@ -36,18 +43,20 @@ bun test packages/mcp-server/src/mcp-server.test.ts
 bun run build.ts
 ```
 
-## Example (Create + Stream)
+## Example Usage
 ```bash
 API_KEY=devkey bun node ./dist/mcp-server.js &
-# list notes
-xh get :27126/mcp/notes key==devkey
-# stream events
-xh get :27126/mcp/events key==devkey
-# create a note
-xh post :27126/mcp/notes key==devkey id=TestNote body='Hello'
+# list tools
+xh post :27126/mcp key==devkey jsonrpc=2.0 id=1 method=tools/list params:='{}'
+# create note
+xh post :27126/mcp key==devkey jsonrpc=2.0 id=2 method=tools/call params:='{"name":"create_note","arguments":{"id":"Alpha","body":"Hello"}}'
+# get note
+xh post :27126/mcp key==devkey jsonrpc=2.0 id=3 method=tools/call params:='{"name":"get_note","arguments":{"id":"alpha.md"}}'
 ```
 
 ## Roadmap Ideas
+- Adopt official MCP transport once stable in this context
+- Reintroduce real-time events via SSE or MCP notifications
 - Pagination & detailed list variant
 - Multi-tag filtering semantics
 - Structured type exports for event payloads
