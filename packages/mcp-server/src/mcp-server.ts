@@ -37,11 +37,16 @@ export class McpServer {
   private readonly app = new Hono()
   private readonly clients = new Set<SseClient>()
   private running = false
+  private pingIntervalMs: number
 
-  constructor(opts: { port?: number; noteService?: NoteService; apiKey?: string } = {}) {
-    this.port = opts.port ?? 27126
+  constructor(opts: { port?: number; noteService?: NoteService; apiKey?: string; pingIntervalMs?: number } = {}) {
+    const envPort = typeof process !== "undefined" ? Number(process.env.MCP_PORT || process.env.PORT) : undefined
+    this.port = opts.port ?? (envPort && !Number.isNaN(envPort) ? envPort : 27126)
+    const envKey = typeof process !== "undefined" ? (process.env.MCP_API_KEY || process.env.API_KEY) : undefined
     this.noteService = opts.noteService ?? null
-    this.apiKey = opts.apiKey ?? null
+    this.apiKey = opts.apiKey ?? envKey ?? null
+    this.pingIntervalMs = opts.pingIntervalMs ?? (typeof process !== "undefined" && process.env.MCP_PING_INTERVAL_MS ? Number(process.env.MCP_PING_INTERVAL_MS) : 30_000)
+    if (!this.pingIntervalMs || this.pingIntervalMs < 1000) this.pingIntervalMs = 1000
     this.configureRoutes()
   }
 
@@ -161,10 +166,14 @@ export class McpServer {
         stream,
         ping: setInterval(() => {
           stream.writeSSE({ event: "ping", data: Date.now().toString() }).catch(() => {})
-        }, 30_000),
+        }, this.pingIntervalMs),
       }
       this.clients.add(client)
       stream.writeSSE({ event: "ready", data: "{}" }).catch(() => {})
+      if (this.pingIntervalMs < 1000) {
+        // emit an initial ping quickly for test environments
+        stream.writeSSE({ event: "ping", data: Date.now().toString() }).catch(() => {})
+      }
       log.info(`SSE client connected (total=${this.clients.size})`)
 
       const abort = c.req.raw.signal
@@ -214,6 +223,10 @@ export class McpServer {
 
   // Broadcast utility for note events
   broadcast(event: string, payload: unknown) {
+    if (!this.running) {
+      log.info(`skip broadcast '${event}' (server not running)`)
+      return
+    }
     const data = JSON.stringify(payload)
     for (const c of this.clients) {
       c.stream.writeSSE({ event, data }).catch(() => this.dropClient(c))

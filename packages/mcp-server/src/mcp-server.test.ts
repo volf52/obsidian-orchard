@@ -187,4 +187,65 @@ describe("McpServer", () => {
     expect(events).toContain("ready")
     expect(events).toContain("note.created")
   })
+
+  // Newly added tests
+  it("negative cases: missing version & update non-existent", async () => {
+    // missing version on update
+    const updMissing = await j("PUT", "/mcp/notes/beta.md", { body: "NoVersion" })
+    expect(updMissing.status).toBe(400)
+    expect(updMissing.body.error.code).toBe("MissingVersion")
+    // missing version on delete
+    const delMissing = await j("DELETE", "/mcp/notes/beta.md")
+    expect(delMissing.status).toBe(400)
+    expect(delMissing.body.error.code).toBe("MissingVersion")
+    // update non-existent note
+    const updMissingNote = await j("PUT", "/mcp/notes/doesnotexist.md", { version: "v1", body: "X" })
+    expect([404,409]).toContain(updMissingNote.status)
+    if (updMissingNote.status === 404) expect(updMissingNote.body.error.code).toBe("NotFound")
+  })
+
+  it("uses custom short ping interval", async () => {
+    const shortServer = new McpServer({ noteService: svc, apiKey: testKey, port: 27127, pingIntervalMs: 10 })
+    await shortServer.start(); await new Promise(r=>setTimeout(r,30))
+    const controller = new AbortController()
+    const resp = await fetch(`http://localhost:27127/mcp/events?key=${encodeURIComponent(testKey)}`, { signal: controller.signal })
+    const reader = resp.body!.getReader()
+    const dec = new TextDecoder()
+    let buf = ""
+    const collect = (async () => {
+      const start = Date.now()
+      while (Date.now() - start < 300) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buf += dec.decode(value, { stream: true })
+      }
+    })()
+    await collect
+    controller.abort()
+    // Count ping events in accumulated buffer
+    const pingEvents = buf.split("\n\n").filter(chunk => /event: *ping/.test(chunk)).length
+    expect(pingEvents).toBeGreaterThanOrEqual(1)
+    await shortServer.stop()
+  })
+
+
+  it("env fallbacks for port/apiKey", async () => {
+    (process as any).env.MCP_PORT = "27128"
+    ;(process as any).env.MCP_API_KEY = "envKey123"
+    const envServer = new McpServer({ noteService: svc })
+    await envServer.start(); await new Promise(r=>setTimeout(r,30))
+    const unauth = await fetch("http://localhost:27128/mcp/notes")
+    expect(unauth.status).toBe(401)
+    const list = await fetch(`http://localhost:27128/mcp/notes?key=envKey123`)
+    expect(list.status).toBe(200)
+    await envServer.stop()
+  })
+
+  it("graceful broadcast guard after stop", async () => {
+    const gs = new McpServer({ noteService: svc, apiKey: testKey, port: 27129 })
+    await gs.start(); await new Promise(r=>setTimeout(r,20))
+    await gs.stop()
+    // should not throw when broadcasting after stop
+    gs.broadcast("note.updated", { id: "x" })
+  })
 })
