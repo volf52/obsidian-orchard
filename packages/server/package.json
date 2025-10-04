@@ -9,7 +9,7 @@
     "lint": "biome check src",
     "lint:fix": "biome check src --write --unsafe",
     "fmt": "biome format src --write",
-    "test": "echo \"No tests yet\"",
+    "test": "bun test",
     "clean": "rm -rf dist"
   },
   "keywords": ["obsidian", "plugin", "server", "http2"],
