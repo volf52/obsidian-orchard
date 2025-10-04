@@ -1,4 +1,4 @@
-import { createEventBus, NoteService } from "@orchard/core"
+import { createEventBus, NoteService, type EventBus } from "@orchard/core"
 import { type Command, Plugin } from "obsidian"
 import { ICON, ORCHAR_RSB_VIEW_TYPE } from "@/constants"
 import RightSidebarView from "@/right-sidebar-view"
@@ -24,6 +24,7 @@ class Orchard extends Plugin {
   transcriptionModule!: TranscriptionModule
 
   noteService!: NoteService
+  events!: EventBus
 
   override async onload(): Promise<void> {
     await this.loadSettings()
@@ -43,6 +44,7 @@ class Orchard extends Plugin {
     // Core note service wiring
     const adapter = createObsidianVaultAdapter(this.app.vault)
     const events = createEventBus()
+    this.events = events
     this.noteService = new NoteService({ adapter, events })
 
     this.addRibbonIcon(ICON, "Open Orchard", (_evt) => {

@@ -1,6 +1,6 @@
 import builtins from "builtin-modules"
-import { sveltePlugin } from "./svelte-plugin"
 import { coreAliasPlugin } from "../orchard-core/build-utils/core-alias-plugin"
+import { sveltePlugin } from "./svelte-plugin"
 
 Bun.build({
   entrypoints: ["./src/plugin.ts"],
