@@ -10,11 +10,11 @@
     "experimentalScannerIgnores": ["node_modules", ".git"],
     "ignoreUnknown": true,
     "includes": [
-      "*.jsonc",
-      "*.json",
-      "svelte.config.js",
-      "vite.config.ts",
-      "src/**/*.{ts,svelte,tsx,json,css}"
+      "*.{json,jsonc,js,ts,tsx,css,md}",
+      "packages/*/src/**/*.{ts,tsx,js,json,css,md}",
+
+      "packages/*/*.json",
+      "packages/*/biome.jsonc"
     ]
   },
   "formatter": {
@@ -97,20 +97,6 @@
     "linter": { "enabled": true }
   },
   "overrides": [
-    {
-      "includes": ["**/*.svelte"],
-      "linter": {
-        "rules": {
-          "correctness": {
-            "noUnusedImports": "off",
-            "noUnusedVariables": "off"
-          },
-          "style": {
-            "useConst": "off",
-            "useImportType": "off"
-          }
-        }
-      }
-    }
+
   ]
 }
