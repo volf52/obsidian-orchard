@@ -7,11 +7,7 @@ import {
 } from "@/index"
 
 const c = {
-  green: (s: string) => `\x1b[32m${s}\x1b[0m`,
-  cyan: (s: string) => `\x1b[36m${s}\x1b[0m`,
-  yellow: (s: string) => `\x1b[33m${s}\x1b[0m`,
   magenta: (s: string) => `\x1b[35m${s}\x1b[0m`,
-  red: (s: string) => `\x1b[31m${s}\x1b[0m`,
 }
 
 function banner(title: string) {
@@ -29,6 +25,19 @@ describe("NoteService", () => {
     const read = await svc.read("test.md")
     expect(read?.body).toBe("Hello")
     expect(read?.version).toBe(computeNoteVersion(created.frontmatter, "Hello"))
+  })
+
+  it("hash stability & ordering", () => {
+    banner("hash ordering")
+    const fm1 = { b: 2, a: 1 }
+    const fm2 = { a: 1, b: 2 }
+    const body1 = "Line1\nLine2"
+    const body2 = "Line1\r\nLine2" // CRLF variant
+    const h1 = computeNoteVersion(fm1, body1)
+    const h2 = computeNoteVersion(fm2, body1)
+    const h3 = computeNoteVersion(fm2, body2)
+    expect(h1).toBe(h2)
+    expect(h2).toBe(h3)
   })
 
   it("enforces optimistic concurrency on update", async () => {
@@ -52,6 +61,18 @@ describe("NoteService", () => {
     const n = await svc.create({ id: "a", body: "Body" })
     const updated = await svc.update("a.md", {}, n.version)
     expect(updated.version).toBe(n.version)
+  })
+
+  it("no event on idempotent update", async () => {
+    banner("idempotent no event")
+    const adapter = createMemoryAdapter()
+    const bus = createEventBus()
+    const events: string[] = []
+    bus.subscribe((e) => events.push(e.type))
+    const svc = new NoteService({ adapter, events: bus })
+    const n = await svc.create({ id: "same", body: "Body" })
+    await svc.update("same.md", {}, n.version)
+    expect(events).toEqual(["note.created"]) // no note.updated
   })
 
   it("deletes with version check", async () => {
@@ -108,5 +129,19 @@ describe("NoteService", () => {
     const searchFiltered = await svc.list({ search: "second" })
     expect(searchFiltered.length).toBe(1)
     expect(searchFiltered[0].id).toBe("tagb.md")
+  })
+
+  it("list preserves array/object frontmatter", async () => {
+    banner("list frontmatter parse")
+    const adapter = createMemoryAdapter()
+    const svc = new NoteService({ adapter })
+    await svc.create({ id: "Complex", body: "Hello", tags: ["one", "two"], frontmatter: { meta: { deep: true }, count: 3 } })
+    const listed = await svc.list({ search: "hello" })
+    expect(listed.length).toBe(1)
+    const fm = listed[0].frontmatter as any
+    expect(Array.isArray(listed[0].tags)).toBe(true)
+    expect(listed[0].tags).toEqual(["one", "two"])
+    expect(fm.meta).toEqual({ deep: true })
+    expect(fm.count).toBe(3)
   })
 })
