@@ -1,10 +1,9 @@
-import { Hono } from "hono";
-import { serve } from "@hono/node-server";
+import { createServer, type Server } from "node:http";
 import type { NoteService } from "@orchard/core";
 import { z } from "zod";
-import { McpServer as SdkMcpServer } from "@modelcontextprotocol/sdk/server/mcp";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp";
-import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types";
+import { McpServer as SdkMcpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 
 const colors = {
   reset: "\x1b[0m",
@@ -21,12 +20,12 @@ const log = {
   error: (m: string) => console.error(`❌ ${colors.red(m)}`),
 };
 
+// Minimal MCP HTTP server exposing /health and /mcp (JSON-RPC + SSE)
 export class McpServer {
-  private httpServer: ReturnType<typeof serve> | null = null;
+  private httpServer: Server | null = null;
   private readonly port: number;
   private noteService: NoteService | null;
   private apiKey: string | null;
-  private readonly app = new Hono();
   private running = false;
   private readonly sdk: SdkMcpServer;
   private readonly transport: StreamableHTTPServerTransport;
@@ -43,13 +42,10 @@ export class McpServer {
       version: "0.1.0",
     });
 
-    // register tools with SDK
     this.registerTools();
 
-    // streamable HTTP transport; enable JSON responses for POST convenience
-    this.transport = new StreamableHTTPServerTransport({ enableJsonResponse: true });
-
-    this.configureRoutes();
+    // Streamable transport; JSON responses enabled for simple tool calls over POST
+    this.transport = new StreamableHTTPServerTransport({ enableJsonResponse: true, sessionIdGenerator: () => Math.random().toString(36).slice(2) });
   }
 
   setNoteService(svc: NoteService) { this.noteService = svc; }
@@ -59,17 +55,26 @@ export class McpServer {
     return this.noteService;
   }
 
+  broadcast(event: string, params: Record<string, unknown>) {
+    // Fire-and-forget notification to connected clients (SSE subscribers)
+    try {
+      (this.sdk as any).notify?.(event as any, params);
+    } catch {
+      // ignore
+    }
+  }
+
   private registerTools() {
     // list_notes
     this.sdk.tool(
       "list_notes",
       "List notes (optional tag/search filters). Returns slim metadata.",
-      { tag: z.string().optional(), search: z.string().optional() },
-      async (args) => {
+       { tag: z.string().optional(), search: z.string().optional() },
+      async (args: { tag?: string; search?: string }) => {
         const svc = this.requireService();
         const notes = await svc.list({ tag: args.tag, search: args.search } as any);
         const slim = notes.map((n) => ({ id: n.id, title: n.title, version: n.version }));
-        return { content: [{ type: "json", data: { notes: slim } }] };
+        return { content: [{ type: "text", text: JSON.stringify({ notes: slim }) }] };
       },
     );
 
@@ -77,12 +82,12 @@ export class McpServer {
     this.sdk.tool(
       "get_note",
       "Fetch full note by id.",
-      { id: z.string() },
-      async (args) => {
+       { id: z.string() },
+      async (args: { id: string }) => {
         const svc = this.requireService();
         const note = await svc.read(args.id as any);
         if (!note) throw new McpError(ErrorCode.InvalidParams, "NoteNotFound");
-        return { content: [{ type: "json", data: { note } }] };
+        return { content: [{ type: "text", text: JSON.stringify({ note }) }] };
       },
     );
 
@@ -90,14 +95,14 @@ export class McpServer {
     this.sdk.tool(
       "create_note",
       "Create a note; id normalized + .md appended if missing.",
-      {
+       {
         id: z.string(),
         title: z.string().optional(),
         body: z.string().optional(),
         tags: z.array(z.string()).optional(),
         frontmatter: z.record(z.any()).optional(),
       },
-      async (input) => {
+      async (input: { id: string; title?: string; body?: string; tags?: string[]; frontmatter?: Record<string, unknown> }) => {
         const svc = this.requireService();
         try {
           const created = await svc.create({
@@ -107,7 +112,7 @@ export class McpServer {
             tags: input.tags,
             frontmatter: input.frontmatter as any,
           });
-          return { content: [{ type: "json", data: { note: created } }] };
+          return { content: [{ type: "text", text: JSON.stringify({ note: created }) }] };
         } catch (e) {
           return { content: [{ type: "text", text: (e as Error).message }], isError: true };
         }
@@ -118,7 +123,7 @@ export class McpServer {
     this.sdk.tool(
       "update_note",
       "Update fields of a note with optimistic version.",
-      {
+       {
         id: z.string(),
         version: z.string(),
         title: z.string().optional(),
@@ -126,7 +131,7 @@ export class McpServer {
         tags: z.array(z.string()).optional(),
         frontmatter: z.record(z.any()).optional(),
       },
-      async (input) => {
+      async (input: { id: string; version: string; title?: string; body?: string; tags?: string[]; frontmatter?: Record<string, unknown> }) => {
         const svc = this.requireService();
         try {
           const updated = await svc.update(input.id as any, {
@@ -135,7 +140,7 @@ export class McpServer {
             tags: input.tags,
             frontmatter: input.frontmatter as any,
           }, input.version as any);
-          return { content: [{ type: "json", data: { note: updated } }] };
+          return { content: [{ type: "text", text: JSON.stringify({ note: updated }) }] };
         } catch (e) {
           return { content: [{ type: "text", text: (e as Error).message }], isError: true };
         }
@@ -146,13 +151,13 @@ export class McpServer {
     this.sdk.tool(
       "delete_note",
       "Delete a note by id+version.",
-      { id: z.string(), version: z.string() },
-      async (input) => {
+       { id: z.string(), version: z.string() },
+      async (input: { id: string; version: string }) => {
         const svc = this.requireService();
         try {
           const ok = await svc.delete(input.id as any, input.version as any);
-          if (!ok) return { content: [{ type: "text", text: "NoteNotFound" }], isError: true };
-          return { content: [{ type: "json", data: { ok: true } }] };
+            if (!ok) return { content: [{ type: "text", text: "NoteNotFound" }], isError: true };
+            return { content: [{ type: "text", text: JSON.stringify({ ok: true }) }] };
         } catch (e) {
           return { content: [{ type: "text", text: (e as Error).message }], isError: true };
         }
@@ -167,88 +172,66 @@ export class McpServer {
       async () => {
         const svc = this.requireService();
         const notes = await svc.list({} as any);
-        return { content: [{ type: "json", data: { notes: notes.length, uptimeMs: Date.now(), serverRunning: this.running } }] };
+        return { content: [{ type: "text", text: JSON.stringify({ notes: notes.length, uptimeMs: Date.now(), serverRunning: this.running }) }] };
       },
     );
   }
 
-  private configureRoutes() {
-    this.app.get("/health", (c) => c.json({ ok: true }));
-
-    // Streamable HTTP transport endpoints: we forward GET/POST/DELETE to transport handler
-    this.app.all("/mcp", async (c) => {
-      if (!this.apiKey) return c.json({ error: { code: "ServerNotReady" } }, 503);
-      const auth = c.req.header("authorization") || "";
-      const bearer = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : null;
-      const q = c.req.query("key");
-      const provided = bearer || q || null;
-      if (!provided || provided !== this.apiKey) return c.json({ error: { code: "Unauthorized" } }, 401);
-
-      // Hono provides Request/Response; transport expects Node req/res, so we drop to Node handler
-      // Workaround: Use c.env.incoming? Not available. Instead create a Node-like adapter not ideal; simplest is to bypass and manually use internal handler via fetch semantics.
-      // For now, we respond with 501 directing clients to use raw HTTP server (since full adapter is non-trivial in this context).
-      return c.json({ error: { code: "NotImplemented", message: "Direct /mcp via Hono not yet wired to StreamableHTTPServerTransport" } }, 501);
-    });
+  private authOk(url: URL, headers: Headers): boolean {
+    if (!this.apiKey) return false; // server not ready until key set
+    const auth = headers.get("authorization") || "";
+    const bearer = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : null;
+    const q = url.searchParams.get("key");
+    const provided = bearer || q || null;
+    return !!provided && provided === this.apiKey;
   }
 
   async start(): Promise<void> {
     if (this.running) return;
     this.running = true;
 
-    // Start transport (no-op) then connect SDK (needs a transport)
-    await this.transport.start();
+    // StreamableHTTPServerTransport start is handled by sdk.connect
+    await this.sdk.connect(this.transport as any);
 
-    // We host the raw transport handlers under /mcp internally by accessing Node req/res via server's fetch callback.
-    // So we create a custom fetch that intercepts /mcp and passes to transport.handleRequest.
-    const originalFetch = this.app.fetch;
-    const transport = this.transport; // capture
-    const sdk = this.sdk;
+    this.httpServer = createServer((req, res) => {
+      const url = new URL(req.url || "/", `http://localhost:${this.port}`);
 
-    // Ensure tool handlers registered
-    (sdk as any).setToolRequestHandlers?.();
-
-    const wrappedFetch: typeof originalFetch = async (req, env, execCtx) => {
-      const url = new URL(req.url);
-      if (url.pathname === "/mcp") {
-        // We need Node's IncomingMessage/ServerResponse; Bun's fetch provides Request only.
-        // Fallback: accept only POST initialize + tool requests via transport JSON mode not available here; thus we manually parse and dispatch using sdk.server.
-        // For simplicity: emulate minimal subset by forwarding JSON-RPC to sdk.server.request
-        try {
-          const body = req.method === "POST" ? await req.json() : null;
-          if (req.method === "POST") {
-            const response = await (sdk as any).server.handleRequest(body); // internal API (not public) may differ
-            return new Response(JSON.stringify(response), { status: 200, headers: { "Content-Type": "application/json" } });
-          }
-          if (req.method === "GET") {
-            return new Response(JSON.stringify({ error: { code: "MethodNotAllowed" } }), { status: 405 });
-          }
-          return new Response(JSON.stringify({ error: { code: "MethodNotAllowed" } }), { status: 405 });
-        } catch (e) {
-          return new Response(JSON.stringify({ error: { code: "InternalError", message: (e as Error).message } }), { status: 500 });
-        }
+      if (url.pathname === "/health") {
+        res.statusCode = 200;
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify({ ok: true }));
+        return;
       }
-      return originalFetch(req, env, execCtx);
-    };
 
-    this.httpServer = serve({
-      fetch: wrappedFetch,
-      port: this.port,
-      hostname: "0.0.0.0",
-    }, (info) => {
-      log.start(`MCP server (SDK) listening http://localhost:${info.port}`);
-      log.info(`Health: http://localhost:${info.port}/health`);
-      log.info(`MCP: http://localhost:${info.port}/mcp`);
+      if (url.pathname === "/mcp") {
+        if (!this.authOk(url, new Headers(req.headers as any))) {
+          res.statusCode = this.apiKey ? 401 : 503;
+          res.setHeader("Content-Type", "application/json");
+          res.end(JSON.stringify({ error: { code: this.apiKey ? "Unauthorized" : "ServerNotReady" } }));
+          return;
+        }
+        // Delegate to SDK transport (handles JSON-RPC + SSE if Accept header)
+        this.transport.handleRequest(req, res);
+        return;
+      }
+
+      res.statusCode = 404;
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify({ error: { code: "NotFound" } }));
     });
 
-    // Connect SDK to transport placeholder (no actual underlying streams yet)
-    await this.sdk.connect(this.transport as any);
+    this.httpServer.listen(this.port, "0.0.0.0", () => {
+      log.start(`MCP server (SDK) listening http://localhost:${this.port}`);
+      log.info(`Health: http://localhost:${this.port}/health`);
+      log.info(`MCP: http://localhost:${this.port}/mcp`);
+    });
   }
 
   async stop(): Promise<void> {
     if (!this.running) return;
     this.running = false;
     await this.sdk.close();
-    this.httpServer?.close();
+    await new Promise<void>((resolve) => this.httpServer?.close(() => resolve()));
     this.httpServer = null;
     log.stop("MCP server stopped");
   }

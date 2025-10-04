@@ -1,6 +1,9 @@
 import { Plugin, Notice } from "obsidian"
 import { McpServer } from "./mcp-server"
 
+// @ts-ignore ambient for Obsidian environment
+declare const window: any;
+
 interface McpSettings {
   enabled: boolean
   apiKey: string

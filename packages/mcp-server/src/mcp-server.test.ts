@@ -9,14 +9,28 @@ interface RpcResult {
   error?: { code: number; message: string };
 }
 
+let sessionId: string | null = null;
+
 async function rpcCall(key: string, method: string, params: any) {
+  const headers: Record<string, string> = { "Content-Type": "application/json", Accept: "application/json, text/event-stream" };
+  if (sessionId) {
+    headers["Mcp-Session-Id"] = sessionId;
+    headers["Mcp-Protocol-Version"] = "2024-11-05";
+  }
   const res = await fetch(`http://localhost:27126/mcp?key=${encodeURIComponent(key)}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({ jsonrpc: "2.0", id: Math.floor(Math.random() * 1e9), method, params }),
   });
   const data = (await res.json()) as RpcResult;
+  // (diagnostics removed)
+  const sid = res.headers.get("mcp-session-id");
+  if (!sessionId && sid) sessionId = sid;
   return { status: res.status, body: data };
+}
+
+async function initialize(key: string) {
+  return rpcCall(key, "initialize", { protocolVersion: "2024-11-05", capabilities: {}, clientInfo: { name: "orchard-tests", version: "0.0.0" } });
 }
 
 function extractJsonContent(result: any): any {
@@ -24,6 +38,10 @@ function extractJsonContent(result: any): any {
   const content = result.content ?? [];
   const jsonPart = content.find((c: any) => c.type === "json");
   if (jsonPart) return jsonPart.data;
+  const textPart = content.find((c: any) => c.type === "text" && typeof c.text === "string" && c.text.trim().startsWith("{"));
+  if (textPart) {
+    try { return JSON.parse(textPart.text); } catch { /* ignore */ }
+  }
   return content;
 }
 
@@ -41,7 +59,7 @@ async function listTools(key: string) {
   return rpcCall(key, "tools/list", {});
 }
 
-describe("McpServer (MCP JSON-RPC)", () => {
+describe("McpServer (MCP SDK HTTP Transport)", () => {
   let server: McpServer;
   let svc: NoteService;
   let testKey: string;
@@ -61,17 +79,21 @@ describe("McpServer (MCP JSON-RPC)", () => {
   it("health endpoint responds", async () => {
     const res = await fetch("http://localhost:27126/health");
     expect(res.status).toBe(200);
-    const data = await res.json();
+    const data: any = await res.json();
     expect(data.ok).toBe(true);
   });
 
-  it("lists tools", async () => {
+  it("initializes then lists tools", async () => {
+    const init = await initialize(testKey);
+
+    expect(init.body.result?.protocolVersion || init.body.result?.serverInfo).toBeTruthy();
     const { body } = await listTools(testKey);
     expect(body.result?.tools?.some((t: any) => t.name === "create_note")).toBe(true);
   });
 
   it("creates notes and lists via list_notes filters", async () => {
     const c = await callTool(testKey, "create_note", { id: "Alpha", body: "Hello", tags: ["tagA"] });
+
     const createdData = extractJsonContent(c.body.result);
     expect(createdData.note.id).toBe("alpha.md");
 
