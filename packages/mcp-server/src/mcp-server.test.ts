@@ -2,26 +2,29 @@ import { describe, expect, it, beforeAll, afterAll } from "bun:test"
 import { McpServer } from "./mcp-server"
 import { NoteService, createMemoryAdapter } from "@orchard/core"
 
-// Helper to fetch JSON
-async function j(method: string, path: string, body?: unknown) {
-  const res = await fetch(`http://localhost:27126${path}` , {
-    method,
-    headers: body ? { "Content-Type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
-  })
-  const txt = await res.text()
-  let parsed: any
-  try { parsed = JSON.parse(txt) } catch { parsed = txt }
-  return { status: res.status, body: parsed }
-}
-
 describe("McpServer", () => {
   let server: McpServer
   let svc: NoteService
+  let testKey: string
+
+  // Helper to fetch JSON (auto attach key after testKey assigned)
+  async function j(method: string, path: string, body?: unknown, key?: string) {
+    const url = `http://localhost:27126${path}${path.includes("?") ? "&" : "?"}key=${encodeURIComponent(key ?? testKey)}`
+    const res = await fetch(url , {
+      method,
+      headers: body ? { "Content-Type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+    })
+    const txt = await res.text()
+    let parsed: any
+    try { parsed = JSON.parse(txt) } catch { parsed = txt }
+    return { status: res.status, body: parsed }
+  }
 
   beforeAll(async () => {
     svc = new NoteService({ adapter: createMemoryAdapter() })
-    server = new McpServer({ noteService: svc })
+    testKey = "testkey1234567890"
+    server = new McpServer({ noteService: svc, apiKey: testKey })
     await server.start()
     // tiny delay to ensure listening
     await new Promise((r) => setTimeout(r, 50))
@@ -36,6 +39,14 @@ describe("McpServer", () => {
     expect(res.status).toBe(200)
     const data = await res.json()
     expect(data.ok).toBe(true)
+  })
+
+  it("rejects unauthorized access", async () => {
+    // manual fetch without key
+    const res = await fetch("http://localhost:27126/mcp/notes")
+    expect(res.status).toBe(401)
+    const bad = await res.json()
+    expect(bad.error).toBe("Unauthorized")
   })
 
   it("creates and lists notes", async () => {
@@ -53,6 +64,11 @@ describe("McpServer", () => {
     const r = await j("GET", "/mcp/notes/alpha.md")
     expect(r.status).toBe(200)
     expect(r.body.note.body).toBe("Hello")
+  })
+
+  it("denies wrong key", async () => {
+    const wrong = await j("GET", "/mcp/notes/alpha.md", undefined, "badkey")
+    expect(wrong.status).toBe(401)
   })
 
   it("updates a note and enforces version", async () => {
@@ -82,7 +98,7 @@ describe("McpServer", () => {
   it("SSE connection emits ready + receives broadcast", async () => {
     const events: string[] = []
     const controller = new AbortController()
-    const resp = await fetch("http://localhost:27126/mcp/events", { signal: controller.signal })
+    const resp = await fetch(`http://localhost:27126/mcp/events?key=${encodeURIComponent(testKey)}`, { signal: controller.signal })
     const reader = resp.body!.getReader()
 
     // collect a couple of chunks

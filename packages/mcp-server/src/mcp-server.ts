@@ -33,21 +33,34 @@ export class McpServer {
   private server: ReturnType<typeof serve> | null = null
   private readonly port: number
   private noteService: NoteService | null
+  private apiKey: string | null
   private readonly app = new Hono()
   private readonly clients = new Set<SseClient>()
   private running = false
 
-  constructor(opts: { port?: number; noteService?: NoteService } = {}) {
+  constructor(opts: { port?: number; noteService?: NoteService; apiKey?: string } = {}) {
     this.port = opts.port ?? 27126
     this.noteService = opts.noteService ?? null
+    this.apiKey = opts.apiKey ?? null
     this.configureRoutes()
   }
 
   setNoteService(svc: NoteService) { this.noteService = svc }
 
   private configureRoutes() {
-    // Health
+    // Health (no auth)
     this.app.get("/health", (c) => c.json({ ok: true }))
+
+    // Auth middleware for /mcp/* (except health)
+    this.app.use("/mcp/*", async (c, next) => {
+      if (!this.apiKey) return c.json({ error: "ServerNotReady" }, 503)
+      const auth = c.req.header("authorization") || ""
+      const bearer = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : null
+      const q = c.req.query("key")
+      const provided = bearer || q || null
+      if (!provided || provided !== this.apiKey) return c.json({ error: "Unauthorized" }, 401)
+      await next()
+    })
 
     // List notes
     this.app.get("/mcp/notes", async (c) => {
@@ -164,11 +177,17 @@ export class McpServer {
       port: this.port,
       hostname: "0.0.0.0",
     }, (info) => {
-      log.start(`MCP server listening http://localhost:${info.port}`)
-      log.info(`Health: http://localhost:${info.port}/health`)
-      log.info(`Events: http://localhost:${info.port}/mcp/events`)
-    })
-  }
+       log.start(`MCP server listening http://localhost:${info.port}`)
+       log.info(`Health: http://localhost:${info.port}/health`)
+       if (this.apiKey) {
+         const tail = this.apiKey.slice(-6)
+         log.info(`Events: http://localhost:${info.port}/mcp/events?key=***${tail}`)
+       } else {
+         log.info(`Events: http://localhost:${info.port}/mcp/events (no-key)`)
+       }
+     })
+   }
+
 
   async stop(): Promise<void> {
     if (!this.running) return
