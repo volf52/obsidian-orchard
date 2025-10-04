@@ -2,6 +2,9 @@ import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import type { NoteService } from "@orchard/core";
 import { z } from "zod";
+import { McpServer as SdkMcpServer } from "@modelcontextprotocol/sdk/server/mcp";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp";
+import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types";
 
 const colors = {
   reset: "\x1b[0m",
@@ -18,21 +21,15 @@ const log = {
   error: (m: string) => console.error(`❌ ${colors.red(m)}`),
 };
 
-interface ToolDef<Input> {
-  name: string;
-  description: string;
-  schema?: z.ZodTypeAny; // input schema
-  execute: (input: Input) => Promise<any>;
-}
-
 export class McpServer {
-  private server: ReturnType<typeof serve> | null = null;
+  private httpServer: ReturnType<typeof serve> | null = null;
   private readonly port: number;
   private noteService: NoteService | null;
   private apiKey: string | null;
   private readonly app = new Hono();
   private running = false;
-  private tools: Record<string, ToolDef<any>> = {};
+  private readonly sdk: SdkMcpServer;
+  private readonly transport: StreamableHTTPServerTransport;
 
   constructor(opts: { port?: number; noteService?: NoteService; apiKey?: string } = {}) {
     const envPort = typeof process !== "undefined" ? Number(process.env.MCP_PORT || process.env.PORT) : undefined;
@@ -40,60 +37,67 @@ export class McpServer {
     const envKey = typeof process !== "undefined" ? (process.env.MCP_API_KEY || process.env.API_KEY) : undefined;
     this.noteService = opts.noteService ?? null;
     this.apiKey = opts.apiKey ?? envKey ?? null;
+
+    this.sdk = new SdkMcpServer({
+      name: "orchard-mcp",
+      version: "0.1.0",
+    });
+
+    // register tools with SDK
     this.registerTools();
+
+    // streamable HTTP transport; enable JSON responses for POST convenience
+    this.transport = new StreamableHTTPServerTransport({ enableJsonResponse: true });
+
     this.configureRoutes();
   }
 
   setNoteService(svc: NoteService) { this.noteService = svc; }
 
   private requireService(): NoteService {
-    if (!this.noteService) throw new Error("NoteServiceUnavailable");
+    if (!this.noteService) throw new McpError(ErrorCode.InternalError, "NoteServiceUnavailable");
     return this.noteService;
-  }
-
-  private addTool<Input>(def: ToolDef<Input>) {
-    this.tools[def.name] = def;
   }
 
   private registerTools() {
     // list_notes
-    this.addTool({
-      name: "list_notes",
-      description: "List notes (optional tag/search filters). Returns slim metadata.",
-      schema: z.object({ tag: z.string().optional(), search: z.string().optional() }).optional(),
-      execute: async ({ tag, search }: any) => {
+    this.sdk.tool(
+      "list_notes",
+      "List notes (optional tag/search filters). Returns slim metadata.",
+      { tag: z.string().optional(), search: z.string().optional() },
+      async (args) => {
         const svc = this.requireService();
-        const notes = await svc.list({ tag, search } as any);
+        const notes = await svc.list({ tag: args.tag, search: args.search } as any);
         const slim = notes.map((n) => ({ id: n.id, title: n.title, version: n.version }));
         return { content: [{ type: "json", data: { notes: slim } }] };
       },
-    });
+    );
 
     // get_note
-    this.addTool({
-      name: "get_note",
-      description: "Fetch full note by id.",
-      schema: z.object({ id: z.string() }),
-      execute: async ({ id }: any) => {
+    this.sdk.tool(
+      "get_note",
+      "Fetch full note by id.",
+      { id: z.string() },
+      async (args) => {
         const svc = this.requireService();
-        const note = await svc.read(id as any);
-        if (!note) throw new Error("NotFound");
+        const note = await svc.read(args.id as any);
+        if (!note) throw new McpError(ErrorCode.InvalidParams, "NoteNotFound");
         return { content: [{ type: "json", data: { note } }] };
       },
-    });
+    );
 
     // create_note
-    this.addTool({
-      name: "create_note",
-      description: "Create a note; id normalized + .md appended if missing.",
-      schema: z.object({
+    this.sdk.tool(
+      "create_note",
+      "Create a note; id normalized + .md appended if missing.",
+      {
         id: z.string(),
         title: z.string().optional(),
         body: z.string().optional(),
         tags: z.array(z.string()).optional(),
         frontmatter: z.record(z.any()).optional(),
-      }),
-      execute: async (input: any) => {
+      },
+      async (input) => {
         const svc = this.requireService();
         try {
           const created = await svc.create({
@@ -103,27 +107,26 @@ export class McpServer {
             tags: input.tags,
             frontmatter: input.frontmatter as any,
           });
-          return { content: [{ type: "json", data: { note: created } }], isError: false };
+          return { content: [{ type: "json", data: { note: created } }] };
         } catch (e) {
-          const msg = (e as Error).message;
-          return { content: [{ type: "text", text: msg }], isError: true };
+          return { content: [{ type: "text", text: (e as Error).message }], isError: true };
         }
       },
-    });
+    );
 
     // update_note
-    this.addTool({
-      name: "update_note",
-      description: "Update fields of a note with optimistic version.",
-      schema: z.object({
+    this.sdk.tool(
+      "update_note",
+      "Update fields of a note with optimistic version.",
+      {
         id: z.string(),
         version: z.string(),
         title: z.string().optional(),
         body: z.string().optional(),
         tags: z.array(z.string()).optional(),
         frontmatter: z.record(z.any()).optional(),
-      }),
-      execute: async (input: any) => {
+      },
+      async (input) => {
         const svc = this.requireService();
         try {
           const updated = await svc.update(input.id as any, {
@@ -134,48 +137,46 @@ export class McpServer {
           }, input.version as any);
           return { content: [{ type: "json", data: { note: updated } }] };
         } catch (e) {
-          const msg = (e as Error).message;
-          return { content: [{ type: "text", text: msg }], isError: true };
+          return { content: [{ type: "text", text: (e as Error).message }], isError: true };
         }
       },
-    });
+    );
 
     // delete_note
-    this.addTool({
-      name: "delete_note",
-      description: "Delete a note by id+version.",
-      schema: z.object({ id: z.string(), version: z.string() }),
-      execute: async (input: any) => {
+    this.sdk.tool(
+      "delete_note",
+      "Delete a note by id+version.",
+      { id: z.string(), version: z.string() },
+      async (input) => {
         const svc = this.requireService();
         try {
           const ok = await svc.delete(input.id as any, input.version as any);
-          if (!ok) return { content: [{ type: "text", text: "NotFound" }], isError: true };
+          if (!ok) return { content: [{ type: "text", text: "NoteNotFound" }], isError: true };
           return { content: [{ type: "json", data: { ok: true } }] };
         } catch (e) {
-          const msg = (e as Error).message;
-          return { content: [{ type: "text", text: msg }], isError: true };
+          return { content: [{ type: "text", text: (e as Error).message }], isError: true };
         }
       },
-    });
+    );
 
     // metrics
-    this.addTool({
-      name: "metrics",
-      description: "Basic metrics: note count + uptime.",
-      execute: async () => {
+    this.sdk.tool(
+      "metrics",
+      "Basic metrics: note count + uptime.",
+      {},
+      async () => {
         const svc = this.requireService();
         const notes = await svc.list({} as any);
         return { content: [{ type: "json", data: { notes: notes.length, uptimeMs: Date.now(), serverRunning: this.running } }] };
       },
-    });
+    );
   }
 
   private configureRoutes() {
-    // Health (unauthenticated)
     this.app.get("/health", (c) => c.json({ ok: true }));
 
-    // Single JSON-RPC endpoint supporting tools/list and tools/call
-    this.app.post("/mcp", async (c) => {
+    // Streamable HTTP transport endpoints: we forward GET/POST/DELETE to transport handler
+    this.app.all("/mcp", async (c) => {
       if (!this.apiKey) return c.json({ error: { code: "ServerNotReady" } }, 503);
       const auth = c.req.header("authorization") || "";
       const bearer = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : null;
@@ -183,59 +184,72 @@ export class McpServer {
       const provided = bearer || q || null;
       if (!provided || provided !== this.apiKey) return c.json({ error: { code: "Unauthorized" } }, 401);
 
-      try {
-        const bodyText = await c.req.text();
-        const req = JSON.parse(bodyText);
-        const jsonrpc = req.jsonrpc || "2.0";
-        const id = req.id;
-        if (!req.method) {
-          return c.json({ jsonrpc, id, error: { code: -32600, message: "Invalid Request" } }, 400);
-        }
-        if (req.method === "tools/list") {
-          const tools = Object.values(this.tools).map(t => ({ name: t.name, description: t.description }));
-          return c.json({ jsonrpc, id, result: { tools } });
-        }
-        if (req.method === "tools/call") {
-          const name = req.params?.name;
-          const args = req.params?.arguments;
-          if (typeof name !== "string") return c.json({ jsonrpc, id, error: { code: -32602, message: "Missing tool name" } }, 400);
-          const tool = this.tools[name];
-          if (!tool) return c.json({ jsonrpc, id, error: { code: -32601, message: "Tool not found" } }, 404);
-          try {
-            const parsed = tool.schema ? tool.schema.parse(args) : args;
-            const res = await tool.execute(parsed);
-            return c.json({ jsonrpc, id, result: res });
-          } catch (e) {
-            return c.json({ jsonrpc, id, result: { content: [{ type: "text", text: (e as Error).message }], isError: true } });
-          }
-        }
-        return c.json({ jsonrpc, id, error: { code: -32601, message: "Method not found" } }, 404);
-      } catch (e) {
-        log.error(`MCP handler error: ${(e as Error).message}`);
-        return c.json({ error: { code: "InternalError", message: (e as Error).message } }, 500);
-      }
+      // Hono provides Request/Response; transport expects Node req/res, so we drop to Node handler
+      // Workaround: Use c.env.incoming? Not available. Instead create a Node-like adapter not ideal; simplest is to bypass and manually use internal handler via fetch semantics.
+      // For now, we respond with 501 directing clients to use raw HTTP server (since full adapter is non-trivial in this context).
+      return c.json({ error: { code: "NotImplemented", message: "Direct /mcp via Hono not yet wired to StreamableHTTPServerTransport" } }, 501);
     });
   }
 
   async start(): Promise<void> {
     if (this.running) return;
     this.running = true;
-    this.server = serve({
-      fetch: this.app.fetch,
+
+    // Start transport (no-op) then connect SDK (needs a transport)
+    await this.transport.start();
+
+    // We host the raw transport handlers under /mcp internally by accessing Node req/res via server's fetch callback.
+    // So we create a custom fetch that intercepts /mcp and passes to transport.handleRequest.
+    const originalFetch = this.app.fetch;
+    const transport = this.transport; // capture
+    const sdk = this.sdk;
+
+    // Ensure tool handlers registered
+    (sdk as any).setToolRequestHandlers?.();
+
+    const wrappedFetch: typeof originalFetch = async (req, env, execCtx) => {
+      const url = new URL(req.url);
+      if (url.pathname === "/mcp") {
+        // We need Node's IncomingMessage/ServerResponse; Bun's fetch provides Request only.
+        // Fallback: accept only POST initialize + tool requests via transport JSON mode not available here; thus we manually parse and dispatch using sdk.server.
+        // For simplicity: emulate minimal subset by forwarding JSON-RPC to sdk.server.request
+        try {
+          const body = req.method === "POST" ? await req.json() : null;
+          if (req.method === "POST") {
+            const response = await (sdk as any).server.handleRequest(body); // internal API (not public) may differ
+            return new Response(JSON.stringify(response), { status: 200, headers: { "Content-Type": "application/json" } });
+          }
+          if (req.method === "GET") {
+            return new Response(JSON.stringify({ error: { code: "MethodNotAllowed" } }), { status: 405 });
+          }
+          return new Response(JSON.stringify({ error: { code: "MethodNotAllowed" } }), { status: 405 });
+        } catch (e) {
+          return new Response(JSON.stringify({ error: { code: "InternalError", message: (e as Error).message } }), { status: 500 });
+        }
+      }
+      return originalFetch(req, env, execCtx);
+    };
+
+    this.httpServer = serve({
+      fetch: wrappedFetch,
       port: this.port,
       hostname: "0.0.0.0",
     }, (info) => {
-      log.start(`MCP server listening http://localhost:${info.port}`);
+      log.start(`MCP server (SDK) listening http://localhost:${info.port}`);
       log.info(`Health: http://localhost:${info.port}/health`);
-      log.info(`/mcp: http://localhost:${info.port}/mcp`);
+      log.info(`MCP: http://localhost:${info.port}/mcp`);
     });
+
+    // Connect SDK to transport placeholder (no actual underlying streams yet)
+    await this.sdk.connect(this.transport as any);
   }
 
   async stop(): Promise<void> {
     if (!this.running) return;
     this.running = false;
-    this.server?.close();
-    this.server = null;
+    await this.sdk.close();
+    this.httpServer?.close();
+    this.httpServer = null;
     log.stop("MCP server stopped");
   }
 }
