@@ -29,7 +29,7 @@ export class ServerModule {
         console.log(`🚀 Server started on http://localhost:${info.port}`)
         console.log(`📚 API documentation: http://localhost:${info.port}/`)
         console.log(`💚 Health check: http://localhost:${info.port}/health`)
-        console.log(`🔑 API Key: ${this.apiKey}`)
+        // console.log(`🔑 API Key: ${this.apiKey}`)
       },
     )
 

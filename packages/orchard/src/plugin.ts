@@ -1,6 +1,8 @@
+import { createEventBus, NoteService } from "@orchard/core"
 import { type Command, Plugin } from "obsidian"
 import { ICON, ORCHAR_RSB_VIEW_TYPE } from "@/constants"
 import RightSidebarView from "@/right-sidebar-view"
+import { createObsidianVaultAdapter } from "@/services/note-adapter"
 import OrchardSettingsTab, { DEFAULT_SETTINGS } from "@/settings"
 import "./styles.css"
 import "./components/svelte.css"
@@ -21,6 +23,8 @@ class Orchard extends Plugin {
   videoModule!: VideoModule
   transcriptionModule!: TranscriptionModule
 
+  noteService!: NoteService
+
   override async onload(): Promise<void> {
     await this.loadSettings()
 
@@ -35,6 +39,11 @@ class Orchard extends Plugin {
       this.settings,
       this.services,
     )
+
+    // Core note service wiring
+    const adapter = createObsidianVaultAdapter(this.app.vault)
+    const events = createEventBus()
+    this.noteService = new NoteService({ adapter, events })
 
     this.addRibbonIcon(ICON, "Open Orchard", (_evt) => {
       this.activateView()
@@ -57,6 +66,35 @@ class Orchard extends Plugin {
         id: "orchard-open",
         name: "Open Orchard",
         callback: () => this.activateView(),
+      },
+      {
+        id: "orchard-create-test-note",
+        name: "Create Test Orchard Note",
+        callback: async () => {
+          try {
+            const note = await this.noteService.create({
+              id: "Orchard Test",
+              body: "Hello from Orchard core",
+            })
+            console.log("Created test note", note.id)
+          } catch (err) {
+            console.error("Failed to create test note", err)
+          }
+        },
+      },
+      {
+        id: "orchard-list-notes-log",
+        name: "List Orchard Notes (log)",
+        callback: async () => {
+          const notes = await this.noteService.list()
+          console.log(
+            "Orchard notes:",
+            notes.map((n: { id: string; version: string }) => ({
+              id: n.id,
+              v: n.version.slice(0, 8),
+            })),
+          )
+        },
       },
     ]
 

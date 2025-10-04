@@ -48,8 +48,9 @@ export default class OrchardServerPlugin extends Plugin {
       id: "orchard-server-show-apikey",
       name: "Show Server API Key",
       callback: () => {
-        new Notice(`Server API Key: ${this.settings.apiKey}`)
-        console.log("Current Server API Key:", this.settings.apiKey)
+        const msg = ` API 🔑: ${this.settings.apiKey}`
+        new Notice(`Server ${msg}`)
+        console.log(msg)
 
         // COpy to clipboard
         navigator.clipboard
@@ -63,11 +64,6 @@ export default class OrchardServerPlugin extends Plugin {
           })
       },
     })
-
-    console.log(
-      "Orchard Server Plugin loaded with API Key:",
-      this.settings.apiKey,
-    )
   }
 
   override async onunload() {

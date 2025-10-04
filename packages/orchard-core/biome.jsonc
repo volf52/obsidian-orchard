@@ -9,7 +9,7 @@
   "files": {
     "experimentalScannerIgnores": ["node_modules", ".git"],
     "ignoreUnknown": true,
-    "includes": ["*.jsonc", "*.json", "./*.ts", "./src/**/*.{ts,json,css}"]
+    "includes": ["*.jsonc", "*.json", "./*.ts", "src/**/*.{ts,json,css}"]
   },
   "formatter": {
     "bracketSameLine": true,

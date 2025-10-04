@@ -17,7 +17,7 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noImplicitAny": true,
-    "importHelpers": true,
+
     "isolatedModules": true,
     "strictNullChecks": true,
     // "checkJs": false,
@@ -31,8 +31,10 @@
       }
     ],
     "baseUrl": ".",
+    "lib": ["DOM", "ES2022"],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@orchard/core": ["../orchard-core/src/index.ts"]
     }
   },
   "include": [

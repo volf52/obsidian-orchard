@@ -1,3 +1,3 @@
 #:schema https://json.schemastore.org/bunfig.json
 
-preload = ['./svelte-preload.ts']
+preload = ['./packages/orchard/svelte-preload.ts']

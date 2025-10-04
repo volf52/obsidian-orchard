@@ -40,7 +40,10 @@ class VideoModule {
     const svelteModal = mount(AddVideoModal, {
       target: m.contentEl,
       props: {
-        onSubmit: async (value, errFunc) => {
+        onSubmit: async (
+          value: string,
+          errFunc: (value: string, msg: string) => void,
+        ) => {
           m.disableClose()
           const videoId = extractYtId(value)
           if (videoId === null) {
