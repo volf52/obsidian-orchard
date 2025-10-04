@@ -60,18 +60,7 @@ export function extractJsonContent(result: any): any {
   if (!result) return undefined;
   const content = result.content ?? [];
   const jsonPart = content.find((c: any) => c.type === "json");
-  if (jsonPart) return jsonPart.data;
-  const textPart = content.find(
-    (c: any) => c.type === "text" && typeof c.text === "string" && c.text.trim().startsWith("{")
-  );
-  if (textPart) {
-    try {
-      return JSON.parse(textPart.text);
-    } catch {
-      // ignore
-    }
-  }
-  return content;
+  return jsonPart ? jsonPart.data : content;
 }
 
 export function isErrorResult(result: any): boolean {

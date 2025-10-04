@@ -74,7 +74,7 @@ export class McpServer {
         const svc = this.requireService();
         const notes = await svc.list({ tag: args.tag, search: args.search } as any);
         const slim = notes.map((n) => ({ id: n.id, title: n.title, version: n.version }));
-        return { content: [{ type: "text", text: JSON.stringify({ notes: slim }) }] };
+        return { content: [{ type: "json", data: { notes: slim } }] };
       },
     );
 
@@ -87,7 +87,7 @@ export class McpServer {
         const svc = this.requireService();
         const note = await svc.read(args.id as any);
         if (!note) throw new McpError(ErrorCode.InvalidParams, "NoteNotFound");
-        return { content: [{ type: "text", text: JSON.stringify({ note }) }] };
+        return { content: [{ type: "json", data: { note } }] };
       },
     );
 
@@ -112,7 +112,7 @@ export class McpServer {
             tags: input.tags,
             frontmatter: input.frontmatter as any,
           });
-          return { content: [{ type: "text", text: JSON.stringify({ note: created }) }] };
+          return { content: [{ type: "json", data: { note: created } }] };
         } catch (e) {
           return { content: [{ type: "text", text: (e as Error).message }], isError: true };
         }
@@ -140,7 +140,7 @@ export class McpServer {
             tags: input.tags,
             frontmatter: input.frontmatter as any,
           }, input.version as any);
-          return { content: [{ type: "text", text: JSON.stringify({ note: updated }) }] };
+          return { content: [{ type: "json", data: { note: updated } }] };
         } catch (e) {
           return { content: [{ type: "text", text: (e as Error).message }], isError: true };
         }
@@ -157,7 +157,7 @@ export class McpServer {
         try {
           const ok = await svc.delete(input.id as any, input.version as any);
             if (!ok) return { content: [{ type: "text", text: "NoteNotFound" }], isError: true };
-            return { content: [{ type: "text", text: JSON.stringify({ ok: true }) }] };
+            return { content: [{ type: "json", data: { ok: true } }] };
         } catch (e) {
           return { content: [{ type: "text", text: (e as Error).message }], isError: true };
         }
@@ -172,7 +172,7 @@ export class McpServer {
       async () => {
         const svc = this.requireService();
         const notes = await svc.list({} as any);
-        return { content: [{ type: "text", text: JSON.stringify({ notes: notes.length, uptimeMs: Date.now(), serverRunning: this.running }) }] };
+        return { content: [{ type: "json", data: { notes: notes.length, uptimeMs: Date.now(), serverRunning: this.running } }] };
       },
     );
   }
