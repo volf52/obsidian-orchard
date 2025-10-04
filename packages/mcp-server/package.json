@@ -9,7 +9,7 @@
     "lint": "biome check src",
     "lint:fix": "biome check src --write --unsafe",
     "fmt": "biome format src --write",
-    "test": "echo \"No tests yet\"",
+    "test": "bun test src/mcp-server.test.ts",
     "clean": "rm -rf dist"
   },
   "keywords": ["obsidian", "plugin", "mcp", "orchard"],
@@ -27,7 +27,6 @@
       "obsidian": "^1.10.0",
       "hono": "^4.9.9",
       "@hono/node-server": "^1.19.5",
-      "@modelcontextprotocol/sdk": "^1.1.0",
       "zod": "^3.23.8"
     }
 }
