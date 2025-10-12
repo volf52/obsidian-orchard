@@ -27,6 +27,7 @@ export class McpServer {
   private noteService: NoteService | null;
   private apiKey: string | null;
   private running = false;
+  private startedAt: number | null = null;
   private readonly sdk: SdkMcpServer;
   private readonly transport: StreamableHTTPServerTransport;
   setApiKey(key: string) { this.apiKey = key; }
@@ -201,7 +202,8 @@ export class McpServer {
       async () => {
         const svc = this.requireService();
         const notes = await svc.list({} as any);
-        return { content: [{ type: "text", text: JSON.stringify({ notes: notes.length, uptimeMs: Date.now(), serverRunning: this.running }) }] };
+        const uptimeMs = this.startedAt ? Date.now() - this.startedAt : 0;
+        return { content: [{ type: "text", text: JSON.stringify({ notes: notes.length, uptimeMs, serverRunning: this.running }) }] };
       },
     );
   }
@@ -309,6 +311,7 @@ export class McpServer {
     });
 
     this.httpServer.listen(this.port, "0.0.0.0", () => {
+      this.startedAt = Date.now();
       log.start(`MCP server (SDK) listening http://localhost:${this.port}`);
       log.info(`Health: http://localhost:${this.port}/health`);
       log.info(`MCP: http://localhost:${this.port}/mcp`);
@@ -321,6 +324,7 @@ export class McpServer {
     await this.sdk.close();
     await new Promise<void>((resolve) => this.httpServer?.close(() => resolve()));
     this.httpServer = null;
+    this.startedAt = null;
     log.stop("MCP server stopped");
   }
 }
