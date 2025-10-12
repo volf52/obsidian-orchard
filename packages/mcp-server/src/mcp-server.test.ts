@@ -125,10 +125,19 @@ describe("McpServer (MCP SDK HTTP Transport)", () => {
   });
 
   it("metrics tool returns counts", async () => {
-    const m = await callTool(testKey, "metrics", {});
-    const mData = extractJsonContent(m.body.result);
-    expect(typeof mData.notes).toBe("number");
-    expect(typeof mData.uptimeMs).toBe("number");
+    const first = await callTool(testKey, "metrics", {});
+    const firstData = extractJsonContent(first.body.result);
+    expect(typeof firstData.notes).toBe("number");
+    expect(typeof firstData.uptimeMs).toBe("number");
+    expect(firstData.uptimeMs).toBeGreaterThanOrEqual(0);
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    const second = await callTool(testKey, "metrics", {});
+    const secondData = extractJsonContent(second.body.result);
+    expect(typeof secondData.notes).toBe("number");
+    expect(typeof secondData.uptimeMs).toBe("number");
+    expect(secondData.uptimeMs).toBeGreaterThanOrEqual(firstData.uptimeMs);
   });
 
   it("re-initialization returns either error or same protocolVersion", async () => {
