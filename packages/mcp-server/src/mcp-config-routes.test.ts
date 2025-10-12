@@ -38,6 +38,10 @@ describe("McpServer config routes", () => {
   it("rotates api key via rotate flag and rejects old key", async () => {
     const rotate = await post("http://localhost:27126/config/key", { rotate: true }, key);
     expect(rotate.status).toBe(200);
+    const rotatedKey = (server as any).apiKey as string | null;
+    expect(typeof rotatedKey).toBe("string");
+    expect(rotatedKey).toMatch(/^[0-9a-f]{64}$/);
+
     // Old key should now fail auth for protected endpoint (/mcp)
     const unauthorized = await fetch("http://localhost:27126/mcp", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` }, body: JSON.stringify({ jsonrpc: "2.0", id: 0, method: "tools/list", params: {} }) });
     // Either 401 or 400 (if it got past auth but missing session). We want 401 to confirm key change.
