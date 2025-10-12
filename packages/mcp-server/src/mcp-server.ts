@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { createServer, type Server } from "node:http";
 import type { NoteService } from "@orchard/core";
 import { z } from "zod";
@@ -254,7 +255,7 @@ export class McpServer {
             const schema = z.object({ rotate: z.boolean().optional(), newKey: z.string().optional() });
             const cfg = schema.parse(parsed);
             if (cfg.rotate || cfg.newKey) {
-              this.apiKey = cfg.newKey || Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2);
+              this.apiKey = cfg.newKey || randomBytes(32).toString("hex");
             }
             res.statusCode = 200;
             res.setHeader("Content-Type", "application/json");
