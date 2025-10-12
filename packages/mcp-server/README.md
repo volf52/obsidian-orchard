@@ -10,6 +10,7 @@ Minimal HTTP JSON-RPC endpoint exposing Orchard note CRUD via MCP Streamable HTT
   - `tools/call` → invoke a tool by name with arguments
 - Tools implemented:
   - `list_notes` (filters: `tag`, `search`)
+  - `list_tags` (unique tags with usage counts)
   - `get_note` (id)
   - `create_note` (id, title?, body?, tags?, frontmatter?)
   - `update_note` (id, version, optional fields)
