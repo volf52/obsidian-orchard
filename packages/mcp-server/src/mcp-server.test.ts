@@ -21,6 +21,8 @@ describe("McpServer (MCP SDK HTTP Transport)", () => {
 
   beforeAll(async () => {
     svc = new NoteService({ adapter: createMemoryAdapter() });
+    await svc.create({ id: "SeedOne", title: "Seed One", body: "Seed content", tags: ["seedA", "shared"] });
+    await svc.create({ id: "SeedTwo", title: "Seed Two", body: "More seed content", tags: ["seedB"] });
     testKey = "testkey1234567890";
     server = new McpServer({ noteService: svc, apiKey: testKey });
     await server.start();
@@ -61,6 +63,7 @@ describe("McpServer (MCP SDK HTTP Transport)", () => {
     expect(init.body.result?.protocolVersion || init.body.result?.serverInfo).toBeTruthy();
     const { body } = await listTools(testKey);
     expect(body.result?.tools?.some((t: any) => t.name === "create_note")).toBe(true);
+    expect(body.result?.tools?.some((t: any) => t.name === "list_tags")).toBe(true);
   });
 
   it("creates notes and lists via list_notes filters", async () => {
@@ -99,6 +102,16 @@ describe("McpServer (MCP SDK HTTP Transport)", () => {
     const searchData = extractJsonContent(search.body.result);
     const ids = searchData.notes.map((n: any) => n.id).sort();
     expect(ids).toEqual(["beta.md", "gamma.md"]);
+
+    const tags = await callTool(testKey, "list_tags", {});
+    const tagData = extractJsonContent(tags.body.result);
+    expect(tagData.tags).toEqual([
+      { name: "seedA", count: 1 },
+      { name: "seedB", count: 1 },
+      { name: "shared", count: 1 },
+      { name: "tagA", count: 2 },
+      { name: "tagB", count: 2 },
+    ]);
   });
 
   it("gets a note", async () => {

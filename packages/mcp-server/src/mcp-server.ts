@@ -146,6 +146,32 @@ export class McpServer {
       },
     );
 
+    // list_tags
+    this.sdk.tool(
+      "list_tags",
+      {},
+      async () => {
+        const svc = this.requireService();
+        try {
+          const notes = await svc.list({} as any);
+          const counts = new Map<string, number>();
+          for (const note of notes) {
+            for (const tag of note.tags ?? []) {
+              const current = counts.get(tag) ?? 0;
+              counts.set(tag, current + 1);
+            }
+          }
+          const tags = Array.from(counts.entries())
+            .map(([name, count]) => ({ name, count }))
+            .sort((a, b) => a.name.localeCompare(b.name));
+          return { content: [{ type: "text", text: JSON.stringify({ tags }) }] };
+        } catch (e) {
+          const mapped = mapError(e);
+          return errorContent(mapped.code, mapped.details);
+        }
+      },
+    );
+
     // get_note
     this.sdk.tool(
       "get_note",
