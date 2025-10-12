@@ -20,6 +20,32 @@ const log = {
   error: (m: string) => console.error(`❌ ${colors.red(m)}`),
 };
 
+const summarizeFrontmatter = (
+  frontmatter: Record<string, unknown>,
+): Record<string, unknown> | undefined => {
+  const summary: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(frontmatter)) {
+    if (key === "title" || key === "tags") continue;
+    if (value == null) continue;
+    if (
+      typeof value === "string" ||
+      typeof value === "number" ||
+      typeof value === "boolean"
+    ) {
+      summary[key] = value;
+      continue;
+    }
+    if (Array.isArray(value)) {
+      const filtered = value.filter(
+        (v): v is string | number =>
+          typeof v === "string" || typeof v === "number",
+      );
+      if (filtered.length > 0) summary[key] = filtered.slice(0, 10);
+    }
+  }
+  return Object.keys(summary).length > 0 ? summary : undefined;
+};
+
 // Minimal MCP HTTP server exposing /health and /mcp (JSON-RPC + SSE)
 export class McpServer {
   private httpServer: Server | null = null;
@@ -95,7 +121,17 @@ export class McpServer {
         const svc = this.requireService();
         try {
           const notes = await svc.list({ tag: args.tag, search: args.search } as any);
-          const slim = notes.map((n) => ({ id: n.id, title: n.title, version: n.version }));
+          const slim = notes.map((n) => {
+            const frontmatterSummary = summarizeFrontmatter(n.frontmatter);
+            return {
+              id: n.id,
+              title: n.title,
+              version: n.version,
+              updatedAt: n.updatedAt,
+              tags: n.tags,
+              ...(frontmatterSummary ? { frontmatterSummary } : {}),
+            };
+          });
           return { content: [{ type: "text", text: JSON.stringify({ notes: slim }) }] };
         } catch (e) {
           const mapped = mapError(e);

@@ -16,6 +16,32 @@ Minimal HTTP JSON-RPC endpoint exposing Orchard note CRUD via MCP Streamable HTT
   - `delete_note` (id, version)
   - `metrics` (note count + uptime flag)
 
+### `list_notes` payload
+
+Each entry in the response now exposes richer metadata so MCP clients can render vault state without additional calls:
+
+```jsonc
+{
+  "notes": [
+    {
+      "id": "alpha.md",
+      "title": "Alpha",
+      "version": "<sha256>",
+      "updatedAt": 1710000000000,
+      "tags": ["tagA"],
+      "frontmatterSummary": {
+        "summary": "delta note",
+        "rating": 5
+      }
+    }
+  ]
+}
+```
+
+- `updatedAt` is the file modification time in epoch milliseconds.
+- `tags` mirrors the normalized frontmatter tag array (empty if unspecified).
+- `frontmatterSummary` is optional and includes non-title/tag frontmatter keys whose values are simple scalars or short string/number arrays. Use it for lightweight previews while falling back to `get_note` for full bodies/frontmatter.
+
 ### Health Endpoint
 `GET /health` returns readiness fields:
 ```jsonc

@@ -70,11 +70,26 @@ describe("McpServer (MCP SDK HTTP Transport)", () => {
 
     await callTool(testKey, "create_note", { id: "Beta", body: "Searchable Body", tags: ["tagB"] });
     await callTool(testKey, "create_note", { id: "Gamma", body: "Mixed Search Text", tags: ["tagA", "tagB"] });
+    await callTool(testKey, "create_note", {
+      id: "Delta",
+      body: "Has custom frontmatter",
+      tags: ["tagC"],
+      frontmatter: { summary: "delta note", rating: 5 },
+    });
 
     const listAll = await callTool(testKey, "list_notes", {});
     const listAllData = extractJsonContent(listAll.body.result);
     expect(Array.isArray(listAllData.notes)).toBe(true);
-    expect(listAllData.notes.find((n: any) => n.id === "alpha.md")).toBeTruthy();
+    const alpha = listAllData.notes.find((n: any) => n.id === "alpha.md");
+    expect(alpha).toBeTruthy();
+    expect(typeof alpha.updatedAt).toBe("number");
+    expect(Array.isArray(alpha.tags)).toBe(true);
+    expect(alpha.tags).toContain("tagA");
+    expect(alpha.frontmatterSummary).toBeUndefined();
+
+    const delta = listAllData.notes.find((n: any) => n.id === "delta.md");
+    expect(delta.tags).toEqual(["tagC"]);
+    expect(delta.frontmatterSummary).toEqual({ summary: "delta note", rating: 5 });
 
     const tagA = await callTool(testKey, "list_notes", { tag: "tagA" });
     const tagAData = extractJsonContent(tagA.body.result);
