@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { createServer, type Server } from "node:http";
+import { randomUUID } from "node:crypto";
 import type { NoteService } from "@orchard/core";
 import { z } from "zod";
 import { McpServer as SdkMcpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -48,7 +49,10 @@ export class McpServer {
     this.registerTools();
 
     // Streamable transport; JSON responses enabled for simple tool calls over POST
-    this.transport = new StreamableHTTPServerTransport({ enableJsonResponse: true, sessionIdGenerator: () => Math.random().toString(36).slice(2) });
+    this.transport = new StreamableHTTPServerTransport({
+      enableJsonResponse: true,
+      sessionIdGenerator: () => randomUUID(),
+    });
   }
 
   setNoteService(svc: NoteService) { this.noteService = svc; }
