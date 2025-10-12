@@ -1,9 +1,9 @@
-import type { EventBus, NoteEvent } from "./types"
+import type { EventBus, OrchardEvent } from "./types"
 
 export function createEventBus(): EventBus {
-  const handlers = new Set<(e: NoteEvent) => void>()
+  const handlers = new Set<(e: OrchardEvent) => void>()
   return {
-    publish(event: NoteEvent) {
+    publish(event: OrchardEvent) {
       for (const h of handlers) {
         try {
           h(event)
@@ -12,7 +12,7 @@ export function createEventBus(): EventBus {
         }
       }
     },
-    subscribe(handler: (event: NoteEvent) => void) {
+    subscribe(handler: (event: OrchardEvent) => void) {
       handlers.add(handler)
       return () => handlers.delete(handler)
     },
