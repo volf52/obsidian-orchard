@@ -2,6 +2,17 @@ import { createEventBus, createMemoryAdapter, NoteService } from "@orchard/core"
 import { Notice, Plugin, TFile, type Vault } from "obsidian"
 import { McpServer } from "./mcp-server"
 
+/**
+ * Creates a NoteService-compatible adapter that maps Obsidian vault file operations to MCP storage operations.
+ *
+ * @param vault - The Obsidian Vault instance used for file access and modification.
+ * @returns An object with the following methods:
+ *  - `readFile(id)` — Returns the file contents for the given path or `null` if no Markdown file is found.
+ *  - `writeFile(id, data)` — Creates a new Markdown file at `id` or replaces the contents of an existing file.
+ *  - `fileInfo(id)` — Returns `{ id, mtime, size }` for the file at `id`, or `null` if not found or not a Markdown file.
+ *  - `list()` — Returns an array of `{ id, mtime, size }` for all Markdown files in the vault.
+ *  - `deleteFile(id)` — Deletes the file at `id` and returns `true` on success, or `false` if the file was not found.
+ */
 function createObsidianVaultAdapter(vault: Vault) {
   function normalize(id: string): string {
     let n = id.trim()

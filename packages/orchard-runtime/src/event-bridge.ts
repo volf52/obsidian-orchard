@@ -10,7 +10,15 @@ export interface BridgeOptions {
 }
 
 /**
- * Subscribes to core note events and forwards minimal payloads to a broadcast target (e.g. MCP server).
+ * Subscribe to core note events and forward minimal note payloads to the provided broadcast target.
+ *
+ * For each core event this forwards:
+ * - "note.created" -> { id, version }
+ * - "note.updated" -> { id, version, previousVersion }
+ * - "note.deleted" -> { id, previousVersion }
+ *
+ * @param events - The core EventBus to subscribe to for note events
+ * @param target - The broadcast target that receives minimal event payloads
  */
 export function bridgeNoteEvents({ events, target }: BridgeOptions) {
   events.subscribe((evt) => {

@@ -55,6 +55,11 @@ export interface UpdateTaskNoteInput {
   tags?: string[]
 }
 
+/**
+ * Produce a normalized TaskFrontmatter object from a TaskFrontmatterInit.
+ *
+ * @returns A TaskFrontmatter with `type` set to `TASK_NOTE_TYPE` and normalized `status`, `project`, `due`, `priority`, and `mcpSyncState` fields.
+ */
 export function normalizeTaskFrontmatter(
   init: TaskFrontmatterInit,
 ): TaskFrontmatter {
@@ -69,6 +74,13 @@ export function normalizeTaskFrontmatter(
   }
 }
 
+/**
+ * Validate and normalize a raw task frontmatter object.
+ *
+ * @param raw - The raw frontmatter object to validate and normalize
+ * @returns The normalized `TaskFrontmatter` with `type` set to `TASK_NOTE_TYPE`
+ * @throws If `raw` is not an object or if `raw.type` is present and does not equal `TASK_NOTE_TYPE`
+ */
 export function validateTaskFrontmatter(
   raw: Record<string, unknown>,
 ): TaskFrontmatter {
@@ -89,6 +101,12 @@ export function validateTaskFrontmatter(
   return normalizeTaskFrontmatter(init)
 }
 
+/**
+ * Produce a serializable frontmatter object and minimal body for creating a task note.
+ *
+ * @param init - Initial task frontmatter values to normalize
+ * @returns An object with `frontmatter` set to the normalized task frontmatter and `body` set to the minimal task note body
+ */
 export function serializeTaskFrontmatter(
   init: TaskFrontmatterInit,
 ): Pick<CreateNoteInput, "frontmatter" | "body"> {
@@ -98,6 +116,14 @@ export function serializeTaskFrontmatter(
   }
 }
 
+/**
+ * Determines whether a given note is a task note.
+ *
+ * Validates the note's frontmatter and confirms its `type` equals `TASK_NOTE_TYPE`.
+ *
+ * @param note - The note to check
+ * @returns `true` if the provided note is a task note (frontmatter.type === TASK_NOTE_TYPE), `false` otherwise.
+ */
 export function isTaskNote(note: Note | null | undefined): note is TaskNote {
   if (!note) return false
   try {
@@ -108,6 +134,11 @@ export function isTaskNote(note: Note | null | undefined): note is TaskNote {
   }
 }
 
+/**
+ * Convert a Note into a TaskNote by validating and normalizing its frontmatter.
+ *
+ * @returns The original note with its `frontmatter` replaced by a normalized `TaskFrontmatter`.
+ */
 export function toTaskNote(note: Note): TaskNote {
   const frontmatter = validateTaskFrontmatter(note.frontmatter)
   return {
@@ -201,6 +232,15 @@ export class TaskNoteService {
   }
 }
 
+/**
+ * Normalize and validate a task status value.
+ *
+ * Trims leading and trailing whitespace and returns the resulting string.
+ *
+ * @param status - The value to validate and normalize as a task status
+ * @returns The trimmed status string
+ * @throws Error - If `status` is not a string (`"Task status must be a string"`) or if the trimmed string is empty (`"Task status cannot be empty"`)
+ */
 function normalizeStatus(status: unknown): string {
   if (typeof status !== "string") {
     throw new Error("Task status must be a string")
@@ -210,6 +250,12 @@ function normalizeStatus(status: unknown): string {
   return trimmed
 }
 
+/**
+ * Normalize a possibly-null/empty value into a trimmed string or `null`.
+ *
+ * @param value - The input to normalize. `null` or `undefined` become `null`; strings are trimmed and empty or whitespace-only strings become `null`; other values are converted to a string.
+ * @returns The trimmed string result, or `null` if the input was nullish or an empty/whitespace-only string.
+ */
 function normalizeOptionalString(value: unknown): string | null {
   if (value == null) return null
   if (typeof value === "string") {
@@ -219,6 +265,13 @@ function normalizeOptionalString(value: unknown): string | null {
   return String(value)
 }
 
+/**
+ * Normalize a task due value into a date-only ISO string (YYYY-MM-DD) or `null`.
+ *
+ * @param value - Accepted inputs: `null`/`undefined`/empty string, a `Date` instance, a numeric timestamp, or a date string (either `YYYY-MM-DD` or any string parseable by `Date`). Strings are trimmed before parsing.
+ * @returns A `YYYY-MM-DD` formatted date string if `value` represents a valid date, or `null` if `value` is `null`, an empty string, or an invalid `Date`/numeric timestamp.
+ * @throws Error if `value` is a non-empty string that cannot be parsed as a date or if `value` is of an unsupported type.
+ */
 function normalizeDue(value: unknown): string | null {
   if (value == null || value === "") return null
   if (value instanceof Date) {
@@ -243,6 +296,12 @@ function normalizeDue(value: unknown): string | null {
   throw new Error("Invalid type for task due date")
 }
 
+/**
+ * Format a Date as an ISO date string (YYYY-MM-DD) using the date's UTC year, month, and day.
+ *
+ * @param date - The Date to format; its UTC date components are used.
+ * @returns The UTC date portion formatted as `YYYY-MM-DD`.
+ */
 function toDateOnly(date: Date): string {
   const year = date.getUTCFullYear()
   const month = `${date.getUTCMonth() + 1}`.padStart(2, "0")
@@ -299,6 +358,13 @@ export interface InlineTaskIdentifier {
   line?: number
 }
 
+/**
+ * Generate a unique block identifier for an inline task combining a compact timestamp and a short base-36 random suffix.
+ *
+ * @param date - Date to base the timestamp on; defaults to the current date/time.
+ * @param randomFn - Function that returns a number in [0, 1); used to seed the random suffix. Defaults to Math.random.
+ * @returns A string of the form `orchard-task-YYYYMMDDHHMMSSxxxx` where `xxxx` is a zero-padded base-36 random suffix.
+ */
 export function createInlineTaskBlockId(
   date = new Date(),
   randomFn: () => number = Math.random,
@@ -313,6 +379,16 @@ export function createInlineTaskBlockId(
   return `orchard-task-${iso}${random}`
 }
 
+/**
+ * Formats an inline task into a single line suitable for storing in a note body.
+ *
+ * @param input - Formatting options including:
+ *   - `text`: task text
+ *   - `frontmatter`: task metadata (`status`, `project`, `due`, `priority`, `mcpSyncState`)
+ *   - `indent` and `bullet`: leading whitespace and list bullet
+ *   - `blockId`: optional block identifier appended as `^blockId`
+ *   - `extraFields`: additional key:: value fields to include
+ * @returns A single-line string representing the inline task, containing the list marker, checkbox, collapsed text, inline frontmatter fields, any extra fields (sorted by key), and an optional trailing `^blockId`.
 export function formatInlineTaskLine(input: InlineTaskFormatInput): string {
   const frontmatter = normalizeTaskFrontmatter({
     status: input.frontmatter.status,
@@ -350,6 +426,15 @@ export function formatInlineTaskLine(input: InlineTaskFormatInput): string {
   return line
 }
 
+/**
+ * Parse inline checklist task lines from a note body into structured InlineTask objects.
+ *
+ * Only lines that match the checklist pattern (bullet + checkbox + fields) and include a `type` field
+ * equal to `orchard-task` (case-insensitive) are returned.
+ *
+ * @param note - The note (id and body) to scan for inline tasks
+ * @returns An array of `InlineTask` objects parsed from the note body, in document order
+ */
 export function parseInlineTasks(
   note: Pick<Note, "id" | "body">,
 ): InlineTask[] {
@@ -591,6 +676,12 @@ export class InlineTaskService {
   }
 }
 
+/**
+ * Map a task status string to the corresponding checkbox symbol.
+ *
+ * @param status - Status label (case-insensitive, leading/trailing whitespace ignored)
+ * @returns `"x"` for completed statuses, `"-"` for cancelled statuses, `">"` for in-progress statuses, `"~"` for waiting/blocked statuses, or `" "` for any other status
+ */
 function statusToCheckbox(status: string): string {
   const normalized = status.trim().toLowerCase()
   if (["done", "complete", "completed"].includes(normalized)) return "x"
@@ -601,6 +692,12 @@ function statusToCheckbox(status: string): string {
   return " "
 }
 
+/**
+ * Map an inline task checkbox character to its canonical task status.
+ *
+ * @param checkbox - A task checkbox symbol (`" "`, `"x"`, `"X"`, `"-"`, `">"`, or `"~"`)
+ * @returns The canonical status: `done` for `"x"`/`"X"`, `cancelled` for `"-"`, `in-progress` for `">"`/`"~"`, and `todo` for any other checkbox
+ */
 function checkboxToStatus(checkbox: TaskCheckbox): string {
   switch (checkbox) {
     case "x":
@@ -621,6 +718,14 @@ interface ExtractedFields {
   text: string
 }
 
+/**
+ * Extracts inline "key:: value" fields from a string and returns a map of those fields plus the remaining text.
+ *
+ * Recognizes keys matching [A-Za-z0-9_-] followed by `::`. Values for each key extend until the next key occurrence or end of string. Whitespace in extracted values and in the returned text is collapsed to single spaces and trimmed. An empty or whitespace-only input yields empty fields and an empty text.
+ *
+ * @param value - The input string that may contain `key:: value` pairs interleaved with free text.
+ * @returns An object with `fields`, a map from each extracted key to its collapsed value, and `text`, the remaining collapsed text with all extracted field segments removed.
+ */
 function extractInlineFields(value: string): ExtractedFields {
   if (!value.trim()) {
     return { fields: {}, text: "" }
@@ -660,10 +765,26 @@ function extractInlineFields(value: string): ExtractedFields {
   return { fields, text }
 }
 
+/**
+ * Collapse consecutive whitespace characters into single spaces and remove leading/trailing whitespace.
+ *
+ * @param value - The input string whose whitespace will be normalized
+ * @returns The string with internal whitespace collapsed to single spaces and trimmed at both ends
+ */
 function collapseWhitespace(value: string): string {
   return value.replace(/\s+/g, " ").trim()
 }
 
+/**
+ * Filter and normalize a map of extra inline-task fields.
+ *
+ * Removes entries whose value is `null`, `undefined`, or the empty string, excludes any keys listed in `omit`,
+ * and collapses internal whitespace in retained values.
+ *
+ * @param fields - Source map of extra fields (may be `undefined`)
+ * @param omit - Keys to exclude from the result
+ * @returns A map of normalized, non-empty extra fields with internal whitespace collapsed
+ */
 function normalizeExtraFields(
   fields: Record<string, string | null | undefined> | undefined,
   omit: string[] = [],
@@ -683,6 +804,15 @@ interface LineSet {
   trailingNewline: boolean
 }
 
+/**
+ * Split a text body into an array of lines and determine if it ended with a trailing newline.
+ *
+ * The input is normalized from CRLF to LF before splitting; the returned `lines` contain the
+ * body content without a final empty line, and `trailingNewline` is `true` if the original
+ * input ended with a newline character.
+ *
+ * @returns A `LineSet` with `lines` (string[]) and `trailingNewline` (`true` if the original body ended with `\n`)
+ */
 function toLineSet(body: string): LineSet {
   const normalized = body.replace(/\r\n/g, "\n")
   const trailingNewline = normalized.endsWith("\n")
@@ -691,12 +821,28 @@ function toLineSet(body: string): LineSet {
   return { lines, trailingNewline }
 }
 
+/**
+ * Appends a single line to a note body, preserving newline semantics.
+ *
+ * @param body - The original note body text
+ * @param line - The line to append (without automatic newline)
+ * @returns The updated body with `line` appended as a new line; the result always preserves a trailing newline after the appended line
+ */
 function appendLine(body: string, line: string): string {
   const set = toLineSet(body)
   set.lines.push(line)
   return fromLineSet(set.lines, true)
 }
 
+/**
+ * Replace a specific line in a note body with a new line.
+ *
+ * @param body - The original multi-line string (note body)
+ * @param index - Zero-based line index to replace
+ * @param line - Replacement line content
+ * @returns The updated body string with the specified line replaced; preserves trailing newline
+ * @throws Error if `index` is negative or not less than the number of lines in `body`
+ */
 function replaceLine(body: string, index: number, line: string): string {
   const set = toLineSet(body)
   if (index < 0 || index >= set.lines.length) {
@@ -706,6 +852,13 @@ function replaceLine(body: string, index: number, line: string): string {
   return fromLineSet(set.lines, true)
 }
 
+/**
+ * Remove the line at the given zero-based index from a multiline body string.
+ *
+ * @param body - The full text body split into lines
+ * @param index - The zero-based line index to remove
+ * @returns The body with the specified line removed; if `index` is out of range, returns the original `body`
+ */
 function removeLine(body: string, index: number): string {
   const set = toLineSet(body)
   if (index < 0 || index >= set.lines.length) {
@@ -715,6 +868,13 @@ function removeLine(body: string, index: number): string {
   return fromLineSet(set.lines, set.lines.length > 0)
 }
 
+/**
+ * Reconstructs a text body from an array of lines, optionally preserving a trailing newline.
+ *
+ * @param lines - The lines to join into a single string; an empty array yields an empty string.
+ * @param trailingNewline - If true, append a single trailing newline to the joined lines.
+ * @returns The joined lines as a single string, with a trailing newline if `trailingNewline` is true.
+ */
 function fromLineSet(lines: string[], trailingNewline: boolean): string {
   if (lines.length === 0) return ""
   const joined = lines.join("\n")

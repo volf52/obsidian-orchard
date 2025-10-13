@@ -11,6 +11,12 @@ import type {
   VaultAdapter,
 } from "./types"
 
+/**
+ * Normalize a note identifier into the canonical NoteId form.
+ *
+ * @param id - The input identifier or path to normalize
+ * @returns The identifier normalized to use forward slashes, ensured to end with `.md`, and lowercased
+ */
 function normalizeId(id: string): NoteId {
   let n = id.trim()
   if (!n.endsWith(".md")) n = `${n}.md`
@@ -150,6 +156,15 @@ export class NoteService {
   }
 }
 
+/**
+ * Determines whether a note matches the provided filters.
+ *
+ * If `filters` is omitted, the note always matches. When `filters.tag` is set the note must include that tag. When `filters.search` is set the query is matched case-insensitively against the note's title and body.
+ *
+ * @param note - The note to test
+ * @param filters - Optional filters to apply (`tag` and/or `search`)
+ * @returns `true` if the note satisfies all provided filters, `false` otherwise.
+ */
 function applyFilters(note: Note, filters?: NoteFilters): boolean {
   if (!filters) return true
   if (filters.tag && !note.tags.includes(filters.tag)) return false
@@ -166,6 +181,14 @@ function applyFilters(note: Note, filters?: NoteFilters): boolean {
 
 interface ParsedRaw extends NoteContent {}
 
+/**
+ * Parses a note file into a frontmatter object and the remaining body text.
+ *
+ * Recognizes an optional YAML-like frontmatter block delimited by `---\n` and a closing `\n---\n`. Frontmatter lines use `key: value` syntax and are converted to JavaScript values: `true`/`false` become booleans, numeric tokens become numbers, empty values become `""`, and inline JSON arrays/objects (e.g. `["a","b"]` or `{"k":1}`) are parsed into their corresponding structures; other values remain strings.
+ *
+ * @param raw - The full file content to parse, possibly including a frontmatter block followed by body text.
+ * @returns An object with `frontmatter` (a record of parsed keys to values) and `body` (the text after the frontmatter or the original `raw` if no frontmatter is present).
+ */
 function parseRaw(raw: string): ParsedRaw {
   if (raw.startsWith("---\n")) {
     const end = raw.indexOf("\n---\n", 4)
@@ -199,6 +222,13 @@ function parseRaw(raw: string): ParsedRaw {
   return { frontmatter: {}, body: raw }
 }
 
+/**
+ * Serialize a frontmatter object and body into a markdown-like document with a YAML-style frontmatter block.
+ *
+ * @param frontmatter - Mapping of frontmatter keys to values; if empty, no frontmatter block is included.
+ * @param body - The document body that appears after the frontmatter block.
+ * @returns The document string consisting of a `---` delimited frontmatter section (keys sorted) followed by the body, or just the body when `frontmatter` is empty.
+ */
 function serialize(frontmatter: Record<string, unknown>, body: string): string {
   const keys = Object.keys(frontmatter)
   if (keys.length === 0) return body
@@ -211,12 +241,27 @@ function serialize(frontmatter: Record<string, unknown>, body: string): string {
   return lines.join("\n")
 }
 
+/**
+ * Converts a value into its string representation suitable for frontmatter serialization.
+ *
+ * @param v - The value to serialize (may be primitive, object, null, or undefined)
+ * @returns An empty string for `null`/`undefined`, JSON for objects, or the result of `String(v)` for other values
+ */
 function primitiveToString(v: unknown): string {
   if (v == null) return ""
   if (typeof v === "object") return JSON.stringify(v)
   return String(v)
 }
 
+/**
+ * Derives a human-readable title for a note from its id and body.
+ *
+ * Uses the first non-empty line of `body` (trimmed) up to 120 characters; if no such line exists, returns `id` with a trailing `.md` removed.
+ *
+ * @param id - Note identifier (file name, typically ending with `.md`).
+ * @param body - Raw note content.
+ * @returns The first non-empty line of `body` (trimmed and truncated to 120 characters) or the `id` without a `.md` suffix.
+ */
 function deriveTitle(id: string, body: string): string {
   const base = id.replace(/\.md$/, "")
   const firstLine = body.split(/\n/)[0]?.trim()

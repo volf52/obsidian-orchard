@@ -501,6 +501,12 @@ export class McpServer {
   }
 }
 
+/**
+ * Convert Node.js IncomingHttpHeaders into a standard Fetch `Headers` instance.
+ *
+ * @param init - The raw `IncomingHttpHeaders` object (header names to string or string[] values)
+ * @returns A `Headers` populated with the same header names; string[] values are joined with ", ". Non-string, non-array values are ignored.
+ */
 function toHeaders(init: IncomingHttpHeaders): Headers {
   const headers = new Headers()
   for (const [key, value] of Object.entries(init)) {
@@ -520,6 +526,23 @@ export interface CreateMcpServerOptions {
   createAdapter?: () => { adapter: VaultAdapter; events?: EventBus }
 }
 
+/**
+ * Create and configure an MCP server instance, ensuring a NoteService is available.
+ *
+ * If `opts.noteService` is omitted, the function attempts to dynamically import
+ * `@orchard/core` and construct an in-memory NoteService (or uses `opts.createAdapter`
+ * to customize adapter/event bus creation). The returned object exposes the server
+ * instance, the NoteService in use, and convenience `start`/`stop` helpers.
+ *
+ * @param opts - Optional configuration for the server. Relevant fields:
+ *   - `port`, `apiKey`, `noteService`, `createAdapter`
+ * @returns An object containing:
+ *   - `server`: the configured `McpServer` instance
+ *   - `noteService`: the `NoteService` backing the server
+ *   - `start`: convenience function to start the server
+ *   - `stop`: convenience function to stop the server
+ * @throws Error if the function fails to construct a NoteService when one is not provided.
+ */
 export async function createMcpServer(opts: CreateMcpServerOptions = {}) {
   let noteService = opts.noteService || null
   if (!noteService) {
