@@ -1,6 +1,12 @@
 import type { NoteId, VaultAdapter, VaultAdapterFileInfo } from "@orchard/core"
 import { TFile, type Vault } from "obsidian"
 
+/**
+ * Normalize a note path to a canonical lowercase Markdown file id using forward slashes.
+ *
+ * @param id - The input note identifier or path
+ * @returns The normalized note id: trimmed, lowercased, backslashes converted to `/`, and ensured to end with `.md`
+ */
 function normalize(id: string): NoteId {
   let n = id.trim()
   if (!n.endsWith(".md")) n = `${n}.md`
@@ -8,6 +14,15 @@ function normalize(id: string): NoteId {
   return n as NoteId
 }
 
+/**
+ * Create a VaultAdapter that uses the provided Obsidian Vault to manage Markdown notes.
+ *
+ * The adapter operates on `.md` files (normalizing paths to a lowercase `.md` suffix when locating files)
+ * and exposes read, write, metadata, list, and delete operations. Read returns `null` when a note is not found;
+ * delete returns `true` on success and `false` when the target is not a file.
+ *
+ * @returns A VaultAdapter backed by the provided Obsidian Vault
+ */
 export function createObsidianVaultAdapter(vault: Vault): VaultAdapter {
   return {
     async readFile(id: NoteId) {

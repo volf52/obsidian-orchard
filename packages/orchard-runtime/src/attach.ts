@@ -21,8 +21,10 @@ export interface CancelHandle {
 }
 
 /**
- * Polls for infrastructure (e.g. another plugin's note service) and applies it when ready.
- * Keeps orchestration logic out of core domain.
+ * Polls for an external infrastructure and applies it to the host once a valid `noteService` is discovered.
+ *
+ * @param opts - Configuration for probing and applying the infrastructure, timing (intervalMs, timeoutMs), and optional lifecycle callbacks (`onAttempt`, `onAttached`, `onTimeout`).
+ * @returns A CancelHandle containing `cancel()` to stop polling and `completed` which resolves to `true` if attachment succeeded, `false` if it timed out or was cancelled.
  */
 export function lateAttach<
   TInfra extends { noteService: NoteService; events?: EventBus | null },

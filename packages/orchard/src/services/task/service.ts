@@ -107,18 +107,37 @@ export class TaskService {
   }
 }
 
+/**
+ * Normalize a note body by removing trailing whitespace and ensuring a single trailing newline when non-empty.
+ *
+ * @param body - The raw body text, or `undefined` for an empty body
+ * @returns An empty string if `body` is empty or undefined; otherwise `body` with trailing whitespace removed and exactly one newline appended
+ */
 function formatBody(body: string | undefined): string {
   if (!body) return ""
   const trimmed = body.replace(/\s+$/u, "")
   return trimmed ? `${trimmed}\n` : ""
 }
 
+/**
+ * Extracts the directory path portion from a note identifier.
+ *
+ * @param id - The note identifier which may include slash-separated path segments
+ * @returns The directory portion (all segments except the last) or an empty string if there is no directory
+ */
 function toDirname(id: NoteId): string {
   const segments = id.split("/")
   if (segments.length <= 1) return ""
   return segments.slice(0, -1).join("/")
 }
 
+/**
+ * Merge incoming task frontmatter into an existing note's frontmatter, preserving any unspecified fields and normalizing `mcpSyncState`.
+ *
+ * @param incoming - Frontmatter values to merge; provided fields override corresponding values from `current`.
+ * @param current - Optional existing note whose frontmatter supplies defaults and preserved fields when `incoming` omits them.
+ * @returns The resulting TaskFrontmatter combining the current frontmatter with serialized incoming values; `mcpSyncState` is taken from `incoming` if present, otherwise from `current`, or `null` if neither is set.
+ */
 function mergeFrontmatter(
   incoming: TaskFrontmatter,
   current?: Note,

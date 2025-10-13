@@ -6,7 +6,9 @@ export interface MemoryNoteEnv {
 }
 
 /**
- * Convenience factory for ephemeral/testing scenarios.
+ * Creates an in-memory note environment preconfigured for ephemeral or testing use.
+ *
+ * @returns An object containing `noteService` wired to an in-memory adapter and `events` event bus.
  */
 export function createInMemoryNoteEnv(): MemoryNoteEnv {
   const events = createEventBus()

@@ -8,10 +8,25 @@ export interface RpcResult<TResult = unknown> {
 const PROTOCOL_VERSION = "2024-11-05"
 let sessionId: string | null = null
 
+/**
+ * Generates a pseudo-random request identifier.
+ *
+ * @returns An integer greater than or equal to 0 and less than 1e9
+ */
 function nextId() {
   return Math.floor(Math.random() * 1e9)
 }
 
+/**
+ * Performs a JSON-RPC request against the local MCP server and returns the HTTP status together with the normalized RPC response.
+ *
+ * This may update the module-level sessionId from the response header if a session has not yet been established.
+ *
+ * @param key - Authentication or identification key appended to the request URL
+ * @param method - RPC method name to invoke
+ * @param params - Key/value map of RPC parameters to include in the request payload
+ * @returns An object containing the HTTP response `status` and the RPC `body` where `jsonrpc` and `id` are normalized and `result` or `error` (with `code` and optional `message`) are propagated from the server response
+ */
 export async function rpcCall<TResult = unknown>(
   key: string,
   method: string,
@@ -54,6 +69,12 @@ export async function rpcCall<TResult = unknown>(
   return { status: res.status, body: data }
 }
 
+/**
+ * Start an MCP session for the test client using the configured protocol version.
+ *
+ * @param key - Authentication key appended to the MCP request URL
+ * @returns The HTTP response status and the normalized JSON-RPC result body for the initialize call
+ */
 export async function initialize(key: string) {
   return rpcCall(key, "initialize", {
     protocolVersion: PROTOCOL_VERSION,
@@ -62,6 +83,14 @@ export async function initialize(key: string) {
   })
 }
 
+/**
+ * Invoke a named tool through the MCP endpoint and return the HTTP status and RPC response.
+ *
+ * @param key - Authentication or identification key used in the request URL
+ * @param name - The tool name to invoke
+ * @param args - Optional arguments to pass to the tool
+ * @returns An object containing the HTTP response `status` and the RPC `body` (the `RpcResult` for the call)
+ */
 export async function callTool(
   key: string,
   name: string,
@@ -74,6 +103,12 @@ export async function callTool(
   return { status, body }
 }
 
+/**
+ * Retrieve the list of available tools from the server.
+ *
+ * @param key - Authentication key included in the request URL
+ * @returns An object with `status` set to the HTTP response code and `body` set to an `RpcResult` whose `result` contains the tools listing (or `error` on failure)
+ */
 export async function listTools(key: string) {
   return rpcCall(key, "tools/list", {})
 }
@@ -89,6 +124,16 @@ export interface ToolResult {
   isError?: boolean
 }
 
+/**
+ * Extracts JSON-like content from a tool result, preferring parsed text.
+ *
+ * Attempts to parse the first content item with type "text" as JSON; if parsing fails or no such
+ * text item exists, returns the first content item with type "json"'s data. If neither are present,
+ * returns the full content array. Returns `undefined` when `result` is `undefined`.
+ *
+ * @param result - The tool result to extract content from
+ * @returns The parsed JSON value from a text item, the `data` of a JSON item, the content array, or `undefined`
+ */
 export function extractJsonContent(result: ToolResult | undefined): unknown {
   if (!result) return undefined
   const content = result.content ?? []
@@ -107,10 +152,21 @@ export function extractJsonContent(result: ToolResult | undefined): unknown {
   return jsonPart ? jsonPart.data : content
 }
 
+/**
+ * Determine whether a tool result represents an error.
+ *
+ * @returns `true` if the provided `result` has its `isError` flag set, `false` otherwise.
+ */
 export function isErrorResult(result: ToolResult | undefined): boolean {
   return !!result?.isError
 }
 
+/**
+ * Extracts the leading error code token from the first text content item in a tool result.
+ *
+ * @param result - The tool result to inspect; may be undefined
+ * @returns The first whitespace-delimited token from the first content item with type `"text"`, or `undefined` if no such content exists
+ */
 export function extractErrorCode(
   result: ToolResult | undefined,
 ): string | undefined {
@@ -123,6 +179,11 @@ export function extractErrorCode(
   return part.text.split(/\s+/)[0]
 }
 
+/**
+ * Clear the internal MCP session state used by tests.
+ *
+ * Resets the stored session identifier to `null` so subsequent test calls do not reuse an existing session.
+ */
 export function resetSessionForTests() {
   sessionId = null
 }

@@ -5,6 +5,11 @@ interface Entry {
   mtime: number
 }
 
+/**
+ * Create an in-memory VaultAdapter for storing notes during runtime.
+ *
+ * @returns A VaultAdapter that keeps files in an internal Map, tracking each entry's data, modification time (`mtime`), and size; it implements `readFile`, `writeFile`, `fileInfo`, `list`, and `deleteFile`.
+ */
 export function createMemoryAdapter(): VaultAdapter {
   const store = new Map<NoteId, Entry>()
   return {
