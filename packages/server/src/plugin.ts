@@ -64,8 +64,6 @@ export default class OrchardServerPlugin extends Plugin {
           })
       },
     })
-
-
   }
 
   override async onunload() {

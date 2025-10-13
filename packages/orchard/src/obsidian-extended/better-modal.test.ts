@@ -1,4 +1,5 @@
 import { describe, expect, mock, test } from "bun:test"
+import type { App } from "obsidian"
 
 type StyleRecord = Record<string, string> & { cursor: string }
 
@@ -159,15 +160,40 @@ mock.module("obsidian", () => {
 
 const { default: BetterModal } = await import("./better-modal")
 
-const getBg = (modal: BetterModal) =>
+type BetterModalInstance = InstanceType<typeof BetterModal>
+
+const createAppStub = (): App =>
+  ({
+    keymap: {},
+    scope: {},
+    workspace: {},
+    vault: {},
+    metadataCache: {},
+    commands: {},
+    plugins: {},
+    workspaceCompatibility: {},
+    scopeManager: {},
+    loadLocalStorage: async () => undefined,
+    saveLocalStorage: async () => undefined,
+    loadPlugin: async () => undefined,
+    manifold: {},
+    internalPlugins: {},
+    dom: {},
+    appId: "test",
+    lastEvent: undefined,
+    dailyNotesPlugin: {},
+    fileManager: {},
+  }) as unknown as App
+
+const getBg = (modal: BetterModalInstance) =>
   modal.containerEl.find("div.modal-bg") as unknown as ElementStub
 
-const getClose = (modal: BetterModal) =>
+const getClose = (modal: BetterModalInstance) =>
   modal.modalEl.find("div.modal-close-button") as unknown as ElementStub
 
 describe("BetterModal closing controls", () => {
   test("disableClose and enableClose swap control elements safely", () => {
-    const modal = new BetterModal({}, "Test Modal")
+    const modal = new BetterModal(createAppStub(), "Test Modal")
 
     expect(modal.canClose).toBe(false)
 
@@ -192,7 +218,7 @@ describe("BetterModal closing controls", () => {
   })
 
   test("toggleClose flips closing ability without throwing", () => {
-    const modal = new BetterModal({}, "Toggle Modal")
+    const modal = new BetterModal(createAppStub(), "Toggle Modal")
 
     modal.enableClose()
     expect(modal.canClose).toBe(true)
@@ -208,7 +234,7 @@ describe("BetterModal closing controls", () => {
   })
 
   test("guards skip replacements when nodes are detached", () => {
-    const modal = new BetterModal({}, "Detached Modal")
+    const modal = new BetterModal(createAppStub(), "Detached Modal")
 
     const bg = getBg(modal)
     const close = getClose(modal)

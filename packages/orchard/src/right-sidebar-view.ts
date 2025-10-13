@@ -1,4 +1,4 @@
-import { type App, ItemView, Notice, type WorkspaceLeaf } from "obsidian"
+import { type App, ItemView, Notice, TFile, type WorkspaceLeaf } from "obsidian"
 import { getActiveEditor } from "@/utils/obsidian-utils"
 import { ICON, ORCHAR_RSB_VIEW_TYPE } from "./constants"
 import { insertLatexItem, PREDEFINED_LATEX } from "./latex"
@@ -48,9 +48,9 @@ class RightSidebarView extends ItemView {
         })
         el.onClickEvent(async () => {
           const file = this.app.vault.getAbstractFileByPath(n.id)
-          if (file && (file as any).extension === "md") {
+          if (file instanceof TFile) {
             const leaf = this.app.workspace.getLeaf("tab")
-            await leaf.openFile(file as any)
+            await leaf.openFile(file)
           }
         })
       }

@@ -1,51 +1,50 @@
-import { Plugin, Notice } from "obsidian"
+import { createEventBus, createMemoryAdapter, NoteService } from "@orchard/core"
+import { Notice, Plugin, TFile, type Vault } from "obsidian"
 import { McpServer } from "./mcp-server"
-import { createEventBus, NoteService, createMemoryAdapter } from "@orchard/core"
-import { TFile, type Vault } from "obsidian"
 
 function createObsidianVaultAdapter(vault: Vault) {
   function normalize(id: string): string {
-    let n = id.trim();
-    if (!n.endsWith(".md")) n = `${n}.md`;
-    n = n.replace(/\\+/g, "/").toLowerCase();
-    return n;
+    let n = id.trim()
+    if (!n.endsWith(".md")) n = `${n}.md`
+    n = n.replace(/\\+/g, "/").toLowerCase()
+    return n
   }
   return {
     async readFile(id: string) {
-      const file = vault.getAbstractFileByPath(id);
-      if (file instanceof TFile && file.extension === "md") return vault.read(file);
-      const t = vault.getAbstractFileByPath(normalize(id));
-      if (t instanceof TFile) return vault.read(t);
-      return null;
+      const file = vault.getAbstractFileByPath(id)
+      if (file instanceof TFile && file.extension === "md")
+        return vault.read(file)
+      const t = vault.getAbstractFileByPath(normalize(id))
+      if (t instanceof TFile) return vault.read(t)
+      return null
     },
     async writeFile(id: string, data: string) {
-      const existing = vault.getAbstractFileByPath(id);
+      const existing = vault.getAbstractFileByPath(id)
       if (existing instanceof TFile) {
-        await vault.modify(existing, data);
-        return;
+        await vault.modify(existing, data)
+        return
       }
-      await vault.create(id, data);
+      await vault.create(id, data)
     },
     async fileInfo(id: string) {
-      const file = vault.getAbstractFileByPath(id);
-      if (!(file instanceof TFile)) return null;
-      return { id, mtime: file.stat.mtime, size: file.stat.size };
+      const file = vault.getAbstractFileByPath(id)
+      if (!(file instanceof TFile)) return null
+      return { id, mtime: file.stat.mtime, size: file.stat.size }
     },
     async list() {
       return vault
         .getFiles()
         .filter((f): f is TFile => f instanceof TFile && f.extension === "md")
-        .map((f) => ({ id: f.path, mtime: f.stat.mtime, size: f.stat.size }));
+        .map((f) => ({ id: f.path, mtime: f.stat.mtime, size: f.stat.size }))
     },
     async deleteFile(id: string) {
-      const file = vault.getAbstractFileByPath(id);
-      if (!(file instanceof TFile)) return false;
-      await vault.delete(file);
-      return true;
+      const file = vault.getAbstractFileByPath(id)
+      if (!(file instanceof TFile)) return false
+      await vault.delete(file)
+      return true
     },
-  };
+  }
 }
-
 
 interface McpSettings {
   enabled: boolean
@@ -53,7 +52,11 @@ interface McpSettings {
   storage: "vault" | "memory"
 }
 
-const DEFAULT_SETTINGS: McpSettings = { enabled: true, apiKey: "", storage: "vault" }
+const DEFAULT_SETTINGS: McpSettings = {
+  enabled: true,
+  apiKey: "",
+  storage: "vault",
+}
 
 export default class OrchardMcpPlugin extends Plugin {
   settings!: McpSettings
@@ -103,7 +106,9 @@ export default class OrchardMcpPlugin extends Plugin {
         const tail = this.settings.apiKey.slice(-6)
         new Notice(`MCP API Key: ${this.settings.apiKey}`)
         console.log(`[MCP] API key shown to user ***${tail}`)
-        await (navigator as any).clipboard?.writeText?.(this.settings.apiKey)
+        const clipboard =
+          typeof navigator !== "undefined" ? navigator.clipboard : undefined
+        await clipboard?.writeText?.(this.settings.apiKey)
         new Notice("MCP API Key copied to clipboard")
       },
     })
@@ -130,13 +135,16 @@ export default class OrchardMcpPlugin extends Plugin {
     if (!this.settings.apiKey) {
       this.settings.apiKey = this.generateKey()
       await this.saveSettings()
-      console.log(`[MCP] Generated new API key ***${this.settings.apiKey.slice(-6)}`)
+      console.log(
+        `[MCP] Generated new API key ***${this.settings.apiKey.slice(-6)}`,
+      )
     }
 
     const events = createEventBus()
-    const adapter = this.settings.storage === "vault"
-      ? createObsidianVaultAdapter(this.app.vault)
-      : createMemoryAdapter()
+    const adapter =
+      this.settings.storage === "vault"
+        ? createObsidianVaultAdapter(this.app.vault)
+        : createMemoryAdapter()
     const noteService = new NoteService({ adapter, events })
 
     this.mcp = new McpServer({ noteService, apiKey: this.settings.apiKey })
@@ -168,11 +176,19 @@ export default class OrchardMcpPlugin extends Plugin {
 
   private generateKey(): string {
     const arr = new Uint8Array(24)
-    if (typeof crypto !== "undefined" && typeof (crypto as any).getRandomValues === "function") {
-      (crypto as any).getRandomValues(arr)
+    type RandomSource = { getRandomValues?: (data: Uint8Array) => Uint8Array }
+    const cryptoObj =
+      typeof globalThis !== "undefined" && "crypto" in globalThis
+        ? ((globalThis as { crypto?: RandomSource }).crypto ?? null)
+        : null
+    if (cryptoObj?.getRandomValues) {
+      cryptoObj.getRandomValues(arr)
     } else {
-      for (let i = 0; i < arr.length; i++) arr[i] = Math.floor(Math.random() * 256)
+      for (let i = 0; i < arr.length; i++)
+        arr[i] = Math.floor(Math.random() * 256)
     }
-    return Array.from(arr).map((b) => b.toString(16).padStart(2, "0")).join("")
+    return Array.from(arr)
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("")
   }
 }

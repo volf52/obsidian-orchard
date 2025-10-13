@@ -36,11 +36,13 @@ class TranscriptionModule {
       props: {
         onSubmit: async (
           file: File,
-          _errFunc: (file: File, msg: string) => void,
+          onErr: (_data: string, err: unknown) => void,
         ) => {
           m.disableClose()
 
           console.log("File submitted", file.name, file.type, file.size)
+
+          onErr("transcribe", new Error("Transcription not yet implemented"))
 
           m.enableClose()
           m.close()

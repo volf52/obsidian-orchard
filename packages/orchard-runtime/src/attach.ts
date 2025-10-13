@@ -31,7 +31,7 @@ export function lateAttach<
   const timeout = Math.max(interval, opts.timeoutMs ?? 10_000)
   let attempt = 0
   let attached = false
-  let timer: any = null
+  let timer: ReturnType<typeof setTimeout> | null = null
   let stopped = false
 
   let resolveCompleted: (v: boolean) => void = () => {}

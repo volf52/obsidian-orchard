@@ -1,4 +1,3 @@
-import type { App } from "obsidian"
 import type {
   InlineTask,
   InlineTaskService,
@@ -6,6 +5,7 @@ import type {
   TaskNote,
   TaskNoteService,
 } from "@orchard/core"
+import type { App } from "obsidian"
 import {
   ensureDirectory,
   ensureTaskBaseDefinition,
@@ -72,7 +72,11 @@ async function syncInlineTaskIndex(
     const extraFields = { ...(current?.extraFields ?? {}), note: noteLink }
     if (current) {
       await inlineTasks.update(
-        { noteId: indexNoteId, blockId: current.blockId ?? undefined, line: current.line },
+        {
+          noteId: indexNoteId,
+          blockId: current.blockId ?? undefined,
+          line: current.line,
+        },
         {
           text,
           status: note.frontmatter.status,

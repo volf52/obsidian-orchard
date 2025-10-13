@@ -1,3 +1,4 @@
+import type { NoteService } from "./note-service"
 import type {
   CreateNoteInput,
   Note,
@@ -6,7 +7,6 @@ import type {
   NoteVersion,
   UpdateNoteMutation,
 } from "./types"
-import type { NoteService } from "./note-service"
 
 export const TASK_NOTE_TYPE = "orchard-task" as const
 export const TASK_NOTE_MINIMAL_BODY = ""
@@ -69,7 +69,9 @@ export function normalizeTaskFrontmatter(
   }
 }
 
-export function validateTaskFrontmatter(raw: Record<string, unknown>): TaskFrontmatter {
+export function validateTaskFrontmatter(
+  raw: Record<string, unknown>,
+): TaskFrontmatter {
   if (!raw || typeof raw !== "object") {
     throw new Error("Task frontmatter must be an object")
   }
@@ -173,8 +175,7 @@ export class TaskNoteService {
         mutation.project !== undefined
           ? mutation.project
           : current.frontmatter.project,
-      due:
-        mutation.due !== undefined ? mutation.due : current.frontmatter.due,
+      due: mutation.due !== undefined ? mutation.due : current.frontmatter.due,
       priority:
         mutation.priority !== undefined
           ? mutation.priority
@@ -302,7 +303,10 @@ export function createInlineTaskBlockId(
   date = new Date(),
   randomFn: () => number = Math.random,
 ): string {
-  const iso = date.toISOString().replace(/[-:TZ.]/g, "").slice(0, 14)
+  const iso = date
+    .toISOString()
+    .replace(/[-:TZ.]/g, "")
+    .slice(0, 14)
   const random = Math.floor(randomFn() * 36 ** 4)
     .toString(36)
     .padStart(4, "0")
@@ -346,23 +350,27 @@ export function formatInlineTaskLine(input: InlineTaskFormatInput): string {
   return line
 }
 
-export function parseInlineTasks(note: Pick<Note, "id" | "body">): InlineTask[] {
+export function parseInlineTasks(
+  note: Pick<Note, "id" | "body">,
+): InlineTask[] {
   const { lines } = toLineSet(note.body)
   const tasks: InlineTask[] = []
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index]
+    if (line == null) continue
+
     const match = line.match(/^(\s*)([-*])\s+\[([ xX>\-~])\]\s+(.*)$/)
     if (!match) continue
 
-    const indent = match[1]
+    const indent = match[1] ?? ""
     const bullet = match[2] === "*" ? "*" : "-"
-    const checkbox = match[3] as TaskCheckbox
-    let remainder = match[4]
+    const checkbox = (match[3] ?? " ") as TaskCheckbox
+    let remainder = match[4] ?? ""
 
     let blockId: string | null = null
     const blockMatch = remainder.match(/\s*\^([A-Za-z0-9-]+)\s*$/)
-    if (blockMatch && blockMatch.index !== undefined) {
-      blockId = blockMatch[1]
+    if (blockMatch?.index !== undefined) {
+      blockId = blockMatch[1] ?? null
       remainder = remainder.slice(0, blockMatch.index).trimEnd()
     }
 
@@ -416,7 +424,8 @@ export class InlineTaskService {
 
   constructor(notes: NoteService, options?: { createBlockId?: () => string }) {
     this.notes = notes
-    this.createBlockId = options?.createBlockId ?? (() => createInlineTaskBlockId())
+    this.createBlockId =
+      options?.createBlockId ?? (() => createInlineTaskBlockId())
   }
 
   async list(noteId: NoteId): Promise<InlineTask[]> {
@@ -427,7 +436,8 @@ export class InlineTaskService {
 
   async create(input: CreateInlineTaskInput): Promise<InlineTask> {
     const note = await this.notes.read(input.noteId)
-    if (!note) throw new Error(`Note not found for inline task: ${input.noteId}`)
+    if (!note)
+      throw new Error(`Note not found for inline task: ${input.noteId}`)
 
     const tasks = parseInlineTasks(note)
     let blockId = input.blockId ?? null
@@ -458,7 +468,9 @@ export class InlineTaskService {
       note.version,
     )
 
-    const created = parseInlineTasks(updated).find((task) => task.blockId === blockId)
+    const created = parseInlineTasks(updated).find(
+      (task) => task.blockId === blockId,
+    )
     if (!created) {
       throw new Error("Failed to locate created inline task")
     }
@@ -470,7 +482,8 @@ export class InlineTaskService {
     mutation: UpdateInlineTaskInput,
   ): Promise<InlineTask> {
     const note = await this.notes.read(identifier.noteId)
-    if (!note) throw new Error(`Note not found for inline task: ${identifier.noteId}`)
+    if (!note)
+      throw new Error(`Note not found for inline task: ${identifier.noteId}`)
 
     const tasks = parseInlineTasks(note)
     const target = this.findTargetTask(tasks, identifier)
@@ -479,7 +492,9 @@ export class InlineTaskService {
     const frontmatter = normalizeTaskFrontmatter({
       status: mutation.status ?? target.frontmatter.status,
       project:
-        mutation.project !== undefined ? mutation.project : target.frontmatter.project,
+        mutation.project !== undefined
+          ? mutation.project
+          : target.frontmatter.project,
       due: mutation.due !== undefined ? mutation.due : target.frontmatter.due,
       priority:
         mutation.priority !== undefined
@@ -502,7 +517,8 @@ export class InlineTaskService {
       }
     }
 
-    const blockId = mutation.blockId === undefined ? target.blockId : mutation.blockId
+    const blockId =
+      mutation.blockId === undefined ? target.blockId : mutation.blockId
 
     const newLine = formatInlineTaskLine({
       text: mutation.text ?? target.text,
@@ -579,7 +595,8 @@ function statusToCheckbox(status: string): string {
   const normalized = status.trim().toLowerCase()
   if (["done", "complete", "completed"].includes(normalized)) return "x"
   if (["cancelled", "canceled"].includes(normalized)) return "-"
-  if (["in-progress", "doing", "working", "started"].includes(normalized)) return ">"
+  if (["in-progress", "doing", "working", "started"].includes(normalized))
+    return ">"
   if (["waiting", "blocked", "hold"].includes(normalized)) return "~"
   return " "
 }
@@ -618,15 +635,18 @@ function extractInlineFields(value: string): ExtractedFields {
 
   for (let i = 0; i < matches.length; i += 1) {
     const match = matches[i]
+    if (!match) continue
+
     const start = match.index ?? 0
     if (start > cursor) {
       textParts.push(value.slice(cursor, start))
     }
     const key = match[1]
+    if (!key) continue
     const valueStart = start + match[0].length
     const valueEnd =
       i + 1 < matches.length
-        ? matches[i + 1]?.index ?? value.length
+        ? (matches[i + 1]?.index ?? value.length)
         : value.length
     const rawVal = value.slice(valueStart, valueEnd)
     fields[key] = collapseWhitespace(rawVal)
