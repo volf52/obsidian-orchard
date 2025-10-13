@@ -1,9 +1,9 @@
 import {
-  InlineTaskService,
-  TaskNoteService,
   createEventBus,
-  NoteService,
   type EventBus,
+  type InlineTaskService,
+  NoteService,
+  type TaskNoteService,
 } from "@orchard/core"
 import { type Command, Plugin } from "obsidian"
 import { ICON, ORCHAR_RSB_VIEW_TYPE } from "@/constants"
@@ -12,8 +12,11 @@ import { createObsidianVaultAdapter } from "@/services/note-adapter"
 import OrchardSettingsTab, { DEFAULT_SETTINGS } from "@/settings"
 import "./styles.css"
 import "./components/svelte.css"
+import { migrateTaskNotes } from "@/modules/task-migration"
 import VideoModule from "@/modules/video.module"
-import { type OrchardServices, wireUpServices } from "@/services/utils"
+import type { TaskService } from "@/services/task"
+import type { OrchardServices } from "@/services/utils"
+import { wireUpServices } from "@/services/utils"
 import type { OrchardSettings } from "@/settings/types"
 import {
   clearAllSubscriptions,
@@ -21,7 +24,6 @@ import {
   updateSettings,
 } from "@/stores/settings"
 import TranscriptionModule from "./modules/transcribe.module"
-import { migrateTaskNotes } from "@/modules/task-migration"
 
 class Orchard extends Plugin {
   settings!: OrchardSettings
@@ -31,6 +33,7 @@ class Orchard extends Plugin {
   transcriptionModule!: TranscriptionModule
 
   noteService!: NoteService
+  taskService!: TaskService
   taskNotes!: TaskNoteService
   inlineTasks!: InlineTaskService
   events!: EventBus
@@ -41,7 +44,19 @@ class Orchard extends Plugin {
     // Initialize the signal-based settings store
     initializeSettingsStore(this.settings)
 
-    this.services = wireUpServices(this.settings)
+    // Core note service wiring
+    const adapter = createObsidianVaultAdapter(this.app.vault)
+    const events = createEventBus()
+    this.events = events
+    this.noteService = new NoteService({ adapter, events })
+
+    this.services = wireUpServices(this.settings, {
+      noteService: this.noteService,
+    })
+
+    this.taskService = this.services.tasks
+    this.taskNotes = this.taskService.taskNotes
+    this.inlineTasks = this.taskService.inlineTasks
 
     this.videoModule = new VideoModule(this.app, this.settings, this.services)
     this.transcriptionModule = new TranscriptionModule(
@@ -49,14 +64,6 @@ class Orchard extends Plugin {
       this.settings,
       this.services,
     )
-
-    // Core note service wiring
-    const adapter = createObsidianVaultAdapter(this.app.vault)
-    const events = createEventBus()
-    this.events = events
-    this.noteService = new NoteService({ adapter, events })
-    this.taskNotes = new TaskNoteService(this.noteService)
-    this.inlineTasks = new InlineTaskService(this.noteService)
 
     await migrateTaskNotes(this.app, this.taskNotes, this.inlineTasks)
 

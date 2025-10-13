@@ -13,7 +13,7 @@ export interface BridgeOptions {
  * Subscribes to core note events and forwards minimal payloads to a broadcast target (e.g. MCP server).
  */
 export function bridgeNoteEvents({ events, target }: BridgeOptions) {
-  events.subscribe((evt: any) => {
+  events.subscribe((evt) => {
     if (!evt || typeof evt !== "object" || !("type" in evt)) return
     switch (evt.type) {
       case "note.created":

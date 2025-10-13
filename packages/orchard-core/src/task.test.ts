@@ -1,15 +1,15 @@
 import { describe, expect, it } from "bun:test"
-import {
-  TASK_NOTE_MINIMAL_BODY,
-  TASK_NOTE_TYPE,
-  InlineTaskService,
-  TaskNoteService,
-  formatInlineTaskLine,
-  normalizeTaskFrontmatter,
-  parseInlineTasks,
-} from "@/task"
 import { createMemoryAdapter } from "@/memory-adapter"
 import { NoteService } from "@/note-service"
+import {
+  formatInlineTaskLine,
+  InlineTaskService,
+  normalizeTaskFrontmatter,
+  parseInlineTasks,
+  TASK_NOTE_MINIMAL_BODY,
+  TASK_NOTE_TYPE,
+  TaskNoteService,
+} from "@/task"
 
 describe("task note utilities", () => {
   it("normalizes task frontmatter", () => {
@@ -30,10 +30,16 @@ describe("task note utilities", () => {
   })
 
   it("coerces due strings and numbers", () => {
-    const fromString = normalizeTaskFrontmatter({ status: "todo", due: "2024/05/11" })
+    const fromString = normalizeTaskFrontmatter({
+      status: "todo",
+      due: "2024/05/11",
+    })
     expect(fromString.due).toBe("2024-05-11")
 
-    const fromEpoch = normalizeTaskFrontmatter({ status: "todo", due: Date.UTC(2024, 4, 12) })
+    const fromEpoch = normalizeTaskFrontmatter({
+      status: "todo",
+      due: Date.UTC(2024, 4, 12),
+    })
     expect(fromEpoch.due).toBe("2024-05-12")
   })
 

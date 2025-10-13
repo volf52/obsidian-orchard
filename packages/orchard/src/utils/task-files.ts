@@ -1,5 +1,4 @@
-import type { TaskNote } from "@orchard/core"
-import type { NoteId } from "@orchard/core"
+import type { NoteId, TaskNote } from "@orchard/core"
 import type { TFile, Vault } from "obsidian"
 
 export const TASKS_ROOT_DIR = "tasks"
@@ -61,7 +60,8 @@ export function expectedTaskFilePath(
 ): NoteId {
   const year = resolveYear(note.updatedAt, now)
   const baseName = extractBasename(note.id) ?? note.title ?? "task"
-  const baseSlug = slugifyTaskSegment(baseName) || slugifyTaskSegment(note.title) || "task"
+  const baseSlug =
+    slugifyTaskSegment(baseName) || slugifyTaskSegment(note.title) || "task"
   const suffix = hashSuffix(note.id)
   const slug = suffix ? `${baseSlug}-${suffix}` : baseSlug
   return `${TASKS_ROOT_DIR}/${year}/${slug}.md`.toLowerCase() as NoteId
@@ -114,7 +114,10 @@ function extractInlineTasksSection(content: string): string {
   return `\n${afterMarker.replace(/^\r?\n?/, "")}`
 }
 
-export async function ensureDirectory(vault: Vault, dir: string | null | undefined) {
+export async function ensureDirectory(
+  vault: Vault,
+  dir: string | null | undefined,
+) {
   const normalized = normalizeVaultPath(dir ?? "")
   if (!normalized || normalized === ".") return
   const segments = normalized.split("/")

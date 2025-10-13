@@ -3,7 +3,9 @@ import {
   computeNoteVersion,
   createEventBus,
   createMemoryAdapter,
+  type NoteId,
   NoteService,
+  type NoteVersion,
 } from "@/index"
 
 const c = {
@@ -113,7 +115,9 @@ describe("NoteService", () => {
   it("delete returns false on missing note", async () => {
     banner("delete missing")
     const svc = new NoteService({ adapter: createMemoryAdapter() })
-    const ok = await svc.delete("missing.md" as any, "v" as any)
+    const missingId = "missing.md" as NoteId
+    const version = "v" as NoteVersion
+    const ok = await svc.delete(missingId, version)
     expect(ok).toBe(false)
   })
 
@@ -121,15 +125,25 @@ describe("NoteService", () => {
     banner("filters")
     const adapter = createMemoryAdapter()
     const svc = new NoteService({ adapter })
-    await svc.create({ id: "TagA", tags: ["alpha", "beta"], body: "First body" })
-    await svc.create({ id: "TagB", tags: ["beta"], body: "Second body with word" })
+    await svc.create({
+      id: "TagA",
+      tags: ["alpha", "beta"],
+      body: "First body",
+    })
+    await svc.create({
+      id: "TagB",
+      tags: ["beta"],
+      body: "Second body with word",
+    })
     const tagFiltered = await svc.list({ tag: "alpha" })
     expect(tagFiltered.length).toBe(1)
-    const tagMatch = tagFiltered[0]!
+    const tagMatch = tagFiltered[0]
+    if (!tagMatch) throw new Error("tag match missing")
     expect(tagMatch.id).toBe("taga.md")
     const searchFiltered = await svc.list({ search: "second" })
     expect(searchFiltered.length).toBe(1)
-    const searchMatch = searchFiltered[0]!
+    const searchMatch = searchFiltered[0]
+    if (!searchMatch) throw new Error("search match missing")
     expect(searchMatch.id).toBe("tagb.md")
   })
 
@@ -137,14 +151,21 @@ describe("NoteService", () => {
     banner("list frontmatter parse")
     const adapter = createMemoryAdapter()
     const svc = new NoteService({ adapter })
-    await svc.create({ id: "Complex", body: "Hello", tags: ["one", "two"], frontmatter: { meta: { deep: true }, count: 3 } })
+    await svc.create({
+      id: "Complex",
+      body: "Hello",
+      tags: ["one", "two"],
+      frontmatter: { meta: { deep: true }, count: 3 },
+    })
     const listed = await svc.list({ search: "hello" })
     expect(listed.length).toBe(1)
-    const first = listed[0]!
-    const fm = first.frontmatter as any
+    const first = listed[0]
+    if (!first) throw new Error("missing list entry")
+    const fm = first.frontmatter
+    const meta = fm.meta
     expect(Array.isArray(first.tags)).toBe(true)
     expect(first.tags).toEqual(["one", "two"])
-    expect(fm.meta).toEqual({ deep: true })
+    expect(meta).toEqual({ deep: true })
     expect(fm.count).toBe(3)
   })
 })

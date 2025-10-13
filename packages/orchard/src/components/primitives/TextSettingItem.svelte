@@ -1,5 +1,4 @@
 <script lang="ts">
-import { onMount } from "svelte"
 import SettingItem, {
   type SettingItemExtensionProps,
 } from "./SettingItem.svelte"
@@ -21,13 +20,6 @@ const { fullWidth, name, placeholder, disabled, onChange } = constProps
 
 $effect(() => {
   onChange?.(value)
-})
-
-onMount(() => {
-  console.log("Adding setting item", name)
-  return () => {
-    console.log("Bye bye setting item", name)
-  }
 })
 </script>
 

@@ -1,15 +1,15 @@
 import { describe, expect, it } from "bun:test"
+import type { TaskNote } from "@orchard/core"
+import type { Vault } from "obsidian"
 import {
-  TASKS_BASE_PATH,
-  TASKS_INDEX_NOTE,
-  TASKS_ROOT_DIR,
   ensureTaskBaseDefinition,
   ensureTaskIndexNote,
   expectedTaskFilePath,
   generateTaskNoteId,
+  TASKS_BASE_PATH,
+  TASKS_INDEX_NOTE,
+  TASKS_ROOT_DIR,
 } from "@/utils/task-files"
-import type { TaskNote } from "@orchard/core"
-import type { Vault } from "obsidian"
 
 class MockAdapter {
   private vault: MockVault
@@ -137,7 +137,10 @@ describe("task file helpers", () => {
       title: "My Task",
       updatedAt: new Date("2024-02-15T10:00:00Z").getTime(),
     } as TaskNote
-    const expected = expectedTaskFilePath(note, new Date("2024-01-01T00:00:00Z"))
+    const expected = expectedTaskFilePath(
+      note,
+      new Date("2024-01-01T00:00:00Z"),
+    )
     expect(expected).toMatch(/^tasks\/2024\/my-task-[a-z0-9]+\.md$/)
   })
 
@@ -152,8 +155,8 @@ describe("task file helpers", () => {
       "mcpSyncState",
     ])
     const stored = vault.readRaw(TASKS_BASE_PATH)
-    expect(stored).toContain("\"status\"")
-    expect(stored).toContain("\"mcpSyncState\"")
+    expect(stored).toContain('"status"')
+    expect(stored).toContain('"mcpSyncState"')
   })
 
   it("creates and updates the task index note", async () => {
