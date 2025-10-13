@@ -13,6 +13,7 @@
       "dependencies": {
         "@hono/node-server": "^1.19.5",
         "@modelcontextprotocol/sdk": "^1.1.0",
+        "@orchard/core": "0.1.0",
         "hono": "^4.9.9",
         "obsidian": "^1.10.0",
         "zod": "^3.23.8",

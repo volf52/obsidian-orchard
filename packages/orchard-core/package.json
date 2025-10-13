@@ -17,6 +17,13 @@
   "keywords": ["orchard", "obsidian", "core", "notes"],
   "author": "",
   "license": "ISC",
+  "exports": {
+    ".": {
+      "bun": "./src/index.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
   "devDependencies": {
     "@biomejs/biome": "^2.2.5",
     "@tsconfig/bun": "^1.0.8",

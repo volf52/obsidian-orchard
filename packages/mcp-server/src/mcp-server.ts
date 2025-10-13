@@ -3,12 +3,6 @@ import { createServer, type IncomingHttpHeaders, type Server } from "node:http"
 import { McpServer as SdkMcpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js"
 import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js"
-import {
-  TaskNoteService,
-  normalizeTaskFrontmatter,
-  toTaskNote,
-  validateTaskFrontmatter,
-} from "@orchard/core"
 import type {
   EventBus,
   Note,
@@ -16,12 +10,11 @@ import type {
   NoteId,
   NoteService,
   NoteVersion,
-  TaskFrontmatter,
-  TaskNote,
   UpdateNoteMutation,
   VaultAdapter,
 } from "@orchard/core"
 import { z } from "zod"
+import { TaskToolService } from "./task-service"
 
 const colors = {
   reset: "\x1b[0m",
@@ -69,14 +62,13 @@ export class McpServer {
   private httpServer: Server | null = null
   private readonly port: number
   private noteService: NoteService | null
-  private taskNotes: TaskNoteService | null = null
+  private taskTools: TaskToolService | null = null
   private apiKey: string | null
   private running = false
   private startedAt: number | null = null
   private readonly sdk: SdkMcpServer
   private readonly transport: StreamableHTTPServerTransport
   private readonly taskFolder: string
-  private readonly taskFolderPrefix: string
   private readonly taskBaseFile: string | null
   private events: EventBus | null = null
   private unsubscribeEvents: (() => void) | null = null
@@ -118,7 +110,6 @@ export class McpServer {
         ? process.env.MCP_TASK_BASE_FILE
         : undefined
     this.taskFolder = normalizeTaskFolder(opts.taskFolder ?? envTaskFolder)
-    this.taskFolderPrefix = this.taskFolder ? `${this.taskFolder}/` : ""
     const baseFileSource =
       opts.taskBaseFile !== undefined ? opts.taskBaseFile : envTaskBase
     this.taskBaseFile = normalizeTaskBaseFile(baseFileSource)
@@ -139,7 +130,7 @@ export class McpServer {
 
   setNoteService(svc: NoteService) {
     this.noteService = svc
-    this.taskNotes = null
+    this.taskTools = null
     this.knownTaskIds.clear()
   }
 
@@ -149,10 +140,16 @@ export class McpServer {
     return this.noteService
   }
 
-  private requireTaskNotes(): TaskNoteService {
+  private requireTaskTools(): TaskToolService {
     const svc = this.requireService()
-    if (!this.taskNotes) this.taskNotes = new TaskNoteService(svc)
-    return this.taskNotes
+    if (!this.taskTools) {
+      this.taskTools = new TaskToolService({
+        noteService: svc,
+        taskFolder: this.taskFolder,
+        taskBaseFile: this.taskBaseFile,
+      })
+    }
+    return this.taskTools
   }
 
   broadcast(event: string, params: Record<string, unknown>) {
@@ -193,96 +190,35 @@ export class McpServer {
     note: Note,
     previousVersion?: NoteVersion,
   ) {
-    const id = note.id as NoteId
-    if (!this.isWithinTaskFolder(id)) return
-    try {
-      const task = toTaskNote(note)
-      this.markTaskKnown(task.id)
-      const payload: Record<string, unknown> = {
-        ...this.toTaskPayload(task),
-      }
-      if (previousVersion) payload.previousVersion = previousVersion
-      this.broadcast(type, payload)
-    } catch {
-      // ignore non-task notes
-    }
+    const tasks = this.requireTaskTools()
+    const summary = tasks.tryConvertNote(note)
+    if (!summary) return
+    this.markTaskKnown(summary.id, tasks)
+    const payload: Record<string, unknown> = { ...summary }
+    if (previousVersion) payload.previousVersion = previousVersion
+    this.broadcast(type, payload)
   }
 
   private handleTaskDeletion(id: NoteId, previousVersion: NoteVersion) {
     this.knownTaskIds.delete(id)
-    if (!this.isWithinTaskFolder(id)) return
+    const tasks = this.requireTaskTools()
+    if (!tasks.isWithinTaskFolder(id)) return
     const payload: Record<string, unknown> = {
       id,
       previousVersion,
-      links: this.buildTaskLinks(id),
+      links: tasks.buildLinks(id),
     }
     this.broadcast("task.deleted", payload)
   }
 
-  private markTaskKnown(id: NoteId) {
-    if (!this.isWithinTaskFolder(id)) return
+  private markTaskKnown(id: NoteId, tasks?: TaskToolService) {
+    const svc = tasks ?? this.taskTools
+    if (svc) {
+      if (!svc.isWithinTaskFolder(id)) return
+    } else if (!isWithinFolder(id, this.taskFolder)) {
+      return
+    }
     this.knownTaskIds.add(id)
-  }
-
-  private normalizeNoteId(id: string): NoteId {
-    let normalized = id.trim()
-    if (!normalized.endsWith(".md")) normalized = `${normalized}.md`
-    normalized = normalized.replace(/\\+/g, "/")
-    normalized = normalized.toLowerCase()
-    return normalized as NoteId
-  }
-
-  private ensureTaskId(id: string): NoteId {
-    const normalized = this.normalizeNoteId(id)
-    if (normalized.includes("..")) {
-      throw {
-        code: "TaskOutsideFolder",
-        details: { folder: this.taskFolder || "", id: normalized },
-      }
-    }
-    if (!this.isWithinTaskFolder(normalized)) {
-      throw {
-        code: "TaskOutsideFolder",
-        details: { folder: this.taskFolder || "", id: normalized },
-      }
-    }
-    return normalized
-  }
-
-  private isWithinTaskFolder(id: NoteId): boolean {
-    if (!this.taskFolder) return true
-    if (id === this.taskFolder) return true
-    if (this.taskFolderPrefix && id.startsWith(this.taskFolderPrefix)) return true
-    return false
-  }
-
-  private buildTaskLinks(id: NoteId): Record<string, unknown> {
-    const links: Record<string, unknown> = {
-      note: { scheme: "obsidian", path: id },
-    }
-    if (this.taskBaseFile) {
-      links.base = { scheme: "obsidian", path: this.taskBaseFile }
-    }
-    if (this.taskFolder) {
-      links.folder = { path: this.taskFolder }
-    }
-    return links
-  }
-
-  private toTaskPayload(task: TaskNote) {
-    return {
-      id: task.id,
-      title: task.title,
-      version: task.version,
-      tags: task.tags,
-      updatedAt: task.updatedAt,
-      status: task.frontmatter.status,
-      project: task.frontmatter.project,
-      due: task.frontmatter.due,
-      priority: task.frontmatter.priority,
-      mcpSyncState: task.frontmatter.mcpSyncState,
-      links: this.buildTaskLinks(task.id),
-    }
   }
 
   private registerTools() {
@@ -369,19 +305,6 @@ export class McpServer {
       })
       .passthrough()
 
-    const parseTaskFrontmatter = (value: unknown): TaskFrontmatter => {
-      try {
-        const raw = taskFrontmatterSchema.parse(value) as Record<string, unknown>
-        return validateTaskFrontmatter(raw)
-      } catch (err) {
-        const message = (err as Error)?.message ?? "InvalidTaskFrontmatter"
-        throw {
-          code: "InvalidTaskFrontmatter",
-          details: { message },
-        }
-      }
-    }
-
     // list_tasks
     this.sdk.tool(
       "list_tasks",
@@ -397,35 +320,14 @@ export class McpServer {
         status?: string
         project?: string
       }) => {
-        const svc = this.requireTaskNotes()
+        const tasks = this.requireTaskTools()
         try {
-          const filters: NoteFilters = {}
-          if (args.tag) filters.tag = args.tag
-          if (args.search) filters.search = args.search
-          const tasks = await svc.list(filters)
-          const filtered = tasks.filter((task) =>
-            this.isWithinTaskFolder(task.id),
-          )
-          const statusFilter = args.status?.trim().toLowerCase()
-          const projectFilter = args.project?.trim().toLowerCase()
-          const subset = filtered.filter((task) => {
-            if (
-              statusFilter &&
-              task.frontmatter.status.toLowerCase() !== statusFilter
-            )
-              return false
-            if (projectFilter !== undefined && projectFilter !== "") {
-              return (
-                (task.frontmatter.project ?? "").toLowerCase() ===
-                projectFilter
-              )
-            }
-            if (projectFilter === "") {
-              return task.frontmatter.project == null
-            }
-            return true
+          const payload = await tasks.list({
+            tag: args.tag,
+            search: args.search,
+            status: args.status,
+            project: args.project,
           })
-          const payload = subset.map((task) => this.toTaskPayload(task))
           return {
             content: [
               { type: "text", text: JSON.stringify({ tasks: payload }) },
@@ -453,24 +355,18 @@ export class McpServer {
         tags?: string[]
         frontmatter: Record<string, unknown>
       }) => {
-        const svc = this.requireTaskNotes()
+        const tasks = this.requireTaskTools()
         try {
-          const id = this.ensureTaskId(args.id)
-          const frontmatter = parseTaskFrontmatter(args.frontmatter)
-          const created = await svc.create({
-            id,
+          const created = await tasks.create({
+            id: args.id,
             title: args.title,
             tags: args.tags,
-            status: frontmatter.status,
-            project: frontmatter.project,
-            due: frontmatter.due,
-            priority: frontmatter.priority,
-            mcpSyncState: frontmatter.mcpSyncState,
+            frontmatter: args.frontmatter,
           })
-          this.markTaskKnown(created.id)
+          this.markTaskKnown(created.id, tasks)
           return {
             content: [
-              { type: "text", text: JSON.stringify({ task: this.toTaskPayload(created) }) },
+              { type: "text", text: JSON.stringify({ task: created }) },
             ],
           }
         } catch (e) {
@@ -497,27 +393,19 @@ export class McpServer {
         tags?: string[]
         frontmatter: Record<string, unknown>
       }) => {
-        const svc = this.requireTaskNotes()
+        const tasks = this.requireTaskTools()
         try {
-          const id = this.ensureTaskId(args.id)
-          const frontmatter = parseTaskFrontmatter(args.frontmatter)
-          const updated = await svc.update(
-            id,
-            {
-              title: args.title,
-              tags: args.tags,
-              status: frontmatter.status,
-              project: frontmatter.project,
-              due: frontmatter.due,
-              priority: frontmatter.priority,
-              mcpSyncState: frontmatter.mcpSyncState,
-            },
-            args.version as NoteVersion,
-          )
-          this.markTaskKnown(updated.id)
+          const updated = await tasks.update({
+            id: args.id,
+            version: args.version as NoteVersion,
+            title: args.title,
+            tags: args.tags,
+            frontmatter: args.frontmatter,
+          })
+          this.markTaskKnown(updated.id, tasks)
           return {
             content: [
-              { type: "text", text: JSON.stringify({ task: this.toTaskPayload(updated) }) },
+              { type: "text", text: JSON.stringify({ task: updated }) },
             ],
           }
         } catch (e) {
@@ -548,41 +436,21 @@ export class McpServer {
         priority?: string | null
         mcpSyncState?: string | null
       }) => {
-        const svc = this.requireTaskNotes()
+        const tasks = this.requireTaskTools()
         try {
-          const id = this.ensureTaskId(args.id)
-          const current = await svc.read(id)
-          if (!current)
-            throw new McpError(ErrorCode.InvalidParams, "TaskNotFound")
-          const normalized = normalizeTaskFrontmatter({
+          const updated = await tasks.transition({
+            id: args.id,
+            version: args.version as NoteVersion,
             status: args.status,
-            project:
-              args.project !== undefined ? args.project : current.frontmatter.project,
-            due: args.due !== undefined ? args.due : current.frontmatter.due,
-            priority:
-              args.priority !== undefined
-                ? args.priority
-                : current.frontmatter.priority,
-            mcpSyncState:
-              args.mcpSyncState !== undefined
-                ? args.mcpSyncState
-                : current.frontmatter.mcpSyncState,
+            project: args.project,
+            due: args.due,
+            priority: args.priority,
+            mcpSyncState: args.mcpSyncState,
           })
-          const updated = await svc.update(
-            id,
-            {
-              status: normalized.status,
-              project: normalized.project,
-              due: normalized.due,
-              priority: normalized.priority,
-              mcpSyncState: normalized.mcpSyncState,
-            },
-            args.version as NoteVersion,
-          )
-          this.markTaskKnown(updated.id)
+          this.markTaskKnown(updated.id, tasks)
           return {
             content: [
-              { type: "text", text: JSON.stringify({ task: this.toTaskPayload(updated) }) },
+              { type: "text", text: JSON.stringify({ task: updated }) },
             ],
           }
         } catch (e) {
@@ -988,6 +856,13 @@ export async function createMcpServer(opts: CreateMcpServerOptions = {}) {
     start: () => server.start(),
     stop: () => server.stop(),
   } as const
+}
+
+function isWithinFolder(id: NoteId, folder: string): boolean {
+  if (!folder) return true
+  if (id === folder) return true
+  const prefix = `${folder}/`
+  return id.startsWith(prefix)
 }
 
 function normalizeTaskFolder(input?: string | null): string {

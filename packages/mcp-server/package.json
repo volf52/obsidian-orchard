@@ -24,6 +24,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@orchard/core": "workspace:*",
     "obsidian": "^1.10.0",
     "hono": "^4.9.9",
     "@hono/node-server": "^1.19.5",
