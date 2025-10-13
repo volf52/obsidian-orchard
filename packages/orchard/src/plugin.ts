@@ -14,6 +14,7 @@ import "./styles.css"
 import "./components/svelte.css"
 import { migrateTaskNotes } from "@/modules/task-migration"
 import VideoModule from "@/modules/video.module"
+import TaskModule from "@/modules/task.module"
 import type { TaskService } from "@/services/task"
 import type { OrchardServices } from "@/services/utils"
 import { wireUpServices } from "@/services/utils"
@@ -31,6 +32,7 @@ class Orchard extends Plugin {
 
   videoModule!: VideoModule
   transcriptionModule!: TranscriptionModule
+  taskModule!: TaskModule
 
   noteService!: NoteService
   taskService!: TaskService
@@ -64,6 +66,7 @@ class Orchard extends Plugin {
       this.settings,
       this.services,
     )
+    this.taskModule = new TaskModule(this.app, this.settings, this.services)
 
     await migrateTaskNotes(this.app, this.taskNotes, this.inlineTasks)
 
@@ -126,6 +129,9 @@ class Orchard extends Plugin {
     const transcriptionCommands =
       await this.transcriptionModule.registerCommands()
     commands.push(...transcriptionCommands)
+
+    const taskCommands = await this.taskModule.registerCommands()
+    commands.push(...taskCommands)
 
     // this.addCommand({
     //   id: "orchard-picker",

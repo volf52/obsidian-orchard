@@ -33,30 +33,39 @@ const DEFAULT_TASK_BASE: TaskBaseDefinition = {
   columns: TASK_BASE_COLUMNS,
 }
 
-const TASK_INDEX_HEADER = `---
+const createTaskIndexHeader = (
+  rootDir: string,
+  basePath: string,
+): string => `---
 title: Orchard Tasks
 ---
 # Orchard Tasks
 
-Orchard manages task notes under the \`${TASKS_ROOT_DIR}/\` folder and mirrors them as inline tasks using Dataview metadata.
+Orchard manages task notes under the \`${rootDir}/\` folder and mirrors them as inline tasks using Dataview metadata.
 
-- [[${TASKS_BASE_PATH}|Open the Orchard Tasks Base]]
+- [[${basePath}|Open the Orchard Tasks Base]]
 
 ## Inline Tasks
 `
 
-export function generateTaskNoteId(title: string, date = new Date()): NoteId {
+export function generateTaskNoteId(
+  title: string,
+  date = new Date(),
+  rootDir: string = TASKS_ROOT_DIR,
+): NoteId {
   const year = date.getUTCFullYear()
   const baseSlug = slugifyTaskSegment(title)
   const slug = baseSlug || "task"
   const suffix = timestampSuffix(date)
   const fileName = `${slug}-${suffix}`.toLowerCase()
-  return `${TASKS_ROOT_DIR}/${year}/${fileName}.md` as NoteId
+  const normalizedRoot = normalizeRootDir(rootDir)
+  return `${normalizedRoot}/${year}/${fileName}.md`.toLowerCase() as NoteId
 }
 
 export function expectedTaskFilePath(
   note: Pick<TaskNote, "id" | "title" | "updatedAt">,
   now = new Date(),
+  rootDir: string = TASKS_ROOT_DIR,
 ): NoteId {
   const year = resolveYear(note.updatedAt, now)
   const baseName = extractBasename(note.id) ?? note.title ?? "task"
@@ -64,15 +73,17 @@ export function expectedTaskFilePath(
     slugifyTaskSegment(baseName) || slugifyTaskSegment(note.title) || "task"
   const suffix = hashSuffix(note.id)
   const slug = suffix ? `${baseSlug}-${suffix}` : baseSlug
-  return `${TASKS_ROOT_DIR}/${year}/${slug}.md`.toLowerCase() as NoteId
+  const normalizedRoot = normalizeRootDir(rootDir)
+  return `${normalizedRoot}/${year}/${slug}.md`.toLowerCase() as NoteId
 }
 
 export async function ensureTaskBaseDefinition(
   vault: Vault,
+  basePath: string = TASKS_BASE_PATH,
 ): Promise<TaskBaseDefinition> {
-  await ensureDirectory(vault, getDirname(TASKS_BASE_PATH))
+  await ensureDirectory(vault, getDirname(basePath))
   const adapter = vault.adapter
-  const path = normalizeVaultPath(TASKS_BASE_PATH)
+  const path = normalizeVaultPath(basePath)
   let existing: TaskBaseDefinition | undefined
   if (await adapter.exists(path)) {
     try {
@@ -91,19 +102,26 @@ export async function ensureTaskBaseDefinition(
   return desired
 }
 
-export async function ensureTaskIndexNote(vault: Vault): Promise<void> {
-  const path = normalizeVaultPath(TASKS_INDEX_NOTE)
+export async function ensureTaskIndexNote(
+  vault: Vault,
+  indexPath: string = TASKS_INDEX_NOTE,
+  basePath: string = TASKS_BASE_PATH,
+  rootDir: string = TASKS_ROOT_DIR,
+): Promise<void> {
+  const path = normalizeVaultPath(indexPath)
   await ensureDirectory(vault, getDirname(path))
   const file = vault.getAbstractFileByPath(path)
   if (isVaultFile(file)) {
     const existing = await vault.read(file)
-    if (existing.startsWith(TASK_INDEX_HEADER)) return
+    const header = createTaskIndexHeader(rootDir, basePath)
+    if (existing.startsWith(header)) return
     const preserved = extractInlineTasksSection(existing)
-    const nextContent = `${TASK_INDEX_HEADER}${preserved}`
+    const nextContent = `${header}${preserved}`
     await vault.modify(file, nextContent)
     return
   }
-  await vault.create(path, `${TASK_INDEX_HEADER}\n`)
+  const header = createTaskIndexHeader(rootDir, basePath)
+  await vault.create(path, `${header}\n`)
 }
 
 function extractInlineTasksSection(content: string): string {
@@ -195,6 +213,11 @@ function timestampSuffix(date: Date): string {
   const minute = `${date.getUTCMinutes()}`.padStart(2, "0")
   const second = `${date.getUTCSeconds()}`.padStart(2, "0")
   return `${year}${month}${day}${hour}${minute}${second}`
+}
+
+function normalizeRootDir(rootDir: string): string {
+  if (!rootDir) return TASKS_ROOT_DIR
+  return rootDir.replace(/^\/+|\/+$/g, "")
 }
 
 function resolveYear(updatedAt: number, now: Date): number {
