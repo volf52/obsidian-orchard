@@ -47,6 +47,34 @@ interface TagsResponse {
   tags: Array<{ name: string; count: number }>
 }
 
+interface TaskLinks {
+  note: { scheme: string; path: string }
+  base?: { scheme: string; path: string }
+  folder?: { path: string }
+}
+
+interface TaskSummary {
+  id: string
+  title: string
+  version: string
+  status: string
+  project: string | null
+  due: string | null
+  priority: string | null
+  mcpSyncState: string | null
+  tags: string[]
+  updatedAt: number
+  links: TaskLinks
+}
+
+interface TaskResponse {
+  task: TaskSummary
+}
+
+interface ListTasksResponse {
+  tasks: TaskSummary[]
+}
+
 interface MetricsResponse {
   notes: number
   uptimeMs: number
@@ -145,6 +173,8 @@ describe("McpServer (MCP SDK HTTP Transport)", () => {
     const tools = toolList?.tools ?? []
     expect(tools.some((t) => t.name === "create_note")).toBe(true)
     expect(tools.some((t) => t.name === "list_tags")).toBe(true)
+    expect(tools.some((t) => t.name === "list_tasks")).toBe(true)
+    expect(tools.some((t) => t.name === "create_task")).toBe(true)
   })
 
   it("creates notes and lists via list_notes filters", async () => {
@@ -213,6 +243,7 @@ describe("McpServer (MCP SDK HTTP Transport)", () => {
       { name: "shared", count: 1 },
       { name: "tagA", count: 2 },
       { name: "tagB", count: 2 },
+      { name: "tagC", count: 1 },
     ])
   })
 
@@ -220,6 +251,72 @@ describe("McpServer (MCP SDK HTTP Transport)", () => {
     const r = await callTool(testKey, "get_note", { id: "alpha.md" })
     const data = extractJsonContent(r.body.result) as NoteResponse
     expect(data.note.body).toBe("Hello")
+  })
+
+  it("creates, lists, and updates tasks", async () => {
+    const created = await callTool(testKey, "create_task", {
+      id: "tasks/TaskOne",
+      title: "Task One",
+      frontmatter: { status: "Todo", project: "Alpha" },
+    })
+    expect(created.status).toBe(200)
+    const createdData = extractJsonContent(created.body.result) as TaskResponse
+    expect(createdData.task.id).toBe("tasks/taskone.md")
+    expect(createdData.task.status).toBe("Todo")
+    expect(createdData.task.project).toBe("Alpha")
+    expect(createdData.task.links.note.path).toBe("tasks/taskone.md")
+    expect(createdData.task.links.base?.path).toContain("orchard-tasks.base.json")
+
+    const listAll = await callTool(testKey, "list_tasks", {})
+    expect(listAll.status).toBe(200)
+    const listAllData = extractJsonContent(listAll.body.result) as ListTasksResponse
+    const entry = listAllData.tasks.find((t) => t.id === "tasks/taskone.md")
+    expect(entry?.status).toBe("Todo")
+    expect(entry?.links.folder?.path).toBe("tasks")
+
+    const update = await callTool(testKey, "update_task", {
+      id: createdData.task.id,
+      version: createdData.task.version,
+      title: "Task One",
+      frontmatter: {
+        status: "Doing",
+        project: "Alpha",
+        priority: "High",
+        due: "2025-01-31",
+        mcpSyncState: "pending",
+      },
+    })
+    expect(update.status).toBe(200)
+    const updatedData = extractJsonContent(update.body.result) as TaskResponse
+    expect(updatedData.task.status).toBe("Doing")
+    expect(updatedData.task.priority).toBe("High")
+    expect(updatedData.task.due).toBe("2025-01-31")
+
+    const transitioned = await callTool(testKey, "transition_task_status", {
+      id: updatedData.task.id,
+      version: updatedData.task.version,
+      status: "Done",
+      project: null,
+      mcpSyncState: "synced",
+    })
+    expect(transitioned.status).toBe(200)
+    const transitionedData = extractJsonContent(transitioned.body.result) as TaskResponse
+    expect(transitionedData.task.status).toBe("Done")
+    expect(transitionedData.task.project).toBeNull()
+    expect(transitionedData.task.mcpSyncState).toBe("synced")
+
+    const filtered = await callTool(testKey, "list_tasks", { status: "done" })
+    expect(filtered.status).toBe(200)
+    const filteredData = extractJsonContent(filtered.body.result) as ListTasksResponse
+    expect(filteredData.tasks.some((t) => t.id === transitionedData.task.id)).toBe(true)
+
+    const rejectOutside = await callTool(testKey, "create_task", {
+      id: "notes/Outside",
+      title: "Outside",
+      frontmatter: { status: "Todo" },
+    })
+    expect(rejectOutside.status).toBe(200)
+    expect(extractErrorCode(rejectOutside.body.result)).toBe("TaskOutsideFolder")
   })
 
   it("normalizes id case + extension on create", async () => {

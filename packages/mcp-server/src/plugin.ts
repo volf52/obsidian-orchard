@@ -159,6 +159,7 @@ export default class OrchardMcpPlugin extends Plugin {
     const noteService = new NoteService({ adapter, events })
 
     this.mcp = new McpServer({ noteService, apiKey: this.settings.apiKey })
+    this.mcp.attachEvents(events)
     await this.mcp.start()
     console.log(`[MCP] Server started (storage=${this.settings.storage})`)
   }
