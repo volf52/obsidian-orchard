@@ -10,7 +10,11 @@
     "rootDir": "src",
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "baseUrl": "./src",
+    "paths": {
+      "@orchard/core": ["../orchard-core/src/index.ts"]
+    }
   },
   "include": ["src"],
   "exclude": ["dist", "node_modules"]
