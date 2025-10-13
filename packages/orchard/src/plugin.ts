@@ -1,4 +1,10 @@
-import { createEventBus, NoteService, type EventBus } from "@orchard/core"
+import {
+  InlineTaskService,
+  TaskNoteService,
+  createEventBus,
+  NoteService,
+  type EventBus,
+} from "@orchard/core"
 import { type Command, Plugin } from "obsidian"
 import { ICON, ORCHAR_RSB_VIEW_TYPE } from "@/constants"
 import RightSidebarView from "@/right-sidebar-view"
@@ -15,6 +21,7 @@ import {
   updateSettings,
 } from "@/stores/settings"
 import TranscriptionModule from "./modules/transcribe.module"
+import { migrateTaskNotes } from "@/modules/task-migration"
 
 class Orchard extends Plugin {
   settings!: OrchardSettings
@@ -24,6 +31,8 @@ class Orchard extends Plugin {
   transcriptionModule!: TranscriptionModule
 
   noteService!: NoteService
+  taskNotes!: TaskNoteService
+  inlineTasks!: InlineTaskService
   events!: EventBus
 
   override async onload(): Promise<void> {
@@ -46,6 +55,10 @@ class Orchard extends Plugin {
     const events = createEventBus()
     this.events = events
     this.noteService = new NoteService({ adapter, events })
+    this.taskNotes = new TaskNoteService(this.noteService)
+    this.inlineTasks = new InlineTaskService(this.noteService)
+
+    await migrateTaskNotes(this.app, this.taskNotes, this.inlineTasks)
 
     this.addRibbonIcon(ICON, "Open Orchard", (_evt) => {
       this.activateView()
