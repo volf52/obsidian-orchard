@@ -40,6 +40,7 @@ class YoutubeApiService {
       notifyErr("Got >< 1 results")
       return null
     }
+    console.log("Item", item)
 
     const meta = toVideoMeta(item)
 

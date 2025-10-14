@@ -16,18 +16,18 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@biomejs/biome": "^2.2.5",
-    "@tsconfig/bun": "^1.0.8",
-    "@types/bun": "^1.2.23",
-    "@typescript/native-preview": "^7.0.0-dev.20251004.1",
-    "builtin-modules": "^5.0.0",
-    "oxlint": "^1.19.0",
-    "typescript": "^5.9.3"
+    "@biomejs/biome": "catalog:",
+    "@tsconfig/bun": "catalog:",
+    "@types/bun": "catalog:",
+    "@typescript/native-preview": "catalog:",
+    "builtin-modules": "catalog:",
+    "oxlint": "catalog:",
+    "typescript": "catalog:"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.5",
-    "@scalar/hono-api-reference": "^0.9.20",
+    "@scalar/hono-api-reference": "^0.9.22",
     "hono": "^4.9.9",
-    "obsidian": "^1.10.0"
+    "obsidian": "catalog:"
   }
 }

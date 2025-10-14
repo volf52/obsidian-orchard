@@ -1,5 +1,6 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "root": true,
   "vcs": {
     "clientKind": "git",
     "defaultBranch": "main",
@@ -7,43 +8,47 @@
     "useIgnoreFile": true
   },
   "files": {
-    "experimentalScannerIgnores": ["node_modules", ".git"],
-    "ignoreUnknown": true,
     "includes": [
-      "*.{json,jsonc,js,ts,tsx,css,md}",
-      "packages/*/src/**/*.{ts,tsx,js,json,css,md}",
-
-      "packages/*/*.json",
-      "packages/*/biome.jsonc"
-    ]
+      "./*.jsonc",
+      "./*.json"
+    ],
+    "experimentalScannerIgnores": [
+      "node_modules",
+      ".git"
+    ],
+    "ignoreUnknown": true
   },
   "formatter": {
     "bracketSameLine": true,
     "enabled": true,
     "expand": "auto",
-    "indentStyle": "space",
-    "useEditorconfig": false
+    "indentStyle": "space"
   },
   "linter": {
-    "domains": {
-      "react": "recommended",
-      "test": "recommended"
-    },
     "enabled": true,
     "rules": {
-      "recommended": true
+      "recommended": true,
+      "style": {
+        "useImportType": "off"
+      },
+      "complexity": {
+        "noStaticOnlyClass": "off"
+      }
     }
   },
-
   "plugins": [],
   "grit": {},
   "graphql": {
-    "assist": { "enabled": false },
-    "formatter": { "enabled": false },
-    "linter": { "enabled": false }
+    "assist": {
+      "enabled": false
+    },
+    "formatter": {
+      "enabled": false
+    },
+    "linter": {
+      "enabled": false
+    }
   },
-  "root": true,
-
   "assist": {
     "actions": {
       "source": {
@@ -57,12 +62,21 @@
     "enabled": true
   },
   "css": {
-    "assist": { "enabled": true },
-    "formatter": { "enabled": true, "indentStyle": "space" },
-    "linter": { "enabled": true },
-    "parser": { "allowWrongLineComments": false, "cssModules": true }
+    "assist": {
+      "enabled": true
+    },
+    "formatter": {
+      "enabled": true,
+      "indentStyle": "space"
+    },
+    "linter": {
+      "enabled": true
+    },
+    "parser": {
+      "allowWrongLineComments": false,
+      "cssModules": true
+    }
   },
-
   "html": {
     "formatter": {
       "bracketSameLine": true,
@@ -72,7 +86,9 @@
     }
   },
   "javascript": {
-    "assist": { "enabled": true },
+    "assist": {
+      "enabled": true
+    },
     "formatter": {
       "arrowParentheses": "always",
       "enabled": true,
@@ -82,7 +98,6 @@
       "semicolons": "asNeeded",
       "trailingCommas": "all"
     },
-    "jsxRuntime": "transparent",
     "linter": {
       "enabled": true
     },
@@ -92,11 +107,16 @@
     }
   },
   "json": {
-    "assist": { "enabled": true },
-    "formatter": { "enabled": true, "expand": "auto", "indentStyle": "space" },
-    "linter": { "enabled": true }
-  },
-  "overrides": [
-
-  ]
+    "assist": {
+      "enabled": true
+    },
+    "formatter": {
+      "enabled": true,
+      "expand": "auto",
+      "indentStyle": "space"
+    },
+    "linter": {
+      "enabled": true
+    }
+  }
 }

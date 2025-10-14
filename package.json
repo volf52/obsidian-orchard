@@ -2,10 +2,10 @@
   "name": "obsidian-orchard-monorepo",
   "version": "1.0.0",
   "description": "My obsidian plugins for personal use",
+  "engines": {
+    "bun": ">=1.0.0"
+  },
   "private": true,
-  "workspaces": [
-    "packages/*"
-  ],
   "scripts": {
     "build": "bun run --filter '*' build",
     "tc": "bun run --filter '*' tc",
@@ -18,9 +18,19 @@
     "clean": "bun run --filter '*' clean"
   },
   "devDependencies": {
-    "taze": "^19.7.0"
+    "@biomejs/biome": "catalog:"
   },
-  "engines": {
-    "bun": ">=1.0.0"
+  "workspaces": {
+    "packages": ["packages/*"],
+    "catalog": {
+      "@biomejs/biome": "^2.2.5",
+      "@tsconfig/bun": "^1.0.8",
+      "@types/bun": "^1.2.23",
+      "@typescript/native-preview": "^7.0.0-dev.20251004.1",
+      "oxlint": "^1.23.0",
+      "builtin-modules": "^5.0.0",
+      "obsidian": "^1.10.0",
+      "typescript": "^5.9.3"
+    }
   }
 }

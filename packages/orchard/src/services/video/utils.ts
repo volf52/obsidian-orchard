@@ -73,11 +73,11 @@ export function toVideoMeta(item: YtSearchItem): VideoMetadata {
 
   const thumbs = snippet.thumbnails
   meta.thumbnail =
-    thumbs.maxres.url ||
-    thumbs.high.url ||
-    thumbs.standard.url ||
-    thumbs.medium.url ||
-    thumbs.default.url
+    thumbs.maxres?.url ||
+    thumbs.high?.url ||
+    thumbs.standard?.url ||
+    thumbs.medium?.url ||
+    thumbs.default?.url || ''
 
   return meta
 }
