@@ -28,6 +28,8 @@
     "@biomejs/biome": "catalog:",
     "@tsconfig/bun": "catalog:",
     "@types/bun": "catalog:",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:",
     "@typescript/native-preview": "catalog:",
     "typescript": "catalog:"
   },

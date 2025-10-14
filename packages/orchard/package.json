@@ -28,6 +28,7 @@
     "@typescript/native-preview": "catalog:",
     "builtin-modules": "catalog:",
     "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:",
     "svelte": "^5.40.0",
     "svelte-check": "^4.3.3",
     "typescript": "catalog:"

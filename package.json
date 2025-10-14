@@ -18,7 +18,9 @@
     "clean": "bun run --filter '*' clean"
   },
   "devDependencies": {
-    "@biomejs/biome": "catalog:"
+    "@biomejs/biome": "catalog:",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:"
   },
   "workspaces": {
     "packages": ["packages/*"],
@@ -28,6 +30,7 @@
       "@types/bun": "^1.2.23",
       "@typescript/native-preview": "^7.0.0-dev.20251004.1",
       "oxlint": "^1.23.0",
+      "oxlint-tsgolint": "^0.2.0",
       "builtin-modules": "^5.0.0",
       "obsidian": "^1.10.0",
       "typescript": "^5.9.3"

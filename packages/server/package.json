@@ -22,6 +22,7 @@
     "@typescript/native-preview": "catalog:",
     "builtin-modules": "catalog:",
     "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:",
     "typescript": "catalog:"
   },
   "dependencies": {
