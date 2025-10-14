@@ -37,6 +37,7 @@ class MockVault {
   adapter: MockAdapter
   private files = new Map<string, { data: string; file: MockFile }>()
   private folders = new Set<string>()
+  createdPaths: string[] = []
 
   constructor() {
     this.adapter = new MockAdapter(this)
@@ -49,6 +50,7 @@ class MockVault {
 
   async create(path: string, data: string) {
     const normalized = normalize(path)
+    this.createdPaths.push(normalized)
     const file = createMockFile(normalized)
     this.files.set(normalized, { data, file })
     return file
@@ -177,5 +179,13 @@ describe("task file helpers", () => {
     const headerPrefix = lines.slice(0, headerEnd + 1).join("\n")
     expect(updated.startsWith(headerPrefix)).toBe(true)
     expect(updated).toContain("note:: [[tasks/sample]]")
+  })
+
+  it("skips creating a duplicate task index note when it already exists", async () => {
+    const vault = new MockVault()
+    await vault.create(TASKS_INDEX_NOTE, "Existing content\n")
+    vault.createdPaths = []
+    await ensureTaskIndexNote(vault as unknown as Vault)
+    expect(vault.createdPaths).toHaveLength(0)
   })
 })

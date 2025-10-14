@@ -2,7 +2,7 @@ import type { NoteId, TaskNote } from "@orchard/core"
 import type { TFile, Vault } from "obsidian"
 
 export const TASKS_ROOT_DIR = "tasks"
-export const TASKS_INDEX_NOTE = "Tasks/README.md"
+export const TASKS_INDEX_NOTE = "tasks/readme.md"
 export const TASKS_BASE_PATH = ".obsidian/bases/orchard-tasks.base.json"
 
 export interface TaskBaseColumn {
@@ -145,19 +145,19 @@ export async function ensureTaskIndexNote(
   basePath: string = TASKS_BASE_PATH,
   rootDir: string = TASKS_ROOT_DIR,
 ): Promise<void> {
-  const path = normalizeVaultPath(indexPath)
+  const path = normalizeVaultPath(indexPath).toLowerCase()
   await ensureDirectory(vault, getDirname(path))
   const file = vault.getAbstractFileByPath(path)
+  const header = createTaskIndexHeader(rootDir, basePath)
   if (isVaultFile(file)) {
     const existing = await vault.read(file)
-    const header = createTaskIndexHeader(rootDir, basePath)
     if (existing.startsWith(header)) return
     const preserved = extractInlineTasksSection(existing)
     const nextContent = `${header}${preserved}`
     await vault.modify(file, nextContent)
     return
   }
-  const header = createTaskIndexHeader(rootDir, basePath)
+  if (await vault.adapter.exists(path)) return
   await vault.create(path, `${header}\n`)
 }
 
