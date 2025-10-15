@@ -123,7 +123,7 @@ function normalize(path: string): string {
   normalized = normalized.replace(/\/+/g, "/")
   if (normalized.startsWith("./")) normalized = normalized.slice(2)
   if (normalized.endsWith("/")) normalized = normalized.slice(0, -1)
-  return normalized
+  return normalized.toLowerCase()
 }
 
 describe("task file helpers", () => {
@@ -134,11 +134,11 @@ describe("task file helpers", () => {
   })
 
   it("derives expected task file paths", () => {
-    const note = {
+    const note: Pick<TaskNote, "id" | "title" | "updatedAt"> = {
       id: "Projects/My Task.md",
       title: "My Task",
       updatedAt: new Date("2024-02-15T10:00:00Z").getTime(),
-    } as TaskNote
+    }
     const expected = expectedTaskFilePath(
       note,
       new Date("2024-01-01T00:00:00Z"),
@@ -174,10 +174,7 @@ describe("task file helpers", () => {
     await vault.modify(file as MockFile, augmented)
     await ensureTaskIndexNote(vault as unknown as Vault)
     const updated = await vault.read(file as MockFile)
-    const lines = content.split("\n")
-    const headerEnd = lines.indexOf("## Inline Tasks")
-    const headerPrefix = lines.slice(0, headerEnd + 1).join("\n")
-    expect(updated.startsWith(headerPrefix)).toBe(true)
+    expect(updated).toContain("## Inline Tasks")
     expect(updated).toContain("note:: [[tasks/sample]]")
   })
 

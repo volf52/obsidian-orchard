@@ -21,7 +21,7 @@ By default the plugin writes task notes beneath `tasks/<year>/` using slugged fi
 
 Two companion files are managed automatically:
 
-- **Task index note** – `Tasks/README.md` acts as the inline Dataview surface. The migration utilities ensure it always starts with the Orchard header and preserves any manually maintained "Inline Tasks" section.【F:packages/orchard/src/utils/task-files.ts†L74-L168】
+- **Task index note** – `tasks/readme.md` acts as the inline Dataview surface. The migration utilities ensure it always starts with the Orchard header and preserves any manually maintained "Inline Tasks" section.【F:packages/orchard/src/utils/task-files.ts†L74-L168】
 - **Base definition** – `.obsidian/bases/orchard-tasks.base.json` stores the canonical Base description (columns for status, project, due date, priority, and MCP sync state). It is created or normalized as needed before task operations run.【F:packages/orchard/src/utils/task-files.ts†L8-L64】【F:packages/orchard/src/utils/task-files.ts†L104-L139】
 
 ## Base configuration
@@ -59,7 +59,7 @@ The plugin subscribes to MCP task events so in-app lists stay synchronized as ex
 
 Minimal JSON-RPC envelopes for common operations:
 
-```jsonc
+```json
 {
   "jsonrpc": "2.0",
   "id": 1,
@@ -67,7 +67,7 @@ Minimal JSON-RPC envelopes for common operations:
   "params": {
     "name": "create_task",
     "arguments": {
-      "id": "tasks/Alpha",
+      "id": "tasks/alpha",
       "title": "Draft quarterly plan",
       "frontmatter": {
         "status": "Todo",
@@ -81,7 +81,7 @@ Minimal JSON-RPC envelopes for common operations:
 }
 ```
 
-```jsonc
+```json
 {
   "jsonrpc": "2.0",
   "id": 2,
@@ -100,6 +100,8 @@ Minimal JSON-RPC envelopes for common operations:
 
 Responses include a single text content part that embeds JSON describing the created or updated task, matching the server transport conventions.【F:packages/mcp-server/README.md†L125-L197】
 
+> **Note on identifiers**: Task tool payloads expect an `id` that matches the Orchard task note path, including the `.md` extension for existing notes (for example `tasks/alpha-20250101083000.md`). When creating a note you may supply a slug such as `tasks/alpha`; the server normalizes it to a full filename using the same rules described earlier in this guide.【F:packages/orchard/src/utils/task-files.ts†L61-L104】
+
 ### Syncing external systems
 
 1. **Track mirror state with `mcpSyncState`** – Use values such as `pending`, `queued:<system>`, or `synced` when your automation pushes tasks into another tracker. Because the field is normalized in both the plugin and MCP tools, downstream clients will receive the sanitized string regardless of case or surrounding whitespace.【F:packages/orchard-core/src/task.ts†L15-L63】【F:packages/mcp-server/src/task-service.ts†L209-L219】
@@ -108,4 +110,4 @@ Responses include a single text content part that embeds JSON describing the cre
 4. **Rely on optimistic concurrency** – `update_task` and `transition_task_status` require the latest note `version`. Persist the version from list/create responses to avoid overwriting changes made in Obsidian.【F:packages/mcp-server/src/task-service.ts†L163-L219】
 5. **Link back to Obsidian** – Each summary includes deep links for the note, the Task Base definition, and the task folder so external dashboards can give users direct navigation targets.【F:packages/mcp-server/src/task-service.ts†L221-L240】
 
-Refer back to this document whenever you adjust Task settings or build new MCP automations.
+Refer to this document whenever you adjust Task settings or build new MCP automations.
