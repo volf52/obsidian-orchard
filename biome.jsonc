@@ -10,7 +10,8 @@
   "files": {
     "includes": [
       "./*.jsonc",
-      "./*.json"
+      "./*.json",
+      "./*.config.ts"
     ],
     "experimentalScannerIgnores": [
       "node_modules",

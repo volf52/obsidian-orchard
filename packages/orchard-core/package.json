@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "build": "bun build src/index.ts --outdir dist --target bun --format esm",
+    "build": "bunup",
     "tc": "tsc --noEmit --pretty",
     "lint": "biome check src",
     "lint:fix": "biome check src --write --unsafe",
@@ -28,9 +28,10 @@
     "@biomejs/biome": "catalog:",
     "@tsconfig/bun": "catalog:",
     "@types/bun": "catalog:",
+    "@typescript/native-preview": "catalog:",
+    "bunup": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
-    "@typescript/native-preview": "catalog:",
     "typescript": "catalog:"
   },
   "dependencies": {

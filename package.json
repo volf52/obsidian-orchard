@@ -7,7 +7,7 @@
   },
   "private": true,
   "scripts": {
-    "build": "bun run --filter '*' build",
+    "build": "bunx bunup",
     "tc": "bun run --filter '*' tc",
     "lint": "bun run --filter '*' lint",
     "lint:fix": "bun run --filter '*' lint:fix",
@@ -18,22 +18,27 @@
     "clean": "bun run --filter '*' clean"
   },
   "devDependencies": {
+    "typescript": "catalog:",
+    "@typescript/native-preview": "catalog:",
     "@biomejs/biome": "catalog:",
+    "bunup": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:"
   },
   "workspaces": {
-    "packages": ["packages/*"],
+    "packages": ["packages/*", "internal/*"],
     "catalog": {
       "@biomejs/biome": "^2.2.5",
+      "bunup": "^0.15.4",
       "@tsconfig/bun": "^1.0.8",
       "@types/bun": "^1.2.23",
-      "@typescript/native-preview": "^7.0.0-dev.20251004.1",
+      "@typescript/native-preview": "^7.0.0-dev.20251019.1",
       "oxlint": "^1.23.0",
       "oxlint-tsgolint": "^0.2.0",
       "builtin-modules": "^5.0.0",
       "obsidian": "^1.10.0",
-      "typescript": "^5.9.3"
+      "typescript": "^5.9.3",
+      "svelte": "^5.41.0"
     }
   }
 }

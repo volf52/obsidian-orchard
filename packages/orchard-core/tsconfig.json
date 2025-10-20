@@ -1,15 +1,18 @@
 {
   "extends": "@tsconfig/bun/tsconfig.json",
   "compilerOptions": {
-    "baseUrl": "./",
     "module": "ESNext",
     "target": "ES2022",
     "moduleResolution": "bundler",
     "allowJs": false,
     "noImplicitAny": true,
+    "emitDeclarationOnly": true,
+    "composite": true,
+    "noEmit": false,
     "importHelpers": true,
     "isolatedModules": true,
     "strictNullChecks": true,
+    "isolatedDeclarations": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "esModuleInterop": true,
@@ -17,9 +20,17 @@
     "declaration": true,
     "outDir": "dist",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": [
+        "./src/*"
+      ]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.test.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.test.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

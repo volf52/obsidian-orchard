@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "build": "bun build src/index.ts --outdir dist --target bun --format esm",
+    "build": "bunup",
     "tc": "tsc --noEmit --pretty",
     "lint": "biome check src",
     "lint:fix": "biome check src --write --unsafe",
@@ -24,7 +24,8 @@
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
     "@typescript/native-preview": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "bunup": "catalog:"
   },
   "dependencies": {
     "@orchard/core": "workspace:",

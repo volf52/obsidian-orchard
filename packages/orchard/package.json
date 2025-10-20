@@ -4,7 +4,7 @@
   "description": "Obsidian Orchard plugin for video transcription and note management",
   "main": "index.js",
   "scripts": {
-    "build": "bun --bun run build.ts",
+    "build": "bunup",
     "tc": "tsc --noEmit --pretty",
     "version": "node version-bump.mjs && git add manifest.json versions.json",
     "lint": "biome check src",
@@ -22,6 +22,7 @@
   "devDependencies": {
     "@biomejs/biome": "catalog:",
     "@codemirror/state": "^6.5.2",
+    "bunup": "catalog:",
     "@codemirror/view": "^6.38.6",
     "@tsconfig/bun": "catalog:",
     "@types/bun": "catalog:",
@@ -29,9 +30,10 @@
     "builtin-modules": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
-    "svelte": "^5.40.0",
+    "svelte": "catalog:",
     "svelte-check": "^4.3.3",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "@internal/build-plugins": "workspace:"
   },
   "dependencies": {
     "ky": "^1.12.0",

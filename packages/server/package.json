@@ -28,7 +28,7 @@
   "dependencies": {
     "@hono/node-server": "^1.19.5",
     "@scalar/hono-api-reference": "^0.9.22",
-    "hono": "^4.9.9",
+    "hono": "^4.10.1",
     "obsidian": "catalog:"
   }
 }
