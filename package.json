@@ -28,19 +28,19 @@
   "workspaces": {
     "packages": ["packages/*", "internal/*"],
     "catalog": {
-      "hono": "^4.10.4",
+      "hono": "^4.10.6",
       "@hono/node-server": "^1.19.6",
-      "@biomejs/biome": "^2.3.2",
-      "bunup": "^0.15.13",
-      "@tsconfig/bun": "^1.0.8",
-      "@types/bun": "^1.3.1",
-      "@typescript/native-preview": "^7.0.0-dev.20251101.1",
-      "oxlint": "^1.25.0",
-      "oxlint-tsgolint": "^0.4.0",
+      "@biomejs/biome": "^2.3.7",
+      "bunup": "^0.16.10",
+      "@tsconfig/bun": "^1.0.10",
+      "@types/bun": "^1.3.3",
+      "@typescript/native-preview": "^7.0.0-dev.20251122.1",
+      "oxlint": "^1.29.0",
+      "oxlint-tsgolint": "^0.8.0",
       "builtin-modules": "^5.0.0",
-      "obsidian": "^1.10.2-1",
+      "obsidian": "^1.10.3",
       "typescript": "^5.9.3",
-      "svelte": "^5.43.2"
+      "svelte": "^5.43.14"
     }
   }
 }
