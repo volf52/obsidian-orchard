@@ -34,10 +34,15 @@ class TranscriptionModule {
     const svelteModal = mount(TranscribeFileModal, {
       target: m.modalEl,
       props: {
-        onSubmit: async (file, _errFunc) => {
+        onSubmit: async (
+          file: File,
+          onErr: (_data: string, err: unknown) => void,
+        ) => {
           m.disableClose()
 
           console.log("File submitted", file.name, file.type, file.size)
+
+          onErr("transcribe", new Error("Transcription not yet implemented"))
 
           m.enableClose()
           m.close()

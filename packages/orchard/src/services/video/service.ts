@@ -1,19 +1,22 @@
 import ky, { type KyInstance } from "ky"
-import { onSettingUpdate } from "@/events/settings-store"
 import { notifyErr } from "@/notify"
+import { onSettingChange, trackSubscription } from "@/stores/settings"
 import type { ChannelResp, VideoMetadata, YtSearchResponse } from "./types"
 import { extractChapters, toVideoMeta } from "./utils"
 
 class YoutubeApiService {
-  #http: KyInstance
-  #unsub: () => void
+  private http: KyInstance
+  private unsub: () => void
 
   constructor(private apiKey: string) {
-    this.#unsub = onSettingUpdate((s) => {
-      this.updateApiKey(s.googleApiKey)
+    // Subscribe to Google API key changes specifically
+    this.unsub = onSettingChange("googleApiKey", (newApiKey) => {
+      this.updateApiKey(newApiKey)
     })
 
-    this.#http = ky.extend({
+    trackSubscription(this.unsub)
+
+    this.http = ky.extend({
       prefixUrl: "https://www.googleapis.com/youtube/v3",
       searchParams: { key: apiKey },
     })
@@ -21,13 +24,13 @@ class YoutubeApiService {
 
   updateApiKey(newKey: string) {
     this.apiKey = newKey
-    this.#http = this.#http.extend({
+    this.http = this.http.extend({
       searchParams: { key: this.apiKey },
     })
   }
 
   async fetchVideoDetails(videoId: string): Promise<VideoMetadata | null> {
-    const detailRes = await this.#http.get("videos", {
+    const detailRes = await this.http.get("videos", {
       searchParams: { id: videoId, part: "snippet,contentDetails" },
     })
     const data: YtSearchResponse = await detailRes.json()
@@ -37,6 +40,7 @@ class YoutubeApiService {
       notifyErr("Got >< 1 results")
       return null
     }
+    console.log("Item", item)
 
     const meta = toVideoMeta(item)
 
@@ -56,7 +60,7 @@ class YoutubeApiService {
   }
 
   async getChannelHandle(channelId: string): Promise<string | null> {
-    const res = await this.#http.get("channels", {
+    const res = await this.http.get("channels", {
       searchParams: { id: channelId, part: "snippet" },
     })
     const data: ChannelResp = await res.json()
@@ -70,7 +74,7 @@ class YoutubeApiService {
   }
 
   destroy() {
-    this.#unsub()
+    this.unsub()
   }
 }
 

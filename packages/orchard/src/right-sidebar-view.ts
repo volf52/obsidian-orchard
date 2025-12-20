@@ -1,4 +1,4 @@
-import { type App, ItemView, Notice, type WorkspaceLeaf } from "obsidian"
+import { type App, ItemView, Notice, TFile, type WorkspaceLeaf } from "obsidian"
 import { getActiveEditor } from "@/utils/obsidian-utils"
 import { ICON, ORCHAR_RSB_VIEW_TYPE } from "./constants"
 import { insertLatexItem, PREDEFINED_LATEX } from "./latex"
@@ -26,7 +26,7 @@ class RightSidebarView extends ItemView {
 
   override async onOpen(): Promise<void> {
     const app = this.app
-    const container = this.containerEl.children[1]
+    const container = this.containerEl.children[1] as HTMLElement | undefined
     if (!container) {
       return
     }
@@ -36,6 +36,28 @@ class RightSidebarView extends ItemView {
     container.createEl("h1", { text: "Orchard", cls: "orchard-modal-title" })
     container.createEl("h2", { text: "Snippets", cls: "orchard-test" })
 
+    // Notes section (simple list from core)
+    container.createEl("h2", { text: "Notes", cls: "orchard-test" })
+    const notesRoot = container.createDiv({ cls: "orchard-modal-list" })
+    try {
+      const notes = await this.plugin.noteService.list()
+      for (const n of notes.slice(0, 20)) {
+        const el = notesRoot.createDiv({
+          text: n.title,
+          cls: "orchard-modal-item",
+        })
+        el.onClickEvent(async () => {
+          const file = this.app.vault.getAbstractFileByPath(n.id)
+          if (file instanceof TFile) {
+            const leaf = this.app.workspace.getLeaf("tab")
+            await leaf.openFile(file)
+          }
+        })
+      }
+    } catch (err) {
+      console.error("Failed to list notes", err)
+    }
+
     const snippetsRoot = container.createDiv({ cls: "orchard-modal-list" })
 
     for (const lit of PREDEFINED_LATEX) {
@@ -44,7 +66,7 @@ class RightSidebarView extends ItemView {
         cls: "orchard-modal-item",
       })
 
-      itemEl.onClickEvent((_ev) => {
+      itemEl.onClickEvent((_ev: MouseEvent) => {
         _ev.preventDefault()
 
         const editor = getActiveEditor(app)

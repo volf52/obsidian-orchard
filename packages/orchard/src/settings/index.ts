@@ -3,11 +3,20 @@ import { mount, unmount } from "svelte"
 import SettingsPage from "@/components/SettingsPage.svelte"
 import { notifyErr, notifySuccess } from "@/notify"
 import type Orchard from "@/plugin"
+import {
+  DEFAULT_TASK_PRIORITIES,
+  DEFAULT_TASK_STATUSES,
+} from "@/settings/presets"
 import type { OrchardSettings } from "./types"
 
 export const DEFAULT_SETTINGS: OrchardSettings = {
   googleApiKey: "",
   videoNoteFolder: "",
+  taskFolder: "tasks",
+  taskBaseFile: ".obsidian/bases/orchard-tasks.base.json",
+  taskStatuses: [...DEFAULT_TASK_STATUSES],
+  taskPriorityDefinitions: [...DEFAULT_TASK_PRIORITIES],
+  taskProjectGroups: [],
 }
 
 class OrchardSettingsTab extends PluginSettingTab {

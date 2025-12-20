@@ -4,24 +4,26 @@
   "extends": "@tsconfig/bun",
   "compilerOptions": {
     "module": "ESNext",
+    "noEmit": false,
+    "composite": true,
     "moduleResolution": "bundler",
     "skipLibCheck": true,
     "target": "ES2022",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
+    "allowJs": false,
+    "isolatedDeclarations": true,
+    "declaration": true,
     "resolveJsonModule": true,
-
     "useDefineForClassFields": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noImplicitAny": true,
-    "importHelpers": true,
     "isolatedModules": true,
     "strictNullChecks": true,
     // "checkJs": false,
-    "allowJs": true,
     "plugins": [
       {
         "name": "typescript-svelte-plugin",
@@ -30,17 +32,35 @@
         "assumeIsSvelteProject": true // if true, skip detection and always assume it's a Svelte project
       }
     ],
-    "baseUrl": ".",
+    "lib": [
+      "DOM",
+      "ES2022"
+    ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": [
+        "./src/*"
+      ],
+      "@orchard/core": [
+        "../orchard-core/src/index.ts"
+      ],
+      "@internal/build-plugins": [
+        "../../internal/build-plugins/src"
+      ],
+      "@internal/build-plugins/*": [
+        "../../internal/build-plugins/src/*"
+      ]
     }
   },
   "include": [
     "src/**/*.ts",
     "src/**/*.svelte",
-    "build.ts",
+    "bunup.config.ts",
     "svelte-plugin.ts",
     "svelte-preload.ts"
   ],
-  "exclude": ["node_modules", "dist", "version-bump.mjs"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "version-bump.mjs"
+  ]
 }

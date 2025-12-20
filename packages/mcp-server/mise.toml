@@ -1,0 +1,24 @@
+[tools]
+bun = "latest"
+
+[env]
+_.file = ".env.json"
+
+[tasks.typecheck]
+run = "bun --bun tsc --noEmit --pretty -p ./tsconfig.json"
+description = "Typecheck the MCP server plugin"
+alias = "tc"
+
+[tasks.build]
+run = "bun run build"
+description = "Build the MCP plugin"
+alias = "b"
+depends_post = "copy"
+
+[tasks.copy]
+run = [
+  "eza --color=always --group-directories-first --icons -l dist",
+  "cp dist/main.js {{env.OUTPUT_DIR}}/main.js",
+  "cp dist/main.js.map {{env.OUTPUT_DIR}}/main.js.map",
+]
+description = "Copy build artifacts to deployment directory"

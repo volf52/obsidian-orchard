@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "noEmit": true,
+    "pretty": true,
+    "skipLibCheck": true
+  },
+  "exclude": [
+    "node_modules"
+  ],
+  "references": [
+    {
+      "path": "./internal/build-plugins",
+    },
+    {
+      "path": "./packages/orchard-core"
+    },
+    {
+      "path": "./packages/orchard"
+    },
+    {
+      "path": "./packages/orchard-runtime"
+    }
+  ]
+}

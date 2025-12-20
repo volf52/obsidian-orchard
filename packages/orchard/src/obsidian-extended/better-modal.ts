@@ -73,15 +73,23 @@ class BetterModal extends Modal {
   }
 
   #enableClosing() {
-    // console.log("Enabling modal closing")
-    this.containerEl.replaceChild(this.#bgDisabledEl, this.#bgEl)
-    this.modalEl.replaceChild(this.#closeBtnDisabledEl, this.#closeBtnEl)
+    if (this.containerEl.contains(this.#bgDisabledEl)) {
+      this.containerEl.replaceChild(this.#bgEl, this.#bgDisabledEl)
+    }
+
+    if (this.modalEl.contains(this.#closeBtnDisabledEl)) {
+      this.modalEl.replaceChild(this.#closeBtnEl, this.#closeBtnDisabledEl)
+    }
   }
 
   #disableClosing() {
-    // console.log("Disabling modal closing")
-    this.containerEl.replaceChild(this.#bgEl, this.#bgDisabledEl)
-    this.modalEl.replaceChild(this.#closeBtnEl, this.#closeBtnDisabledEl)
+    if (this.containerEl.contains(this.#bgEl)) {
+      this.containerEl.replaceChild(this.#bgDisabledEl, this.#bgEl)
+    }
+
+    if (this.modalEl.contains(this.#closeBtnEl)) {
+      this.modalEl.replaceChild(this.#closeBtnDisabledEl, this.#closeBtnEl)
+    }
   }
 
   registerOnClose(fn: OnCloseFunction) {

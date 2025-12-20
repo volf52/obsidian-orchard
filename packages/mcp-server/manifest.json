@@ -1,0 +1,11 @@
+{
+  "id": "orchard-mcp-server",
+  "name": "Orchard MCP Server",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.0",
+  "description": "Expose Orchard notes via Model Context Protocol",
+  "author": "",
+  "authorUrl": "",
+  "isDesktopOnly": true,
+  "main": "dist/main.js"
+}

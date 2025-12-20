@@ -1,16 +1,29 @@
+import {
+  createEventBus,
+  type EventBus,
+  type InlineTaskService,
+  NoteService,
+  type TaskNoteService,
+} from "@orchard/core"
 import { type Command, Plugin } from "obsidian"
 import { ICON, ORCHAR_RSB_VIEW_TYPE } from "@/constants"
 import RightSidebarView from "@/right-sidebar-view"
+import { createObsidianVaultAdapter } from "@/services/note-adapter"
 import OrchardSettingsTab, { DEFAULT_SETTINGS } from "@/settings"
 import "./styles.css"
 import "./components/svelte.css"
-import {
-  clearAllSettingUpdates,
-  notifySettingUpdate,
-} from "@/events/settings-store"
+import { migrateTaskNotes } from "@/modules/task-migration"
 import VideoModule from "@/modules/video.module"
-import { type OrchardServices, wireUpServices } from "@/services/utils"
+import TaskModule from "@/modules/task.module"
+import type { TaskService } from "@/services/task"
+import type { OrchardServices } from "@/services/utils"
+import { wireUpServices } from "@/services/utils"
 import type { OrchardSettings } from "@/settings/types"
+import {
+  clearAllSubscriptions,
+  initializeSettingsStore,
+  updateSettings,
+} from "@/stores/settings"
 import TranscriptionModule from "./modules/transcribe.module"
 
 class Orchard extends Plugin {
@@ -19,11 +32,33 @@ class Orchard extends Plugin {
 
   videoModule!: VideoModule
   transcriptionModule!: TranscriptionModule
+  taskModule!: TaskModule
+
+  noteService!: NoteService
+  taskService!: TaskService
+  taskNotes!: TaskNoteService
+  inlineTasks!: InlineTaskService
+  events!: EventBus
 
   override async onload(): Promise<void> {
     await this.loadSettings()
 
-    this.services = wireUpServices(this.settings)
+    // Initialize the signal-based settings store
+    initializeSettingsStore(this.settings)
+
+    // Core note service wiring
+    const adapter = createObsidianVaultAdapter(this.app.vault)
+    const events = createEventBus()
+    this.events = events
+    this.noteService = new NoteService({ adapter, events })
+
+    this.services = wireUpServices(this.settings, {
+      noteService: this.noteService,
+    })
+
+    this.taskService = this.services.tasks
+    this.taskNotes = this.taskService.taskNotes
+    this.inlineTasks = this.taskService.inlineTasks
 
     this.videoModule = new VideoModule(this.app, this.settings, this.services)
     this.transcriptionModule = new TranscriptionModule(
@@ -31,6 +66,9 @@ class Orchard extends Plugin {
       this.settings,
       this.services,
     )
+    this.taskModule = new TaskModule(this.app, this.settings, this.services)
+
+    await migrateTaskNotes(this.app, this.taskNotes, this.inlineTasks)
 
     this.addRibbonIcon(ICON, "Open Orchard", (_evt) => {
       this.activateView()
@@ -54,6 +92,35 @@ class Orchard extends Plugin {
         name: "Open Orchard",
         callback: () => this.activateView(),
       },
+      {
+        id: "orchard-create-test-note",
+        name: "Create Test Orchard Note",
+        callback: async () => {
+          try {
+            const note = await this.noteService.create({
+              id: "Orchard Test",
+              body: "Hello from Orchard core",
+            })
+            console.log("Created test note", note.id)
+          } catch (err) {
+            console.error("Failed to create test note", err)
+          }
+        },
+      },
+      {
+        id: "orchard-list-notes-log",
+        name: "List Orchard Notes (log)",
+        callback: async () => {
+          const notes = await this.noteService.list()
+          console.log(
+            "Orchard notes:",
+            notes.map((n: { id: string; version: string }) => ({
+              id: n.id,
+              v: n.version.slice(0, 8),
+            })),
+          )
+        },
+      },
     ]
 
     const videoCommands = await this.videoModule.registerCommands()
@@ -62,6 +129,9 @@ class Orchard extends Plugin {
     const transcriptionCommands =
       await this.transcriptionModule.registerCommands()
     commands.push(...transcriptionCommands)
+
+    const taskCommands = await this.taskModule.registerCommands()
+    commands.push(...taskCommands)
 
     // this.addCommand({
     //   id: "orchard-picker",
@@ -95,7 +165,7 @@ class Orchard extends Plugin {
   }
 
   override onunload() {
-    clearAllSettingUpdates()
+    clearAllSubscriptions()
   }
 
   private async loadSettings() {
@@ -110,7 +180,7 @@ class Orchard extends Plugin {
   }
 
   async saveSettings() {
-    notifySettingUpdate(this.settings)
+    updateSettings(this.settings)
     await this.saveData(this.settings)
   }
 

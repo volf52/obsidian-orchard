@@ -1,7 +1,6 @@
 import builtins from "builtin-modules"
+import { coreAliasPlugin } from "../orchard-core/build-utils/core-alias-plugin"
 import { sveltePlugin } from "./svelte-plugin"
-
-// import packageJson from "./package.json"
 
 Bun.build({
   entrypoints: ["./src/plugin.ts"],
@@ -26,8 +25,7 @@ Bun.build({
     "@lezer/common",
     "@lezer/highlight",
     "@lezer/lr",
-
     ...builtins,
   ],
-  plugins: [sveltePlugin],
+  plugins: [coreAliasPlugin(), sveltePlugin],
 })
