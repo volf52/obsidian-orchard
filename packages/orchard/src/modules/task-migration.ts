@@ -1,18 +1,18 @@
+import type { App } from 'obsidian'
 import type {
   InlineTask,
   InlineTaskService,
   NoteId,
   TaskNote,
   TaskNoteService,
-} from "@orchard/core"
-import type { App } from "obsidian"
+} from '@orchard/core'
 import {
   ensureDirectory,
   ensureTaskBaseDefinition,
   ensureTaskIndexNote,
   expectedTaskFilePath,
   isVaultFile,
-} from "@/utils/task-files"
+} from '@/utils/task-files'
 
 /**
  * Orchestrates migration of task notes: ensures base structures, relocates notes to their expected paths, and synchronizes the inline task index.
@@ -48,7 +48,7 @@ export async function migrateTaskNotes(
  * @param now - Reference date used to compute the note's expected file path.
  */
 async function relocateTaskNote(
-  vault: App["vault"],
+  vault: App['vault'],
   note: TaskNote,
   now: Date,
 ): Promise<void> {
@@ -57,7 +57,7 @@ async function relocateTaskNote(
   const file = vault.getAbstractFileByPath(note.id)
   if (!isVaultFile(file)) return
   const target = expected
-  const targetDir = target.split("/").slice(0, -1).join("/")
+  const targetDir = target.split('/').slice(0, -1).join('/')
   await ensureDirectory(vault, targetDir)
   const collision = vault.getAbstractFileByPath(target)
   if (isVaultFile(collision) && collision !== file) {
@@ -144,7 +144,7 @@ async function syncInlineTaskIndex(
  * @returns The fixed note ID "tasks/readme.md".
  */
 function toIndexNoteId(): NoteId {
-  return "tasks/readme.md" as NoteId
+  return 'tasks/readme.md' as NoteId
 }
 
 /**
@@ -154,7 +154,7 @@ function toIndexNoteId(): NoteId {
  * @returns The normalized note key: lowercase and with a trailing `.md` removed
  */
 function toNoteKey(id: string): string {
-  return id.replace(/\.md$/i, "").toLowerCase()
+  return id.replace(/\.md$/i, '').toLowerCase()
 }
 
 /**
@@ -164,7 +164,7 @@ function toNoteKey(id: string): string {
  * @returns A wiki link in the form `[[name]]` using the identifier with any trailing `.md` removed
  */
 function formatNoteLink(id: string): string {
-  const base = id.replace(/\.md$/i, "")
+  const base = id.replace(/\.md$/i, '')
   return `[[${base}]]`
 }
 
@@ -182,7 +182,7 @@ function extractNoteKey(raw: string | undefined): string | null {
   const match = trimmed.match(/^\[\[([^\]|]+)(?:\|[^\]]*)?\]\]$/)
   const value = match ? match[1] : trimmed
   if (!value) return null
-  return value.replace(/\.md$/i, "").toLowerCase()
+  return value.replace(/\.md$/i, '').toLowerCase()
 }
 
 /**
@@ -192,7 +192,7 @@ function extractNoteKey(raw: string | undefined): string | null {
  * @returns The last path segment with any trailing `.md` removed
  */
 function fallbackTitle(id: string): string {
-  const base = id.replace(/\.md$/i, "")
-  const segments = base.split("/")
+  const base = id.replace(/\.md$/i, '')
+  const segments = base.split('/')
   return segments[segments.length - 1] ?? base
 }

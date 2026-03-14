@@ -1,5 +1,5 @@
-import type { NoteId, VaultAdapter, VaultAdapterFileInfo } from "@orchard/core"
-import { TFile, type Vault } from "obsidian"
+import { TFile, type Vault } from 'obsidian'
+import type { NoteId, VaultAdapter, VaultAdapterFileInfo } from '@orchard/core'
 
 /**
  * Normalize a note path to a canonical lowercase Markdown file id using forward slashes.
@@ -9,8 +9,8 @@ import { TFile, type Vault } from "obsidian"
  */
 function normalize(id: string): NoteId {
   let n = id.trim()
-  if (!n.endsWith(".md")) n = `${n}.md`
-  n = n.replace(/\\+/g, "/").toLowerCase()
+  if (!n.endsWith('.md')) n = `${n}.md`
+  n = n.replace(/\\+/g, '/').toLowerCase()
   return n as NoteId
 }
 
@@ -27,7 +27,7 @@ export function createObsidianVaultAdapter(vault: Vault): VaultAdapter {
   return {
     async readFile(id: NoteId) {
       const file = vault.getAbstractFileByPath(id)
-      if (file instanceof TFile && file.extension === "md") {
+      if (file instanceof TFile && file.extension === 'md') {
         return vault.read(file)
       }
       const t = vault.getAbstractFileByPath(normalize(id))
@@ -54,7 +54,7 @@ export function createObsidianVaultAdapter(vault: Vault): VaultAdapter {
     async list() {
       const files = vault
         .getFiles()
-        .filter((f): f is TFile => f instanceof TFile && f.extension === "md")
+        .filter((f): f is TFile => f instanceof TFile && f.extension === 'md')
       return files.map((f) => ({
         id: f.path as NoteId,
         mtime: f.stat.mtime,

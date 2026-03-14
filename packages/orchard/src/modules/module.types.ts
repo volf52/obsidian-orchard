@@ -1,1 +1,1 @@
-export type SimpleNoteType = "core" | "moc"
+export type SimpleNoteType = 'core' | 'moc'

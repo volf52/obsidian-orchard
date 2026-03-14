@@ -12,6 +12,7 @@ Svelte-based Obsidian plugin components & modules integrating Orchard core featu
 > **Terminology**: A "Base" is the structured Dataview/Obsidian database (stored under `.obsidian/bases/`) that powers Orchard's task index. The plugin keeps the Orchard Tasks Base definition in sync so filters and views stay consistent across the vault.
 
 ## Structure
+
 - `src/components` – Svelte UI primitives & modals
 - `src/modules` – Feature modules (tasks, note creator, video, transcribe)
 - `src/services` – Service wrappers (video service, adapters)
@@ -29,16 +30,19 @@ Svelte-based Obsidian plugin components & modules integrating Orchard core featu
 > 📸 Screenshots of the Task Base view and modal will be added to `docs/assets/` once captured. Embed them in this README when available to illustrate the workflow.
 
 ## Development
-```
+
+```text
 bun run build.ts
 bun run check   # Svelte + TS checks
 bun test        # Core + util tests
 ```
 
 ## Styling
+
 Custom CSS lives in `packages/orchard/custom-css/`. Enable snippets in Obsidian via **Settings → Appearance → CSS snippets**, then toggle the Orchard snippets you want (gradients, link enhancements, etc.).
 
 ## Roadmap
+
 - Deeper MCP integration (live events) – see also `packages/mcp-server/README.md`
 - Extended transcription workflows
 - Additional media module types – see `packages/orchard-runtime/README.md` for runtime wiring details

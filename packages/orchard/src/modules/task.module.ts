@@ -1,18 +1,18 @@
-import { TFile } from "obsidian"
-import type { App, Command } from "obsidian"
-import { mount, unmount } from "svelte"
+import type { App, Command } from 'obsidian'
+import { TFile } from 'obsidian'
+import { mount, unmount } from 'svelte'
+import type { TaskService } from '@/services/task'
+import type { OrchardServices } from '@/services/utils'
+import type { OrchardSettings } from '@/settings/types'
+import type { NoteId, TaskNote } from '@orchard/core'
 import TaskModal, {
   type TaskModalSubmitDetail,
-} from "@/components/TaskModal.svelte"
+} from '@/components/TaskModal.svelte'
 import TaskQuickActions, {
   type TaskQuickActionDetail,
-} from "@/components/TaskQuickActions.svelte"
-import BetterModal from "@/obsidian-extended/better-modal"
-import { notifyErr, notifySuccess } from "@/notify"
-import type { TaskService } from "@/services/task"
-import type { OrchardServices } from "@/services/utils"
-import type { OrchardSettings } from "@/settings/types"
-import type { NoteId, TaskNote } from "@orchard/core"
+} from '@/components/TaskQuickActions.svelte'
+import { notifyErr, notifySuccess } from '@/notify'
+import BetterModal from '@/obsidian-extended/better-modal'
 
 class TaskModule {
   readonly app: App
@@ -27,24 +27,24 @@ class TaskModule {
     const commands: Command[] = []
 
     commands.push({
-      id: "orchard-task-create",
-      name: "Create Task",
+      id: 'orchard-task-create',
+      name: 'Create Task',
       callback: () => {
         void this.openCreateTaskModal()
       },
     })
 
     commands.push({
-      id: "orchard-task-mark-done",
-      name: "Mark Task Done",
+      id: 'orchard-task-mark-done',
+      name: 'Mark Task Done',
       callback: () => {
         void this.markTaskDone()
       },
     })
 
     commands.push({
-      id: "orchard-task-open-base",
-      name: "Open Task Base",
+      id: 'orchard-task-open-base',
+      name: 'Open Task Base',
       callback: () => {
         void this.openTaskBase()
       },
@@ -54,7 +54,7 @@ class TaskModule {
   }
 
   private async openCreateTaskModal(): Promise<void> {
-    const modal = new BetterModal(this.app, "Create Orchard Task")
+    const modal = new BetterModal(this.app, 'Create Orchard Task')
 
     const component = mount(TaskModal, {
       target: modal.contentEl,
@@ -69,11 +69,11 @@ class TaskModule {
               body: detail.body,
             })
             await this.openTaskNote(task)
-            notifySuccess("Task created")
+            notifySuccess('Task created')
             modal.enableClose(true)
             modal.close()
           } catch (err) {
-            notifyErr("Failed to create task", err)
+            notifyErr('Failed to create task', err)
             modal.enableClose(true)
           }
         },
@@ -90,7 +90,7 @@ class TaskModule {
   private async markTaskDone(): Promise<void> {
     const task = await this.getActiveTask()
     if (!task) {
-      notifyErr("Open a task note before running this command")
+      notifyErr('Open a task note before running this command')
       return
     }
 
@@ -104,7 +104,7 @@ class TaskModule {
     task: TaskNote,
     doneStatus: string,
   ): Promise<void> {
-    const modal = new BetterModal(this.app, "Update Task")
+    const modal = new BetterModal(this.app, 'Update Task')
 
     const component = mount(TaskQuickActions, {
       target: modal.contentEl,
@@ -125,11 +125,11 @@ class TaskModule {
               },
             )
             await this.openTaskNote(updated)
-            notifySuccess("Task updated")
+            notifySuccess('Task updated')
             modal.enableClose(true)
             modal.close()
           } catch (err) {
-            notifyErr("Failed to update task", err)
+            notifyErr('Failed to update task', err)
             modal.enableClose(true)
           }
         },
@@ -145,7 +145,7 @@ class TaskModule {
 
   private resolveDoneStatus(current: string): string {
     const statuses = this.tasks.schema.statuses
-    const done = statuses.find((status) => status.toLowerCase() === "done")
+    const done = statuses.find((status) => status.toLowerCase() === 'done')
     if (done) return done
     return statuses[statuses.length - 1] ?? current
   }
@@ -153,7 +153,7 @@ class TaskModule {
   private async openTaskBase(): Promise<void> {
     try {
       await this.tasks.refreshBaseDefinition(this.app.vault)
-      const source = this.app.workspace.getActiveFile()?.path ?? ""
+      const source = this.app.workspace.getActiveFile()?.path ?? ''
       await Promise.resolve(
         this.app.workspace.openLinkText(
           this.tasks.schema.baseFile,
@@ -162,7 +162,7 @@ class TaskModule {
         ),
       )
     } catch (err) {
-      notifyErr("Failed to open Orchard task base", err)
+      notifyErr('Failed to open Orchard task base', err)
     }
   }
 
@@ -179,7 +179,7 @@ class TaskModule {
       await leaf.openFile(file)
       return
     }
-    await Promise.resolve(this.app.workspace.openLinkText(task.id, "", false))
+    await Promise.resolve(this.app.workspace.openLinkText(task.id, '', false))
   }
 }
 

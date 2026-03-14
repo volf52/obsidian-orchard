@@ -1,11 +1,11 @@
-import { describe, expect, mock, test } from "bun:test"
-import type { App } from "obsidian"
+import type { App } from 'obsidian'
+import { describe, expect, mock, test } from 'bun:test'
 
 type StyleRecord = Record<string, string> & { cursor: string }
 
 class ElementStub {
-  className = ""
-  readonly style: StyleRecord = { cursor: "" }
+  className = ''
+  readonly style: StyleRecord = { cursor: '' }
   parentElement: ElementStub | null = null
   private children: ElementStub[] = []
 
@@ -23,7 +23,7 @@ class ElementStub {
   removeChild(child: ElementStub) {
     const index = this.children.indexOf(child)
     if (index === -1) {
-      throw new Error("Child not found")
+      throw new Error('Child not found')
     }
     this.children.splice(index, 1)
     child.parentElement = null
@@ -33,7 +33,7 @@ class ElementStub {
   replaceChild(newChild: ElementStub, oldChild: ElementStub) {
     const index = this.children.indexOf(oldChild)
     if (index === -1) {
-      throw new Error("Child not found")
+      throw new Error('Child not found')
     }
     if (newChild.parentElement) {
       newChild.parentElement.removeChild(newChild)
@@ -54,7 +54,7 @@ class ElementStub {
   }
 
   querySelector(selector: string): ElementStub | null {
-    const [tagSelector, classSelector] = selector.split(".")
+    const [tagSelector, classSelector] = selector.split('.')
     const matches = (node: ElementStub) => {
       const tagMatches = tagSelector
         ? node.tagName.toLowerCase() === tagSelector.toLowerCase()
@@ -110,13 +110,13 @@ class ElementStub {
   }
 }
 
-mock.module("obsidian", () => {
+mock.module('obsidian', () => {
   class MockNotice {
     messageEl: ElementStub
 
     constructor(public message: string) {
-      this.messageEl = new ElementStub("div")
-      this.messageEl.appendChild(new ElementStub("span"))
+      this.messageEl = new ElementStub('div')
+      this.messageEl.appendChild(new ElementStub('span'))
     }
   }
 
@@ -129,19 +129,19 @@ mock.module("obsidian", () => {
     constructor(app: unknown) {
       this.app = app
 
-      const container = new ElementStub("div")
-      const bg = new ElementStub("div")
-      bg.className = "modal-bg"
+      const container = new ElementStub('div')
+      const bg = new ElementStub('div')
+      bg.className = 'modal-bg'
       container.appendChild(bg)
 
-      const modal = new ElementStub("div")
-      modal.className = "modal"
-      const close = new ElementStub("div")
-      close.className = "modal-close-button"
+      const modal = new ElementStub('div')
+      modal.className = 'modal'
+      const close = new ElementStub('div')
+      close.className = 'modal-close-button'
       modal.appendChild(close)
 
-      const content = new ElementStub("div")
-      content.className = "modal-content"
+      const content = new ElementStub('div')
+      content.className = 'modal-content'
       modal.appendChild(content)
 
       container.appendChild(modal)
@@ -158,7 +158,7 @@ mock.module("obsidian", () => {
   return { Modal: MockModal, Notice: MockNotice }
 })
 
-const { default: BetterModal } = await import("./better-modal")
+const { default: BetterModal } = await import('./better-modal')
 
 type BetterModalInstance = InstanceType<typeof BetterModal>
 
@@ -179,62 +179,62 @@ const createAppStub = (): App =>
     manifold: {},
     internalPlugins: {},
     dom: {},
-    appId: "test",
+    appId: 'test',
     lastEvent: undefined,
     dailyNotesPlugin: {},
     fileManager: {},
   }) as unknown as App
 
 const getBg = (modal: BetterModalInstance) =>
-  modal.containerEl.find("div.modal-bg") as unknown as ElementStub
+  modal.containerEl.find('div.modal-bg') as unknown as ElementStub
 
 const getClose = (modal: BetterModalInstance) =>
-  modal.modalEl.find("div.modal-close-button") as unknown as ElementStub
+  modal.modalEl.find('div.modal-close-button') as unknown as ElementStub
 
-describe("BetterModal closing controls", () => {
-  test("disableClose and enableClose swap control elements safely", () => {
-    const modal = new BetterModal(createAppStub(), "Test Modal")
+describe('BetterModal closing controls', () => {
+  test('disableClose and enableClose swap control elements safely', () => {
+    const modal = new BetterModal(createAppStub(), 'Test Modal')
 
     expect(modal.canClose).toBe(false)
 
     expect(() => modal.disableClose()).not.toThrow()
-    expect(getBg(modal).style.cursor).toBe("")
-    expect(getClose(modal).style.cursor).toBe("")
+    expect(getBg(modal).style.cursor).toBe('')
+    expect(getClose(modal).style.cursor).toBe('')
 
     modal.enableClose()
     expect(modal.canClose).toBe(true)
-    expect(getBg(modal).style.cursor).toBe("")
-    expect(getClose(modal).style.cursor).toBe("")
+    expect(getBg(modal).style.cursor).toBe('')
+    expect(getClose(modal).style.cursor).toBe('')
 
     modal.disableClose()
     expect(modal.canClose).toBe(false)
-    expect(getBg(modal).style.cursor).toBe("not-allowed")
-    expect(getClose(modal).style.cursor).toBe("not-allowed")
+    expect(getBg(modal).style.cursor).toBe('not-allowed')
+    expect(getClose(modal).style.cursor).toBe('not-allowed')
 
     modal.enableClose()
     expect(modal.canClose).toBe(true)
-    expect(getBg(modal).style.cursor).toBe("")
-    expect(getClose(modal).style.cursor).toBe("")
+    expect(getBg(modal).style.cursor).toBe('')
+    expect(getClose(modal).style.cursor).toBe('')
   })
 
-  test("toggleClose flips closing ability without throwing", () => {
-    const modal = new BetterModal(createAppStub(), "Toggle Modal")
+  test('toggleClose flips closing ability without throwing', () => {
+    const modal = new BetterModal(createAppStub(), 'Toggle Modal')
 
     modal.enableClose()
     expect(modal.canClose).toBe(true)
-    expect(getBg(modal).style.cursor).toBe("")
+    expect(getBg(modal).style.cursor).toBe('')
 
     modal.toggleClose()
     expect(modal.canClose).toBe(false)
-    expect(getBg(modal).style.cursor).toBe("not-allowed")
+    expect(getBg(modal).style.cursor).toBe('not-allowed')
 
     modal.toggleClose()
     expect(modal.canClose).toBe(true)
-    expect(getBg(modal).style.cursor).toBe("")
+    expect(getBg(modal).style.cursor).toBe('')
   })
 
-  test("guards skip replacements when nodes are detached", () => {
-    const modal = new BetterModal(createAppStub(), "Detached Modal")
+  test('guards skip replacements when nodes are detached', () => {
+    const modal = new BetterModal(createAppStub(), 'Detached Modal')
 
     const bg = getBg(modal)
     const close = getClose(modal)

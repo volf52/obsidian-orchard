@@ -1,10 +1,10 @@
-import type { Note, NoteId } from "../types"
+import type { Note, NoteId } from '../types'
 
 // Constants
-export const TASK_NOTE_TYPE = "orchard-task" as const
+export const TASK_NOTE_TYPE = 'orchard-task' as const
 
 // Types
-export type TaskSyncState = "pending" | "synced" | "error" | (string & {})
+export type TaskSyncState = 'pending' | 'synced' | 'error' | (string & {})
 
 export interface TaskFrontmatter extends Record<string, unknown> {
   type: typeof TASK_NOTE_TYPE
@@ -23,7 +23,7 @@ export interface TaskFrontmatterInit {
   mcpSyncState?: unknown
 }
 
-export type TaskCheckbox = " " | "x" | "X" | "-" | ">" | "~"
+export type TaskCheckbox = ' ' | 'x' | 'X' | '-' | '>' | '~'
 
 export interface InlineTaskExtraFields extends Record<string, string> {}
 
@@ -31,7 +31,7 @@ export interface InlineTask {
   noteId: NoteId
   line: number
   indent: string
-  bullet: "-" | "*"
+  bullet: '-' | '*'
   checkbox: TaskCheckbox
   text: string
   blockId: string | null
@@ -44,7 +44,7 @@ export interface InlineTaskFormatInput {
   text: string
   frontmatter: TaskFrontmatterInit | TaskFrontmatter
   indent?: string
-  bullet?: "-" | "*"
+  bullet?: '-' | '*'
   blockId?: string | null
   extraFields?: InlineTaskExtraFields
 }
@@ -75,36 +75,38 @@ function normalizeTaskFrontmatter(input: TaskFrontmatterInit): TaskFrontmatter {
     project: normalizeOptionalString(input.project),
     due: normalizeDue(input.due),
     priority: normalizeOptionalString(input.priority),
-    mcpSyncState: normalizeOptionalString(input.mcpSyncState) as TaskSyncState | null,
+    mcpSyncState: normalizeOptionalString(
+      input.mcpSyncState,
+    ) as TaskSyncState | null,
   }
 }
 
 function normalizeStatus(status: unknown): string {
-  if (typeof status === "string") {
+  if (typeof status === 'string') {
     return status.trim()
   }
-  return "todo"
+  return 'todo'
 }
 
 function normalizeOptionalString(value: unknown): string | null {
-  if (typeof value === "string") {
+  if (typeof value === 'string') {
     const trimmed = value.trim()
-    return trimmed === "" ? null : trimmed
+    return trimmed === '' ? null : trimmed
   }
   return null
 }
 
 function normalizeDue(due: unknown): string | null {
-  if (typeof due === "string") {
+  if (typeof due === 'string') {
     const trimmed = due.trim()
-    return trimmed === "" ? null : trimmed
+    return trimmed === '' ? null : trimmed
   }
   if (due instanceof Date) {
     return toDateOnly(due)
   }
-  if (typeof due === "number") {
+  if (typeof due === 'number') {
     const date = new Date(due)
-    if (!isNaN(date.getTime())) {
+    if (!Number.isNaN(date.getTime())) {
       return toDateOnly(date)
     }
   }
@@ -112,50 +114,50 @@ function normalizeDue(due: unknown): string | null {
 }
 
 function toDateOnly(date: Date): string {
-  return date.toISOString().split("T")[0] ?? ""
+  return date.toISOString().split('T')[0] ?? ''
 }
 
 function statusToCheckbox(status: string): TaskCheckbox {
   switch (status.toLowerCase()) {
-    case "done":
-    case "completed":
-    case "x":
-      return "x"
-    case "in_progress":
-    case "progress":
-    case ">":
-      return ">"
-    case "cancelled":
-    case "canceled":
-    case "-":
-      return "-"
-    case "deferred":
-    case "defer":
-    case "~":
-      return "~"
+    case 'done':
+    case 'completed':
+    case 'x':
+      return 'x'
+    case 'in_progress':
+    case 'progress':
+    case '>':
+      return '>'
+    case 'cancelled':
+    case 'canceled':
+    case '-':
+      return '-'
+    case 'deferred':
+    case 'defer':
+    case '~':
+      return '~'
     default:
-      return " "
+      return ' '
   }
 }
 
 function checkboxToStatus(checkbox: TaskCheckbox): string {
   switch (checkbox) {
-    case "x":
-    case "X":
-      return "done"
-    case ">":
-      return "in_progress"
-    case "-":
-      return "cancelled"
-    case "~":
-      return "deferred"
+    case 'x':
+    case 'X':
+      return 'done'
+    case '>':
+      return 'in_progress'
+    case '-':
+      return 'cancelled'
+    case '~':
+      return 'deferred'
     default:
-      return "todo"
+      return 'todo'
   }
 }
 
 function collapseWhitespace(value: string): string {
-  return value.replace(/\s+/g, " ").trim()
+  return value.replace(/\s+/g, ' ').trim()
 }
 
 function normalizeExtraFields(
@@ -164,7 +166,7 @@ function normalizeExtraFields(
   if (!fields) return {}
   const out: InlineTaskExtraFields = {}
   for (const [key, value] of Object.entries(fields)) {
-    if (value != null && value !== "") {
+    if (value != null && value !== '') {
       out[key] = collapseWhitespace(value)
     }
   }
@@ -177,9 +179,9 @@ interface LineSet {
 }
 
 function toLineSet(body: string): LineSet {
-  const lines = body.split("\n")
-  const trailingNewline = body.endsWith("\n") && lines.length > 0
-  if (trailingNewline && lines.at(-1) === "") {
+  const lines = body.split('\n')
+  const trailingNewline = body.endsWith('\n') && lines.length > 0
+  if (trailingNewline && lines.at(-1) === '') {
     lines.pop()
   }
   return { lines, trailingNewline }
@@ -194,8 +196,8 @@ export function formatInlineTaskLine(input: InlineTaskFormatInput): string {
     mcpSyncState: input.frontmatter.mcpSyncState,
   })
 
-  const indent = input.indent ?? ""
-  const bullet = input.bullet ?? "-"
+  const indent = input.indent ?? ''
+  const bullet = input.bullet ?? '-'
   const checkbox = statusToCheckbox(frontmatter.status)
   const text = collapseWhitespace(input.text)
   const segments: string[] = []
@@ -215,7 +217,7 @@ export function formatInlineTaskLine(input: InlineTaskFormatInput): string {
     segments.push(`${key}:: ${value}`)
   }
 
-  let line = segments.join(" ")
+  let line = segments.join(' ')
   if (input.blockId) {
     line = `${line} ^${input.blockId}`
   }
@@ -232,7 +234,7 @@ export function formatInlineTaskLine(input: InlineTaskFormatInput): string {
  * @returns An array of `InlineTask` objects parsed from the note body, in document order
  */
 export function parseInlineTasks(
-  note: Pick<Note, "id" | "body">,
+  note: Pick<Note, 'id' | 'body'>,
 ): InlineTask[] {
   const { lines } = toLineSet(note.body)
   const tasks: InlineTask[] = []
@@ -243,10 +245,10 @@ export function parseInlineTasks(
     const match = line.match(/^(\s*)([-*])\s+\[([ xX>\-~])\]\s+(.*)$/)
     if (!match) continue
 
-    const indent = match[1] ?? ""
-    const bullet = match[2] as "-" | "*"
+    const indent = match[1] ?? ''
+    const bullet = match[2] as '-' | '*'
     const checkbox = match[3] as TaskCheckbox
-    const content = match[4] ?? ""
+    const content = match[4] ?? ''
 
     // Extract block ID if present (format: ^blockId at end of line)
     const blockIdMatch = content.match(/\s+ \^([a-zA-Z0-9_-]+)\s*$/)
@@ -270,7 +272,9 @@ export function parseInlineTasks(
 
     // Extract task text (everything before the first inline field)
     const textMatch = contentWithoutBlockId.match(/^(.+?)\s+\w+::/)
-    const text = textMatch ? textMatch[1]?.trim() ?? "" : contentWithoutBlockId.trim()
+    const text = textMatch
+      ? (textMatch[1]?.trim() ?? '')
+      : contentWithoutBlockId.trim()
 
     tasks.push({
       noteId: note.id,
@@ -319,7 +323,7 @@ function extractInlineFields(line: string): ExtractedFields {
 
   while ((match = fieldRegex.exec(line)) !== null) {
     const key = match[1]!
-    let value = match[2]?.trim() ?? ""
+    let value = match[2]?.trim() ?? ''
 
     // Remove surrounding quotes if present
     if (
@@ -330,22 +334,22 @@ function extractInlineFields(line: string): ExtractedFields {
     }
 
     switch (key) {
-      case "type":
+      case 'type':
         fields.type = value
         break
-      case "status":
+      case 'status':
         fields.status = value
         break
-      case "project":
+      case 'project':
         fields.project = value
         break
-      case "due":
+      case 'due':
         fields.due = value
         break
-      case "priority":
+      case 'priority':
         fields.priority = value
         break
-      case "mcpSyncState":
+      case 'mcpSyncState':
         fields.mcpSyncState = value
         break
       default:

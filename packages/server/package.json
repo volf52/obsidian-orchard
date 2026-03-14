@@ -2,6 +2,15 @@
   "name": "@orchard/server",
   "version": "1.0.0",
   "description": "Obsidian plugin with HTTP/2 server for Orchard",
+  "keywords": [
+    "http2",
+    "obsidian",
+    "plugin",
+    "server"
+  ],
+  "license": "ISC",
+  "author": "",
+  "type": "module",
   "main": "dist/plugin.js",
   "scripts": {
     "build": "bun --bun run build.ts",
@@ -12,23 +21,21 @@
     "test": "bun test",
     "clean": "rm -rf dist"
   },
-  "keywords": ["obsidian", "plugin", "server", "http2"],
-  "author": "",
-  "license": "ISC",
+  "dependencies": {
+    "@hono/node-server": "catalog:",
+    "@scalar/hono-api-reference": "^0.10.3",
+    "hono": "catalog:",
+    "obsidian": "catalog:"
+  },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
     "@tsconfig/bun": "catalog:",
     "@types/bun": "catalog:",
     "@typescript/native-preview": "catalog:",
     "builtin-modules": "catalog:",
+    "oxfmt": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
     "typescript": "catalog:"
-  },
-  "dependencies": {
-    "@hono/node-server": "^1.19.5",
-    "@scalar/hono-api-reference": "^0.9.22",
-    "hono": "^4.10.1",
-    "obsidian": "catalog:"
   }
 }

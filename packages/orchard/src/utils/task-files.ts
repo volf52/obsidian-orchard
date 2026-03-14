@@ -1,9 +1,9 @@
-import type { NoteId, TaskNote } from "@orchard/core"
-import type { TFile, Vault } from "obsidian"
+import type { TFile, Vault } from 'obsidian'
+import type { NoteId, TaskNote } from '@orchard/core'
 
-export const TASKS_ROOT_DIR = "tasks"
-export const TASKS_INDEX_NOTE = "tasks/readme.md"
-export const TASKS_BASE_PATH = ".obsidian/bases/orchard-tasks.base.json"
+export const TASKS_ROOT_DIR = 'tasks'
+export const TASKS_INDEX_NOTE = 'tasks/readme.md'
+export const TASKS_BASE_PATH = '.obsidian/bases/orchard-tasks.base.json'
 
 export interface TaskBaseColumn {
   key: string
@@ -19,17 +19,17 @@ export interface TaskBaseDefinition extends Record<string, unknown> {
 }
 
 const TASK_BASE_COLUMNS: TaskBaseColumn[] = [
-  { key: "status", label: "Status", type: "text" },
-  { key: "project", label: "Project", type: "text" },
-  { key: "due", label: "Due", type: "date" },
-  { key: "priority", label: "Priority", type: "text" },
-  { key: "mcpSyncState", label: "MCP Sync State", type: "text" },
+  { key: 'status', label: 'Status', type: 'text' },
+  { key: 'project', label: 'Project', type: 'text' },
+  { key: 'due', label: 'Due', type: 'date' },
+  { key: 'priority', label: 'Priority', type: 'text' },
+  { key: 'mcpSyncState', label: 'MCP Sync State', type: 'text' },
 ]
 
 const DEFAULT_TASK_BASE: TaskBaseDefinition = {
-  name: "Orchard Tasks",
+  name: 'Orchard Tasks',
   version: 1,
-  description: "Managed tasks created by the Orchard plugin.",
+  description: 'Managed tasks created by the Orchard plugin.',
   columns: TASK_BASE_COLUMNS,
 }
 
@@ -65,7 +65,7 @@ export function generateTaskNoteId(
 ): NoteId {
   const year = date.getUTCFullYear()
   const baseSlug = slugifyTaskSegment(title)
-  const slug = baseSlug || "task"
+  const slug = baseSlug || 'task'
   const suffix = timestampSuffix(date)
   const fileName = `${slug}-${suffix}`.toLowerCase()
   const normalizedRoot = normalizeRootDir(rootDir)
@@ -81,14 +81,14 @@ export function generateTaskNoteId(
  * @returns The normalized, lowercase vault path for the task note in the form `<root>/<year>/<slug>.md`.
  */
 export function expectedTaskFilePath(
-  note: Pick<TaskNote, "id" | "title" | "updatedAt">,
+  note: Pick<TaskNote, 'id' | 'title' | 'updatedAt'>,
   now = new Date(),
   rootDir: string = TASKS_ROOT_DIR,
 ): NoteId {
   const year = resolveYear(note.updatedAt, now)
-  const baseName = extractBasename(note.id) ?? note.title ?? "task"
+  const baseName = extractBasename(note.id) ?? note.title ?? 'task'
   const baseSlug =
-    slugifyTaskSegment(baseName) || slugifyTaskSegment(note.title) || "task"
+    slugifyTaskSegment(baseName) || slugifyTaskSegment(note.title) || 'task'
   const suffix = hashSuffix(note.id)
   const slug = suffix ? `${baseSlug}-${suffix}` : baseSlug
   const normalizedRoot = normalizeRootDir(rootDir)
@@ -168,11 +168,11 @@ export async function ensureTaskIndexNote(
  * @returns The text after the "## Inline Tasks" heading, starting with a single leading newline; returns a single newline if the marker is not present
  */
 function extractInlineTasksSection(content: string): string {
-  const marker = "## Inline Tasks"
+  const marker = '## Inline Tasks'
   const index = content.indexOf(marker)
-  if (index === -1) return "\n"
+  if (index === -1) return '\n'
   const afterMarker = content.slice(index + marker.length)
-  return `\n${afterMarker.replace(/^\r?\n?/, "")}`
+  return `\n${afterMarker.replace(/^\r?\n?/, '')}`
 }
 
 /**
@@ -188,10 +188,10 @@ export async function ensureDirectory(
   vault: Vault,
   dir: string | null | undefined,
 ) {
-  const normalized = normalizeVaultPath(dir ?? "")
-  if (!normalized || normalized === ".") return
-  const segments = normalized.split("/")
-  let current = ""
+  const normalized = normalizeVaultPath(dir ?? '')
+  if (!normalized || normalized === '.') return
+  const segments = normalized.split('/')
+  let current = ''
   for (const segment of segments) {
     if (!segment) continue
     current = current ? `${current}/${segment}` : segment
@@ -259,7 +259,7 @@ function sortValue(value: unknown): unknown {
   if (Array.isArray(value)) {
     return value.map(sortValue)
   }
-  if (value && typeof value === "object") {
+  if (value && typeof value === 'object') {
     const entries = Object.entries(value as Record<string, unknown>).sort(
       ([keyA], [keyB]) => keyA.localeCompare(keyB),
     )
@@ -282,12 +282,12 @@ function sortValue(value: unknown): unknown {
  */
 function slugifyTaskSegment(input: string): string {
   return input
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9\s-]/g, "")
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9\s-]/g, '')
     .trim()
-    .replace(/[\s_-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
     .toLowerCase()
 }
 
@@ -299,11 +299,11 @@ function slugifyTaskSegment(input: string): string {
  */
 function timestampSuffix(date: Date): string {
   const year = date.getUTCFullYear()
-  const month = `${date.getUTCMonth() + 1}`.padStart(2, "0")
-  const day = `${date.getUTCDate()}`.padStart(2, "0")
-  const hour = `${date.getUTCHours()}`.padStart(2, "0")
-  const minute = `${date.getUTCMinutes()}`.padStart(2, "0")
-  const second = `${date.getUTCSeconds()}`.padStart(2, "0")
+  const month = `${date.getUTCMonth() + 1}`.padStart(2, '0')
+  const day = `${date.getUTCDate()}`.padStart(2, '0')
+  const hour = `${date.getUTCHours()}`.padStart(2, '0')
+  const minute = `${date.getUTCMinutes()}`.padStart(2, '0')
+  const second = `${date.getUTCSeconds()}`.padStart(2, '0')
   return `${year}${month}${day}${hour}${minute}${second}`
 }
 
@@ -315,7 +315,7 @@ function timestampSuffix(date: Date): string {
  */
 function normalizeRootDir(rootDir: string): string {
   if (!rootDir) return TASKS_ROOT_DIR
-  return rootDir.replace(/^\/+|\/+$/g, "")
+  return rootDir.replace(/^\/+|\/+$/g, '')
 }
 
 /**
@@ -342,11 +342,11 @@ function resolveYear(updatedAt: number, now: Date): number {
  * @returns The basename without a `.md` extension, or `null` if no final segment exists
  */
 function extractBasename(id: string): string | null {
-  const normalized = id.replace(/\\+/g, "/")
-  const parts = normalized.split("/")
+  const normalized = id.replace(/\\+/g, '/')
+  const parts = normalized.split('/')
   const last = parts[parts.length - 1]
   if (!last) return null
-  return last.replace(/\.md$/i, "")
+  return last.replace(/\.md$/i, '')
 }
 
 /**
@@ -356,7 +356,7 @@ function extractBasename(id: string): string | null {
  * @returns A lowercase base36 string up to 6 characters derived from `value`, or an empty string when `value` is falsy.
  */
 function hashSuffix(value: string): string {
-  if (!value) return ""
+  if (!value) return ''
   let hash = 0
   for (let i = 0; i < value.length; i += 1) {
     hash = (hash * 33 + value.charCodeAt(i)) >>> 0
@@ -372,8 +372,8 @@ function hashSuffix(value: string): string {
  */
 function getDirname(path: string): string {
   const normalized = normalizeVaultPath(path)
-  const idx = normalized.lastIndexOf("/")
-  return idx === -1 ? "" : normalized.slice(0, idx)
+  const idx = normalized.lastIndexOf('/')
+  return idx === -1 ? '' : normalized.slice(0, idx)
 }
 
 /**
@@ -383,10 +383,10 @@ function getDirname(path: string): string {
  * @returns `true` if `file` has a string `path` property and a non-null `stat` object, `false` otherwise.
  */
 export function isVaultFile(file: unknown): file is TFile {
-  if (!file || typeof file !== "object") return false
+  if (!file || typeof file !== 'object') return false
   return (
-    typeof (file as { path?: unknown }).path === "string" &&
-    typeof (file as { stat?: unknown }).stat === "object" &&
+    typeof (file as { path?: unknown }).path === 'string' &&
+    typeof (file as { stat?: unknown }).stat === 'object' &&
     (file as { stat?: unknown }).stat !== null
   )
 }
@@ -402,11 +402,11 @@ export function isVaultFile(file: unknown): file is TFile {
  * @returns The normalized vault path
  */
 function normalizeVaultPath(path: string): string {
-  if (!path) return ""
+  if (!path) return ''
   let normalized = path.trim()
-  normalized = normalized.replace(/\\+/g, "/")
-  normalized = normalized.replace(/\/+/g, "/")
-  if (normalized.startsWith("./")) normalized = normalized.slice(2)
-  if (normalized.endsWith("/")) normalized = normalized.slice(0, -1)
+  normalized = normalized.replace(/\\+/g, '/')
+  normalized = normalized.replace(/\/+/g, '/')
+  if (normalized.startsWith('./')) normalized = normalized.slice(2)
+  if (normalized.endsWith('/')) normalized = normalized.slice(0, -1)
   return normalized
 }

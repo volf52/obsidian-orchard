@@ -1,13 +1,13 @@
-import { Notice } from "obsidian"
+import { Notice } from 'obsidian'
 
 export const notifyErr = (message: string, err?: unknown) => {
   console.error(message)
   if (err) console.error(err)
   const notice = new Notice(message)
-  notice.messageEl.style.color = "var(--text-error)"
+  notice.messageEl.style.color = 'var(--text-error)'
 }
 
 export const notifySuccess = (message: string) => {
   const notice = new Notice(message, 5000)
-  notice.messageEl.style.color = "var(--text-success)"
+  notice.messageEl.style.color = 'var(--text-success)'
 }

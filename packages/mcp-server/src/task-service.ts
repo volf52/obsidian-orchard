@@ -1,20 +1,20 @@
 import {
-  normalizeTaskFrontmatter,
-  TaskNoteService,
-  toTaskNote,
-  validateTaskFrontmatter,
   type Note,
   type NoteFilters,
   type NoteId,
   type NoteService,
   type NoteVersion,
+  normalizeTaskFrontmatter,
   type TaskFrontmatter,
   type TaskNote,
-} from "@orchard/core"
+  TaskNoteService,
+  toTaskNote,
+  validateTaskFrontmatter,
+} from '@orchard/core'
 
 export interface TaskLinks {
-  note: { scheme: "obsidian"; path: string }
-  base?: { scheme: "obsidian"; path: string }
+  note: { scheme: 'obsidian'; path: string }
+  base?: { scheme: 'obsidian'; path: string }
   folder?: { path: string }
 }
 
@@ -82,22 +82,22 @@ export class TaskToolService {
     this.taskNotes = new TaskNoteService(this.noteService)
     this.taskFolder = options.taskFolder
     this.taskBaseFile = options.taskBaseFile
-    this.taskFolderPrefix = this.taskFolder ? `${this.taskFolder}/` : ""
+    this.taskFolderPrefix = this.taskFolder ? `${this.taskFolder}/` : ''
   }
 
   parseFrontmatter(value: unknown): TaskFrontmatter {
-    if (!value || typeof value !== "object" || Array.isArray(value)) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
       throw {
-        code: "InvalidTaskFrontmatter",
-        details: { message: "Task frontmatter must be an object" },
+        code: 'InvalidTaskFrontmatter',
+        details: { message: 'Task frontmatter must be an object' },
       }
     }
     try {
       return validateTaskFrontmatter(value as Record<string, unknown>)
     } catch (error) {
-      const message = (error as Error)?.message ?? "InvalidTaskFrontmatter"
+      const message = (error as Error)?.message ?? 'InvalidTaskFrontmatter'
       throw {
-        code: "InvalidTaskFrontmatter",
+        code: 'InvalidTaskFrontmatter',
         details: { message },
       }
     }
@@ -117,14 +117,15 @@ export class TaskToolService {
     const projectFilter = filters.project?.trim().toLowerCase()
 
     const subset = withinFolder.filter((task) => {
-      if (statusFilter && task.frontmatter.status.toLowerCase() !== statusFilter)
+      if (
+        statusFilter &&
+        task.frontmatter.status.toLowerCase() !== statusFilter
+      )
         return false
-      if (projectFilter !== undefined && projectFilter !== "") {
-        return (
-          (task.frontmatter.project ?? "").toLowerCase() === projectFilter
-        )
+      if (projectFilter !== undefined && projectFilter !== '') {
+        return (task.frontmatter.project ?? '').toLowerCase() === projectFilter
       }
-      if (projectFilter === "") {
+      if (projectFilter === '') {
         return task.frontmatter.project == null
       }
       return true
@@ -172,7 +173,7 @@ export class TaskToolService {
     const id = this.ensureTaskId(args.id)
     const current = await this.taskNotes.read(id)
     if (!current) {
-      throw { code: "TaskNotFound" }
+      throw { code: 'TaskNotFound' }
     }
     const normalized = normalizeTaskFrontmatter({
       status: args.status,
@@ -220,16 +221,17 @@ export class TaskToolService {
   isWithinTaskFolder(id: NoteId): boolean {
     if (!this.taskFolder) return true
     if (id === this.taskFolder) return true
-    if (this.taskFolderPrefix && id.startsWith(this.taskFolderPrefix)) return true
+    if (this.taskFolderPrefix && id.startsWith(this.taskFolderPrefix))
+      return true
     return false
   }
 
   buildLinks(id: NoteId): TaskLinks {
     const links: TaskLinks = {
-      note: { scheme: "obsidian", path: id },
+      note: { scheme: 'obsidian', path: id },
     }
     if (this.taskBaseFile) {
-      links.base = { scheme: "obsidian", path: this.taskBaseFile }
+      links.base = { scheme: 'obsidian', path: this.taskBaseFile }
     }
     if (this.taskFolder) {
       links.folder = { path: this.taskFolder }
@@ -255,16 +257,16 @@ export class TaskToolService {
 
   private ensureTaskId(id: string): NoteId {
     const normalized = this.normalizeNoteId(id)
-    if (normalized.includes("..")) {
+    if (normalized.includes('..')) {
       throw {
-        code: "TaskOutsideFolder",
-        details: { folder: this.taskFolder || "", id: normalized },
+        code: 'TaskOutsideFolder',
+        details: { folder: this.taskFolder || '', id: normalized },
       }
     }
     if (!this.isWithinTaskFolder(normalized)) {
       throw {
-        code: "TaskOutsideFolder",
-        details: { folder: this.taskFolder || "", id: normalized },
+        code: 'TaskOutsideFolder',
+        details: { folder: this.taskFolder || '', id: normalized },
       }
     }
     return normalized
@@ -272,8 +274,8 @@ export class TaskToolService {
 
   private normalizeNoteId(id: string): NoteId {
     let normalized = id.trim()
-    if (!normalized.endsWith(".md")) normalized = `${normalized}.md`
-    normalized = normalized.replace(/\\+/g, "/")
+    if (!normalized.endsWith('.md')) normalized = `${normalized}.md`
+    normalized = normalized.replace(/\\+/g, '/')
     normalized = normalized.toLowerCase()
     return normalized as NoteId
   }

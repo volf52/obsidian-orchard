@@ -22,7 +22,7 @@ export interface NoteFilters {
   search?: string // naive substring search for MVP
 }
 
-export interface CreateNoteInput extends Omit<NoteContent, "frontmatter"> {
+export interface CreateNoteInput extends Omit<NoteContent, 'frontmatter'> {
   id: NoteId
   title?: string
   frontmatter?: Record<string, unknown>
@@ -51,9 +51,9 @@ export interface VaultAdapter {
 }
 
 export type NoteEvent =
-  | { type: "note.created"; note: Note }
-  | { type: "note.updated"; note: Note; previousVersion: NoteVersion }
-  | { type: "note.deleted"; id: NoteId; previousVersion: NoteVersion }
+  | { type: 'note.created'; note: Note }
+  | { type: 'note.updated'; note: Note; previousVersion: NoteVersion }
+  | { type: 'note.deleted'; id: NoteId; previousVersion: NoteVersion }
 
 export interface EventBus {
   publish(event: NoteEvent): void

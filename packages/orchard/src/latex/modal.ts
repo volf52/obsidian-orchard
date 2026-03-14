@@ -1,12 +1,12 @@
-import { type App, FuzzySuggestModal, Notice } from "obsidian"
-import { getActiveEditor } from "@/utils/obsidian-utils"
-import { insertLatexItem, type LatexItem, PREDEFINED_LATEX } from "./latexitem"
+import { type App, FuzzySuggestModal, Notice } from 'obsidian'
+import { getActiveEditor } from '@/utils/obsidian-utils'
+import { insertLatexItem, type LatexItem, PREDEFINED_LATEX } from './latexitem'
 
 class OrchardSuggestionsModal extends FuzzySuggestModal<LatexItem> {
   constructor(app: App) {
     super(app)
 
-    this.setPlaceholder("Select latext snippet to insert")
+    this.setPlaceholder('Select latext snippet to insert')
   }
 
   getItems(): LatexItem[] {
@@ -20,7 +20,7 @@ class OrchardSuggestionsModal extends FuzzySuggestModal<LatexItem> {
   onChooseItem(item: LatexItem, _evt: MouseEvent | KeyboardEvent): void {
     const editor = getActiveEditor(this.app)
     if (!editor) {
-      new Notice("found no active markdown editor")
+      new Notice('found no active markdown editor')
       return
     }
 

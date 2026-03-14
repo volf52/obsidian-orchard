@@ -1,5 +1,5 @@
-import { type App, Modal as ObsidianModal } from "obsidian"
-import { type Component, type ComponentProps, mount, unmount } from "svelte"
+import { type App, Modal as ObsidianModal } from 'obsidian'
+import { type Component, type ComponentProps, mount, unmount } from 'svelte'
 
 // biome-ignore lint/suspicious/noExplicitAny: Intentional
 export type AddModalOptions<C extends Component<any, any>> = {
@@ -28,7 +28,7 @@ export const addModal = <C extends Component<any, any>>({
 
   const originalClose = m.onClose.bind(m)
   m.onClose = () => {
-    console.warn("Modal close overridden by Svelte component")
+    console.warn('Modal close overridden by Svelte component')
     originalClose()
 
     unmount(svelteModal).finally(() => {

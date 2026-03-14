@@ -1,6 +1,6 @@
-import type { StoreApi } from "zustand/vanilla"
-import { createStore } from "zustand/vanilla"
-import type { OrchardSettings } from "@/settings/types"
+import type { StoreApi } from 'zustand/vanilla'
+import { createStore } from 'zustand/vanilla'
+import type { OrchardSettings } from '@/settings/types'
 
 interface SettingsStore {
   settings: OrchardSettings
@@ -40,7 +40,7 @@ export const initializeSettingsStore = (
 export const getSettingsStore = (): StoreApi<SettingsStore> => {
   if (!settingsStore) {
     throw new Error(
-      "Settings store not initialized. Call initializeSettingsStore first.",
+      'Settings store not initialized. Call initializeSettingsStore first.',
     )
   }
   return settingsStore
@@ -96,7 +96,7 @@ export const clearAllSubscriptions = (): void => {
     try {
       unsub()
     } catch (error) {
-      console.error("Error cleaning up subscription:", error)
+      console.error('Error cleaning up subscription:', error)
     }
   }
   allSubscriptions = []

@@ -5,7 +5,7 @@ export interface RpcResult<TResult = unknown> {
   error?: { code: number; message?: string }
 }
 
-const PROTOCOL_VERSION = "2024-11-05"
+const PROTOCOL_VERSION = '2024-11-05'
 let sessionId: string | null = null
 
 /**
@@ -33,38 +33,38 @@ export async function rpcCall<TResult = unknown>(
   params: Record<string, unknown>,
 ): Promise<{ status: number; body: RpcResult<TResult> }> {
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    Accept: "application/json, text/event-stream",
+    'Content-Type': 'application/json',
+    Accept: 'application/json, text/event-stream',
   }
   if (sessionId) {
-    headers["Mcp-Session-Id"] = sessionId
-    headers["Mcp-Protocol-Version"] = PROTOCOL_VERSION
+    headers['Mcp-Session-Id'] = sessionId
+    headers['Mcp-Protocol-Version'] = PROTOCOL_VERSION
   }
   const res = await fetch(
     `http://localhost:27126/mcp?key=${encodeURIComponent(key)}`,
     {
-      method: "POST",
+      method: 'POST',
       headers,
-      body: JSON.stringify({ jsonrpc: "2.0", id: nextId(), method, params }),
+      body: JSON.stringify({ jsonrpc: '2.0', id: nextId(), method, params }),
     },
   )
   let data: RpcResult<TResult>
   try {
     const parsed = (await res.json()) as Partial<RpcResult<TResult>>
     data = {
-      jsonrpc: typeof parsed.jsonrpc === "string" ? parsed.jsonrpc : "2.0",
-      id: typeof parsed.id === "number" ? parsed.id : -1,
+      jsonrpc: typeof parsed.jsonrpc === 'string' ? parsed.jsonrpc : '2.0',
+      id: typeof parsed.id === 'number' ? parsed.id : -1,
       result: parsed.result,
       error: parsed.error,
     }
   } catch {
     data = {
-      jsonrpc: "2.0",
+      jsonrpc: '2.0',
       id: -1,
-      error: { code: res.status, message: "NonJSON" },
+      error: { code: res.status, message: 'NonJSON' },
     }
   }
-  const sid = res.headers.get("mcp-session-id")
+  const sid = res.headers.get('mcp-session-id')
   if (!sessionId && sid) sessionId = sid
   return { status: res.status, body: data }
 }
@@ -76,10 +76,10 @@ export async function rpcCall<TResult = unknown>(
  * @returns The HTTP response status and the normalized JSON-RPC result body for the initialize call
  */
 export async function initialize(key: string) {
-  return rpcCall(key, "initialize", {
+  return rpcCall(key, 'initialize', {
     protocolVersion: PROTOCOL_VERSION,
     capabilities: {},
-    clientInfo: { name: "orchard-tests", version: "0.0.0" },
+    clientInfo: { name: 'orchard-tests', version: '0.0.0' },
   })
 }
 
@@ -96,7 +96,7 @@ export async function callTool(
   name: string,
   args: Record<string, unknown> | undefined,
 ) {
-  const { status, body } = await rpcCall(key, "tools/call", {
+  const { status, body } = await rpcCall(key, 'tools/call', {
     name,
     arguments: args,
   })
@@ -110,7 +110,7 @@ export async function callTool(
  * @returns An object with `status` set to the HTTP response code and `body` set to an `RpcResult` whose `result` contains the tools listing (or `error` on failure)
  */
 export async function listTools(key: string) {
-  return rpcCall(key, "tools/list", {})
+  return rpcCall(key, 'tools/list', {})
 }
 
 export interface ToolContent {
@@ -139,7 +139,7 @@ export function extractJsonContent(result: ToolResult | undefined): unknown {
   const content = result.content ?? []
   const textPart = content.find(
     (c): c is ToolContent & { text: string } =>
-      c.type === "text" && typeof c.text === "string",
+      c.type === 'text' && typeof c.text === 'string',
   )
   if (textPart) {
     try {
@@ -148,7 +148,7 @@ export function extractJsonContent(result: ToolResult | undefined): unknown {
       /* fallthrough */
     }
   }
-  const jsonPart = content.find((c) => c.type === "json")
+  const jsonPart = content.find((c) => c.type === 'json')
   return jsonPart ? jsonPart.data : content
 }
 
@@ -173,7 +173,7 @@ export function extractErrorCode(
   if (!result) return undefined
   const part = (result.content || []).find(
     (c): c is ToolContent & { text: string } =>
-      c.type === "text" && typeof c.text === "string",
+      c.type === 'text' && typeof c.text === 'string',
   )
   if (!part) return undefined
   return part.text.split(/\s+/)[0]

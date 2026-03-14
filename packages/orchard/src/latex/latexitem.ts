@@ -1,4 +1,4 @@
-import type { Editor } from "obsidian"
+import type { Editor } from 'obsidian'
 
 export type LatexItem = {
   display: string
@@ -7,13 +7,13 @@ export type LatexItem = {
 }
 
 export const PREDEFINED_LATEX: Array<LatexItem> = [
-  { display: "Expectation", value: "\\mathbb{E}" },
-  { display: "Variance", value: "\\mathbb{V}" },
-  { display: "Paranthesis", value: "\\left( \\right)", offset: 6 },
+  { display: 'Expectation', value: '\\mathbb{E}' },
+  { display: 'Variance', value: '\\mathbb{V}' },
+  { display: 'Paranthesis', value: '\\left( \\right)', offset: 6 },
 ]
 
 export const insertLatexItem = (item: LatexItem, editor: Editor) => {
-  const cursor = editor.getCursor("from")
+  const cursor = editor.getCursor('from')
 
   editor.replaceRange(item.value, cursor, cursor)
 

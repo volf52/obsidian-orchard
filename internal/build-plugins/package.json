@@ -1,22 +1,23 @@
 {
   "name": "@internal/build-plugins",
+  "private": true,
   "description": "Build plugins for internal use",
   "type": "module",
-  "private": true,
   "exports": {
     "./svelte": {
       "bun": "./src/svelte.ts"
     }
   },
   "devDependencies": {
-    "typescript": "catalog:",
-    "@typescript/native-preview": "catalog:",
-    "oxlint": "catalog:",
-    "oxlint-tsgolint": "catalog:",
     "@biomejs/biome": "catalog:",
     "@tsconfig/bun": "catalog:",
+    "@types/bun": "catalog:",
+    "@typescript/native-preview": "catalog:",
     "bunup": "catalog:",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:",
     "svelte": "catalog:",
-    "@types/bun": "catalog:"
+    "typescript": "catalog:"
   }
 }

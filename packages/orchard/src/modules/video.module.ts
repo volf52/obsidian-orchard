@@ -1,13 +1,13 @@
-import type { App, Command } from "obsidian"
-import { mount, unmount } from "svelte"
-import AddVideoModal from "@/components/AddVideoModal.svelte"
-import { notifyErr, notifySuccess } from "@/notify"
-import BetterModal from "@/obsidian-extended/better-modal"
-import type { OrchardServices } from "@/services/utils"
-import type { YoutubeApiService } from "@/services/video"
-import { extractYtId, videoMetaToContent } from "@/services/video/utils"
-import type { OrchardSettings } from "@/settings/types"
-import { cleanTitle } from "@/utils/general"
+import type { App, Command } from 'obsidian'
+import { mount, unmount } from 'svelte'
+import type { OrchardServices } from '@/services/utils'
+import type { YoutubeApiService } from '@/services/video'
+import type { OrchardSettings } from '@/settings/types'
+import AddVideoModal from '@/components/AddVideoModal.svelte'
+import { notifyErr, notifySuccess } from '@/notify'
+import BetterModal from '@/obsidian-extended/better-modal'
+import { extractYtId, videoMetaToContent } from '@/services/video/utils'
+import { cleanTitle } from '@/utils/general'
 
 class VideoModule {
   #ytServ: YoutubeApiService
@@ -24,8 +24,8 @@ class VideoModule {
     const commands: Command[] = []
 
     commands.push({
-      id: "orchard-video-add",
-      name: "Add Video Note",
+      id: 'orchard-video-add',
+      name: 'Add Video Note',
       callback: () => {
         this.addVideo()
       },
@@ -35,7 +35,7 @@ class VideoModule {
   }
 
   private addVideo() {
-    const m = new BetterModal(this.app, "Add Video Note")
+    const m = new BetterModal(this.app, 'Add Video Note')
 
     const svelteModal = mount(AddVideoModal, {
       target: m.contentEl,
@@ -47,20 +47,20 @@ class VideoModule {
           m.disableClose()
           const videoId = extractYtId(value)
           if (videoId === null) {
-            errFunc(value, "Invalid YouTube URL or ID")
+            errFunc(value, 'Invalid YouTube URL or ID')
             return
           }
 
           const videoFolder = this.settings.videoNoteFolder
 
           if (!videoFolder) {
-            notifyErr("Video note folder is not set in settings.")
+            notifyErr('Video note folder is not set in settings.')
             return
           }
 
           const metadata = await this.#ytServ.fetchVideoDetails(videoId)
           if (!metadata) {
-            notifyErr("Failed to fetch video details.")
+            notifyErr('Failed to fetch video details.')
             return
           }
 
@@ -72,8 +72,8 @@ class VideoModule {
             `${videoFolder}/${title}.md`,
             content,
           )
-          const leaf = this.app.workspace.getLeaf("tab")
-          notifySuccess("Video imported")
+          const leaf = this.app.workspace.getLeaf('tab')
+          notifySuccess('Video imported')
           await leaf.openFile(file)
 
           m.enableClose()

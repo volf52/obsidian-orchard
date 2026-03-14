@@ -1,41 +1,34 @@
-import type { NoteService } from "./note-service"
+import type { NoteService } from './note-service'
 import type {
-  CreateNoteInput,
   Note,
   NoteFilters,
   NoteId,
   NoteVersion,
   UpdateNoteMutation,
-} from "./types"
+} from './types'
 import {
   formatInlineTaskLine,
+  type InlineTask,
+  type InlineTaskExtraFields,
+  type InlineTaskFormatInput,
   parseInlineTasks,
   TASK_NOTE_TYPE,
-  type TaskSyncState,
+  type TaskCheckbox,
   type TaskFrontmatter,
   type TaskFrontmatterInit,
-  type TaskCheckbox,
-  type InlineTaskExtraFields,
-  type InlineTask,
-  type InlineTaskFormatInput,
-} from "./inline-task"
+  type TaskSyncState,
+} from './inline-task'
 import {
-  _statusToCheckbox,
   appendLine,
-  checkboxToStatus,
-  collapseWhitespace,
   createInlineTaskBlockId,
-  normalizeExtraFields,
   normalizeTaskFrontmatter,
   removeLine,
   replaceLine,
   serializeTaskFrontmatter,
-  toLineSet,
   validateTaskFrontmatter,
-  type LineSet,
-} from "./task-utils"
+} from './task-utils'
 
-export const TASK_NOTE_MINIMAL_BODY = ""
+export const TASK_NOTE_MINIMAL_BODY = ''
 
 // Re-export types for backward compatibility
 export type {
@@ -49,7 +42,7 @@ export type {
 }
 export { TASK_NOTE_TYPE }
 
-export interface TaskNote extends Omit<Note, "frontmatter"> {
+export interface TaskNote extends Omit<Note, 'frontmatter'> {
   frontmatter: TaskFrontmatter
 }
 
@@ -203,8 +196,7 @@ export class TaskNoteService {
 // These types are now imported from ./inline-task and re-exported above
 
 export interface CreateInlineTaskInput
-  extends Omit<InlineTaskFormatInput, "frontmatter">,
-    TaskFrontmatterInit {
+  extends Omit<InlineTaskFormatInput, 'frontmatter'>, TaskFrontmatterInit {
   noteId: NoteId
 }
 
@@ -282,7 +274,7 @@ export class InlineTaskService {
       (task) => task.blockId === blockId,
     )
     if (!created) {
-      throw new Error("Failed to locate created inline task")
+      throw new Error('Failed to locate created inline task')
     }
     return created
   }
@@ -297,7 +289,7 @@ export class InlineTaskService {
 
     const tasks = parseInlineTasks(note)
     const target = this.findTargetTask(tasks, identifier)
-    if (!target) throw new Error("Inline task not found")
+    if (!target) throw new Error('Inline task not found')
 
     const frontmatter = normalizeTaskFrontmatter({
       status: mutation.status ?? target.frontmatter.status,
@@ -351,7 +343,7 @@ export class InlineTaskService {
       blockId: blockId ?? undefined,
       line: blockId ? undefined : target.line,
     })
-    if (!nextTarget) throw new Error("Failed to locate updated inline task")
+    if (!nextTarget) throw new Error('Failed to locate updated inline task')
     return nextTarget
   }
 
@@ -380,7 +372,7 @@ export class InlineTaskService {
       guard += 1
     }
     if (seen.has(candidate)) {
-      throw new Error("Unable to generate unique inline task block id")
+      throw new Error('Unable to generate unique inline task block id')
     }
     return candidate
   }
@@ -402,7 +394,7 @@ export class InlineTaskService {
 }
 
 // Re-export inline task formatting and parsing functions
-export { formatInlineTaskLine, parseInlineTasks } from "./inline-task"
+export { formatInlineTaskLine, parseInlineTasks } from './inline-task'
 
 // Re-export task utility functions for backward compatibility
 export {
@@ -411,6 +403,7 @@ export {
   checkboxToStatus,
   collapseWhitespace,
   createInlineTaskBlockId,
+  type LineSet,
   normalizeExtraFields,
   normalizeTaskFrontmatter,
   removeLine,
@@ -418,5 +411,4 @@ export {
   serializeTaskFrontmatter,
   toLineSet,
   validateTaskFrontmatter,
-  type LineSet,
-} from "./task-utils"
+} from './task-utils'

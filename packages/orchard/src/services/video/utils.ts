@@ -1,21 +1,21 @@
-import { notifyErr } from "@/notify"
-import type { Prettify } from "@/types"
-import { cleanTag } from "@/utils/general"
-import type { Chapter, VideoMetadata, YtSearchItem } from "./types"
+import type { Prettify } from '@/types'
+import { notifyErr } from '@/notify'
+import { cleanTag } from '@/utils/general'
+import type { Chapter, VideoMetadata, YtSearchItem } from './types'
 
 export const extractYtId = (url: string) => {
   if (!url) return null
 
   try {
     const u = new URL(url)
-    let videoId = ""
+    let videoId = ''
 
-    if (u.host === "youtu.be") videoId = u.pathname.slice(1)
-    else videoId = u.searchParams.get("v") || ""
+    if (u.host === 'youtu.be') videoId = u.pathname.slice(1)
+    else videoId = u.searchParams.get('v') || ''
 
     return videoId
   } catch (err) {
-    notifyErr("Invalid URL", err)
+    notifyErr('Invalid URL', err)
 
     return null
   }
@@ -28,7 +28,7 @@ export function extractChapters(
   videoId: string,
   description: string,
 ): { chapters: Chapter[]; cleanedDescription: string } {
-  const lines = description.split("\n")
+  const lines = description.split('\n')
   const chapters: Chapter[] = []
   const newDescLines: string[] = []
 
@@ -38,11 +38,11 @@ export function extractChapters(
       const timestamp = match[1]
       if (!timestamp) continue
 
-      let name = line.replace(timestamp, "").trim()
-      if (name.startsWith("-")) name = name.slice(1).trim()
-      if (name.startsWith(":")) name = name.slice(1).trim()
+      let name = line.replace(timestamp, '').trim()
+      if (name.startsWith('-')) name = name.slice(1).trim()
+      if (name.startsWith(':')) name = name.slice(1).trim()
 
-      const linkTime = `${timestamp.replace(":", "m")}s`
+      const linkTime = `${timestamp.replace(':', 'm')}s`
       const link = `https://www.youtube.com/watch?v=${videoId}&t=${linkTime}`
       chapters.push({ link, start: timestamp, name })
     } else {
@@ -52,7 +52,7 @@ export function extractChapters(
 
   return {
     chapters,
-    cleanedDescription: newDescLines.join("\n"),
+    cleanedDescription: newDescLines.join('\n'),
   }
 }
 
@@ -64,10 +64,10 @@ export function toVideoMeta(item: YtSearchItem): VideoMetadata {
     channel: snippet.channelTitle,
     channelId: snippet.channelId,
     uploadedAt: snippet.publishedAt,
-    duration: contentDetails.duration.replace(/^PT/i, "").toLowerCase(),
+    duration: contentDetails.duration.replace(/^PT/i, '').toLowerCase(),
     tags: snippet.tags ?? [],
-    channelHandle: "",
-    thumbnail: "",
+    channelHandle: '',
+    thumbnail: '',
     chapters: [],
   }
 
@@ -77,7 +77,8 @@ export function toVideoMeta(item: YtSearchItem): VideoMetadata {
     thumbs.high?.url ||
     thumbs.standard?.url ||
     thumbs.medium?.url ||
-    thumbs.default?.url || ''
+    thumbs.default?.url ||
+    ''
 
   return meta
 }
@@ -89,7 +90,7 @@ export const videoMetaToContent = (
 ): string => {
   const {
     title,
-    description = "",
+    description = '',
     channel,
     channelHandle,
     duration,
@@ -103,16 +104,16 @@ export const videoMetaToContent = (
     .map(cleanTag)
     .filter(Boolean)
     .map((t) => `🎥/${t}`)
-  const cleanTagsJoined = cleanTags.join(", ")
+  const cleanTagsJoined = cleanTags.join(', ')
 
   const url = `https://www.youtu.be/${id}`
   const channelLink = channelHandle
     ? `https://www.youtube.com/${channelHandle}`
-    : ""
+    : ''
 
   const fm = {
     id,
-    type: "video",
+    type: 'video',
     tags: `["draft", ${cleanTagsJoined}]`,
     title: `"${title}"`,
     url,
@@ -126,17 +127,17 @@ export const videoMetaToContent = (
 
   const fmLines = Object.entries(fm).map(([k, v]) => `${k}: ${v}`)
 
-  const out = ["---", ...fmLines, "---", `# 🎥 ${title}`]
+  const out = ['---', ...fmLines, '---', `# 🎥 ${title}`]
 
   if (thumbnail) {
-    out.push("", `![Thumbnail](${thumbnail})`)
+    out.push('', `![Thumbnail](${thumbnail})`)
   }
 
   if (chapters.length) {
     out.push(
-      "",
+      '',
       `[Watch (${duration})](<https://youtu.be/${id}>)`,
-      "",
+      '',
       ...chapters.map(
         ({ name, start, link }) => `- [[#${name}]] [${start}](<${link}>)`,
       ),
@@ -144,13 +145,13 @@ export const videoMetaToContent = (
   }
 
   if (description.trim()) {
-    out.push("", "## Description", "```", description.trim(), "```")
+    out.push('', '## Description', '```', description.trim(), '```')
   }
 
   if (chapters.length) {
     out.push(
-      "",
-      "## Notes",
+      '',
+      '## Notes',
       ...chapters.flatMap(({ name, start, link }) => [
         `### ${name}`,
         `[${start}](<${link}>)`,
@@ -158,9 +159,9 @@ export const videoMetaToContent = (
     )
   }
 
-  out.push("", "## References", "")
+  out.push('', '## References', '')
 
-  return out.join("\n")
+  return out.join('\n')
 }
 
 type RightData<T> = {

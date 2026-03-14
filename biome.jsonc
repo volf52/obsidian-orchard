@@ -11,11 +11,10 @@
     "includes": [
       "./*.jsonc",
       "./*.json",
-      "./*.config.ts"
-    ],
-    "experimentalScannerIgnores": [
-      "node_modules",
-      ".git"
+      "./*.config.ts",
+      "!node_modules",
+      "!.git",
+      "!.jj"
     ],
     "ignoreUnknown": true
   },
@@ -53,7 +52,7 @@
   "assist": {
     "actions": {
       "source": {
-        "organizeImports": "on",
+        "organizeImports": "off",
         "recommended": true,
         "useSortedAttributes": "on",
         "useSortedKeys": "off",
@@ -67,7 +66,7 @@
       "enabled": true
     },
     "formatter": {
-      "enabled": true,
+      "enabled": false,
       "indentStyle": "space"
     },
     "linter": {
@@ -81,7 +80,7 @@
   "html": {
     "formatter": {
       "bracketSameLine": true,
-      "enabled": true,
+      "enabled": false,
       "indentScriptAndStyle": true,
       "indentStyle": "space"
     }
@@ -92,7 +91,7 @@
     },
     "formatter": {
       "arrowParentheses": "always",
-      "enabled": true,
+      "enabled": false,
       "indentStyle": "space",
       "lineEnding": "lf",
       "quoteStyle": "double",
@@ -112,7 +111,7 @@
       "enabled": true
     },
     "formatter": {
-      "enabled": true,
+      "enabled": false,
       "expand": "auto",
       "indentStyle": "space"
     },

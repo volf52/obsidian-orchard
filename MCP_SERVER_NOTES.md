@@ -5,7 +5,9 @@ _Last updated: 2025-10-04_
 These notes capture the current implementation state, rationale, and next actions for the Orchard MCP server + Obsidian plugin integration. Reference this file to quickly resume work.
 
 ---
+
 ## 1. Current Implementation Snapshot
+
 - **Standalone MCP Plugin**: `packages/mcp-server/src/plugin.ts` starts `McpServer` directly (no dependency on the Orchard plugin lifecycle).
 - **NoteService Backend Selection**: Chosen at startup via `settings.storage` (`vault` | `memory`). Vault = real Obsidian markdown files (via inline lightweight adapter). Memory = ephemeral in‑process storage using `@orchard/core` memory adapter.
 - **API Key Handling (Current)**:
@@ -22,11 +24,13 @@ These notes capture the current implementation state, rationale, and next action
 - **Key Generation Code Simplified**: Removed brittle `globalThis/window` fallback logic.
 
 ---
+
 ## 2. Purpose of Memory Storage Mode
+
 | Aspect | Memory Mode | Vault Mode |
 | ------ | ----------- | ---------- |
 | Persistence | Lost on restart | Stored as markdown files |
-| Use Cases | Testing, sandbox agents, ephemeral scratch notes | Real note authoring | 
+| Use Cases | Testing, sandbox agents, ephemeral scratch notes | Real note authoring |
 | Performance | Faster (no disk I/O) | Dependent on vault FS |
 | Safety | No risk to vault files | Modifies user files |
 | Integration | Not visible in Obsidian file tree | Visible & indexed |
@@ -34,14 +38,18 @@ These notes capture the current implementation state, rationale, and next action
 Rationale: Allows safe experimentation (e.g., LLM/agent note generation) without touching real notes; enables deterministic test fixtures. Not intended for long-term content.
 
 ---
+
 ## 3. Key Rotation: Problems & Improvements
+
 ### 3.1 Issues Now
+
 - Rotating via `{ rotate: true }` leaves plugin settings stale.
 - Server restart (triggered later) will reinitialize with outdated saved key.
 - No metadata endpoint to verify rotation state without full key disclosure.
 - Tests currently use white-box `server.setApiKey` in one path (acceptable for now but not ideal).
 
 ### 3.2 Improvement Options
+
 | Option | Pros | Cons |
 | ------ | ---- | ---- |
 | Client-supplied newKey only | Plugin already knows key; easy persistence | Requires plugin to manage entropy & formatting |
@@ -51,6 +59,7 @@ Rationale: Allows safe experimentation (e.g., LLM/agent note generation) without
 | Return tail + timestamps only | Safe for logs & UI | Needs local copy of full key for comparisons |
 
 ### 3.3 Recommended Composite Approach
+
 1. Enhance constructor to accept `onKeyChange(newKey: string)`.
 2. Modify `POST /config/key` response:
    - On rotation or newKey: `{ ok: true, tail: <last6>, createdAt, rotatedAt, key?: <full only if server-generated this call> }`.
@@ -62,13 +71,18 @@ Rationale: Allows safe experimentation (e.g., LLM/agent note generation) without
 5. Update tests to assert old key now 401 & `GET /config/key` tail matches.
 
 ---
+
 ## 4. Proposed New Endpoint Specs
+
 ### 4.1 POST /config/key
+
 Request bodies:
+
 - `{ "rotate": true }` (server generates)
 - `{ "newKey": "<clientGenerated>" }`
 Response (success):
-```
+
+```text
 {
   "ok": true,
   "tail": "abcdef",           // last 6 chars
@@ -77,18 +91,24 @@ Response (success):
   "key": "<full>"               // ONLY if server generated this rotation
 }
 ```
+
 Errors: `401 Unauthorized`, `503 ServerNotReady`, `400 BadRequest` (invalid shape).
 
 ### 4.2 GET /config/key
+
 Auth Required.
 Response:
-```
+
+```text
 { "tail": "abcdef", "createdAt": 173..., "rotatedAt": 173... }
 ```
+
 Never includes full key.
 
 ---
+
 ## 5. Outstanding Tasks / TODOs
+
 (Use this list to drive next PRs.)
 
 | ID | Task | Status | Priority | Notes |
@@ -105,7 +125,9 @@ Never includes full key.
 | T10 | (Optional) Improve memory→vault migration (export) | Deferred | Low | Future enhancement |
 
 ---
+
 ## 6. Implementation Order Proposal
+
 1. (T1, T2) Extend `McpServer` state & constructor options.
 2. (T3) Enhance POST `/config/key` logic + tests.
 3. (T4) Add GET endpoint + tests.
@@ -114,7 +136,9 @@ Never includes full key.
 6. (T9) Evaluate storage mode auto-restart (if still desired).
 
 ---
+
 ## 7. Testing Strategy Notes
+
 - Use existing port (27126) to stay consistent.
 - Add new test file `mcp-key-mgmt.test.ts` or extend `mcp-config-routes.test.ts`.
 - Assertions:
@@ -126,14 +150,18 @@ Never includes full key.
 - Negative: invalid body → 400; unauthenticated GET → 401/503.
 
 ---
+
 ## 8. Security Considerations
+
 - Never log full key; log tail only (`***<tail>` pattern).
 - One-time full key disclosure only if server generates it (optional; can disable entirely for stricter posture).
 - Consider lengthening key (currently 48 hex chars = 192 bits) – already strong; ok to keep.
 - Avoid timing side channels: constant-time comparison not yet implemented (could introduce subtlety later if key usage frequency rises).
 
 ---
+
 ## 9. Open Questions (Decide Before Implementing)
+
 | Question | Options | Default Assumption |
 | -------- | ------- | ------------------ |
 | Server or client generates rotation key? | Client, Server, Both | Support both; prefer client-provided |
@@ -142,8 +170,11 @@ Never includes full key.
 | Keep memory mode hidden or expose UI toggle? | Hidden, UI Later | Hidden for now |
 
 ---
+
 ## 10. Quick Resume Checklist
+
 When you pick this back up:
+
 1. Confirm decisions in Section 9 or adjust.
 2. Implement tasks T1–T5 sequentially.
 3. Update tests (T7, T8).
@@ -151,26 +182,33 @@ When you pick this back up:
 5. Consider documenting rotation usage in README (optional after feature stabilizes).
 
 ---
+
 ## 11. Suggested Future Enhancements (Non-blocking)
+
 - Add hashed key verification (`hash = SHA256(serverSalt || key)`), enabling clients to compare without full key.
 - Implement streaming note change events over SSE beyond current notifications (subscribe with filters, etc.).
 - Add partial text search index for faster `list_notes` search queries.
 - Provide export command from memory mode to vault.
 
 ---
+
 ## 12. Reference File Paths
+
 - MCP Server: `packages/mcp-server/src/mcp-server.ts`
 - Plugin: `packages/mcp-server/src/plugin.ts`
 - Config Tests: `packages/mcp-server/src/mcp-config-routes.test.ts`
 - Core Note Service: `packages/orchard-core/src/note-service.ts`
 
 ---
+
 ## 13. Glossary
+
 - **Tail**: Last 6 hex characters of API key; safe to display.
 - **Rotation**: Replacing the active API key with a new one.
 - **Ephemeral Notes**: Notes stored only in memory adapter; lost on restart.
 
 ---
+
 Feel free to append decisions you make below this line.
 
 > _Append future decisions here:_

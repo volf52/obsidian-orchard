@@ -1,4 +1,4 @@
-import type { EventBus, NoteEvent } from "./types"
+import type { EventBus, NoteEvent } from './types'
 
 /**
  * Create an EventBus for NoteEvent handlers allowing registration and event delivery.

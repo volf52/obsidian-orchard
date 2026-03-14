@@ -1,7 +1,7 @@
-import type { NoteService } from "@orchard/core"
-import { createTaskSchema, TaskService } from "@/services/task"
-import type { OrchardSettings } from "@/settings/types"
-import { YoutubeApiService } from "./video"
+import type { OrchardSettings } from '@/settings/types'
+import type { NoteService } from '@orchard/core'
+import { createTaskSchema, TaskService } from '@/services/task'
+import { YoutubeApiService } from './video'
 
 type ServiceDeps = {
   noteService: NoteService

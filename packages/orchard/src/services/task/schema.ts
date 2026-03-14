@@ -3,7 +3,7 @@ import type {
   TaskPriorityId,
   TaskProjectGroupSetting,
   TaskStatusId,
-} from "@/settings/types"
+} from '@/settings/types'
 
 export interface TaskSchema {
   folder: string
@@ -25,20 +25,20 @@ export const createTaskSchema = (settings: OrchardSettings): TaskSchema => {
 
 const normalizeFolder = (folder: string): string => {
   const trimmed = folder.trim()
-  if (!trimmed) return "tasks"
-  return trimmed.replace(/^\/+|\/+$/g, "")
+  if (!trimmed) return 'tasks'
+  return trimmed.replace(/^\/+|\/+$/g, '')
 }
 
 const normalizeBaseFile = (baseFile: string): string => {
   const trimmed = baseFile.trim()
-  if (!trimmed) return ".obsidian/bases/orchard-tasks.base.json"
-  return trimmed.replace(/^\/+/, "")
+  if (!trimmed) return '.obsidian/bases/orchard-tasks.base.json'
+  return trimmed.replace(/^\/+/, '')
 }
 
 const normalizeList = (values: string[] | undefined | null): string[] => {
   if (!Array.isArray(values)) return []
   return values
-    .map((value) => (typeof value === "string" ? value.trim() : String(value)))
+    .map((value) => (typeof value === 'string' ? value.trim() : String(value)))
     .filter((value) => value.length > 0)
 }
 
@@ -48,8 +48,8 @@ const normalizeGroups = (
   if (!Array.isArray(groups)) return []
   const normalized: TaskProjectGroupSetting[] = []
   for (const group of groups) {
-    const id = typeof group.id === "string" ? group.id.trim() : ""
-    const name = typeof group.name === "string" ? group.name.trim() : ""
+    const id = typeof group.id === 'string' ? group.id.trim() : ''
+    const name = typeof group.name === 'string' ? group.name.trim() : ''
     if (!id || !name) continue
     normalized.push({
       id,

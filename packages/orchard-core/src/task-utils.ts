@@ -1,6 +1,10 @@
-import type { CreateNoteInput } from "./types"
-import { TASK_NOTE_MINIMAL_BODY, TASK_NOTE_TYPE } from "./task"
-import type { TaskFrontmatter, TaskFrontmatterInit, InlineTaskExtraFields } from "./inline-task"
+import type {
+  InlineTaskExtraFields,
+  TaskFrontmatter,
+  TaskFrontmatterInit,
+} from './inline-task'
+import type { CreateNoteInput } from './types'
+import { TASK_NOTE_MINIMAL_BODY, TASK_NOTE_TYPE } from './task'
 
 /**
  * Produce a normalized TaskFrontmatter object from a TaskFrontmatterInit.
@@ -31,10 +35,10 @@ export function normalizeTaskFrontmatter(
 export function validateTaskFrontmatter(
   raw: Record<string, unknown>,
 ): TaskFrontmatter {
-  if (!raw || typeof raw !== "object") {
-    throw new Error("Task frontmatter must be an object")
+  if (!raw || typeof raw !== 'object') {
+    throw new Error('Task frontmatter must be an object')
   }
-  const typeValue = "type" in raw ? raw.type : undefined
+  const typeValue = 'type' in raw ? raw.type : undefined
   if (typeValue != null && typeValue !== TASK_NOTE_TYPE) {
     throw new Error(`Expected task note type "${TASK_NOTE_TYPE}"`)
   }
@@ -56,7 +60,7 @@ export function validateTaskFrontmatter(
  */
 export function serializeTaskFrontmatter(
   init: TaskFrontmatterInit,
-): Pick<CreateNoteInput, "frontmatter" | "body"> {
+): Pick<CreateNoteInput, 'frontmatter' | 'body'> {
   return {
     frontmatter: normalizeTaskFrontmatter(init),
     body: TASK_NOTE_MINIMAL_BODY,
@@ -73,11 +77,11 @@ export function serializeTaskFrontmatter(
  * @throws Error - If `status` is not a string (`"Task status must be a string"`) or if the trimmed string is empty (`"Task status cannot be empty"`)
  */
 function normalizeStatus(status: unknown): string {
-  if (typeof status !== "string") {
-    throw new Error("Task status must be a string")
+  if (typeof status !== 'string') {
+    throw new Error('Task status must be a string')
   }
   const trimmed = status.trim()
-  if (!trimmed) throw new Error("Task status cannot be empty")
+  if (!trimmed) throw new Error('Task status cannot be empty')
   return trimmed
 }
 
@@ -89,9 +93,9 @@ function normalizeStatus(status: unknown): string {
  */
 function normalizeOptionalString(value: unknown): string | null {
   if (value == null) return null
-  if (typeof value === "string") {
+  if (typeof value === 'string') {
     const trimmed = value.trim()
-    return trimmed === "" ? null : trimmed
+    return trimmed === '' ? null : trimmed
   }
   return String(value)
 }
@@ -104,17 +108,17 @@ function normalizeOptionalString(value: unknown): string | null {
  * @throws Error if `value` is a non-empty string that cannot be parsed as a date or if `value` is of an unsupported type.
  */
 function normalizeDue(value: unknown): string | null {
-  if (value == null || value === "") return null
+  if (value == null || value === '') return null
   if (value instanceof Date) {
     if (Number.isNaN(value.getTime())) return null
     return toDateOnly(value)
   }
-  if (typeof value === "number") {
+  if (typeof value === 'number') {
     const date = new Date(value)
     if (Number.isNaN(date.getTime())) return null
     return toDateOnly(date)
   }
-  if (typeof value === "string") {
+  if (typeof value === 'string') {
     const trimmed = value.trim()
     if (!trimmed) return null
     if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed
@@ -124,7 +128,7 @@ function normalizeDue(value: unknown): string | null {
     }
     return toDateOnly(date)
   }
-  throw new Error("Invalid type for task due date")
+  throw new Error('Invalid type for task due date')
 }
 
 /**
@@ -135,8 +139,8 @@ function normalizeDue(value: unknown): string | null {
  */
 function toDateOnly(date: Date): string {
   const year = date.getUTCFullYear()
-  const month = `${date.getUTCMonth() + 1}`.padStart(2, "0")
-  const day = `${date.getUTCDate()}`.padStart(2, "0")
+  const month = `${date.getUTCMonth() + 1}`.padStart(2, '0')
+  const day = `${date.getUTCDate()}`.padStart(2, '0')
   return `${year}-${month}-${day}`
 }
 
@@ -153,11 +157,11 @@ export function createInlineTaskBlockId(
 ): string {
   const iso = date
     .toISOString()
-    .replace(/[-:TZ.]/g, "")
+    .replace(/[-:TZ.]/g, '')
     .slice(0, 14)
   const random = Math.floor(randomFn() * 36 ** 4)
     .toString(36)
-    .padStart(4, "0")
+    .padStart(4, '0')
   return `orchard-task-${iso}${random}`
 }
 
@@ -169,12 +173,12 @@ export function createInlineTaskBlockId(
  */
 export function _statusToCheckbox(status: string): string {
   const normalized = status.trim().toLowerCase()
-  if (["done", "complete", "completed"].includes(normalized)) return "x"
-  if (["cancelled", "canceled"].includes(normalized)) return "-"
-  if (["in-progress", "doing", "working", "started"].includes(normalized))
-    return ">"
-  if (["waiting", "blocked", "hold"].includes(normalized)) return "~"
-  return " "
+  if (['done', 'complete', 'completed'].includes(normalized)) return 'x'
+  if (['cancelled', 'canceled'].includes(normalized)) return '-'
+  if (['in-progress', 'doing', 'working', 'started'].includes(normalized))
+    return '>'
+  if (['waiting', 'blocked', 'hold'].includes(normalized)) return '~'
+  return ' '
 }
 
 /**
@@ -185,16 +189,16 @@ export function _statusToCheckbox(status: string): string {
  */
 export function checkboxToStatus(checkbox: string): string {
   switch (checkbox) {
-    case "x":
-    case "X":
-      return "done"
-    case "-":
-      return "cancelled"
-    case ">":
-    case "~":
-      return "in_progress"
+    case 'x':
+    case 'X':
+      return 'done'
+    case '-':
+      return 'cancelled'
+    case '>':
+    case '~':
+      return 'in_progress'
     default:
-      return "todo"
+      return 'todo'
   }
 }
 
@@ -205,7 +209,7 @@ export function checkboxToStatus(checkbox: string): string {
  * @returns The string with internal whitespace collapsed to single spaces and trimmed at both ends
  */
 export function collapseWhitespace(value: string): string {
-  return value.replace(/\s+/g, " ").trim()
+  return value.replace(/\s+/g, ' ').trim()
 }
 
 /**
@@ -246,10 +250,10 @@ export interface LineSet {
  * @returns A `LineSet` containing the parsed lines and whether the original body had a trailing newline
  */
 export function toLineSet(body: string): LineSet {
-  const normalized = body.replace(/\r\n/g, "\n")
-  const trailingNewline = normalized.endsWith("\n")
+  const normalized = body.replace(/\r\n/g, '\n')
+  const trailingNewline = normalized.endsWith('\n')
   const content = trailingNewline ? normalized.slice(0, -1) : normalized
-  const lines = content ? content.split("\n") : []
+  const lines = content ? content.split('\n') : []
   return { lines, trailingNewline }
 }
 
@@ -308,7 +312,7 @@ export function removeLine(body: string, index: number): string {
  * @returns The joined lines as a single string, with a trailing newline if `trailingNewline` is true.
  */
 function fromLineSet(lines: string[], trailingNewline: boolean): string {
-  if (lines.length === 0) return ""
-  const joined = lines.join("\n")
+  if (lines.length === 0) return ''
+  const joined = lines.join('\n')
   return trailingNewline ? `${joined}\n` : joined
 }

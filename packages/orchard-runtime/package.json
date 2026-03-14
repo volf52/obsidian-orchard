@@ -2,6 +2,14 @@
   "name": "@orchard/runtime",
   "version": "0.1.0",
   "description": "Runtime/lifecycle helpers for Orchard (assembly, late attachment, event bridging)",
+  "keywords": [
+    "lifecycle",
+    "notes",
+    "orchard",
+    "runtime"
+  ],
+  "license": "ISC",
+  "author": "",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
@@ -14,21 +22,19 @@
     "test:watch": "bun test --watch",
     "clean": "rm -rf dist"
   },
-  "keywords": ["orchard", "runtime", "notes", "lifecycle"],
-  "author": "",
-  "license": "ISC",
+  "dependencies": {
+    "@orchard/core": "workspace:",
+    "tslib": "^2.8.0"
+  },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
     "@tsconfig/bun": "catalog:",
     "@types/bun": "catalog:",
+    "@typescript/native-preview": "catalog:",
+    "bunup": "catalog:",
+    "oxfmt": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
-    "@typescript/native-preview": "catalog:",
-    "typescript": "catalog:",
-    "bunup": "catalog:"
-  },
-  "dependencies": {
-    "@orchard/core": "workspace:",
-    "tslib": "^2.8.0"
+    "typescript": "catalog:"
   }
 }

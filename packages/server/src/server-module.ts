@@ -1,7 +1,7 @@
-import { createHash, randomBytes } from "node:crypto"
-import { serve } from "@hono/node-server"
-import type { Hono } from "hono"
-import { initRouter } from "./router"
+import type { Hono } from 'hono'
+import { serve } from '@hono/node-server'
+import { createHash, randomBytes } from 'node:crypto'
+import { initRouter } from './router'
 
 const PORT = 27125
 
@@ -15,7 +15,7 @@ export class ServerModule {
   }
 
   static generateApiKey(): string {
-    return createHash("sha256").update(randomBytes(32)).digest("hex")
+    return createHash('sha256').update(randomBytes(32)).digest('hex')
   }
 
   async start(): Promise<void> {
@@ -23,7 +23,7 @@ export class ServerModule {
       {
         fetch: this.router.fetch,
         port: PORT,
-        hostname: "0.0.0.0",
+        hostname: '0.0.0.0',
       },
       (info) => {
         console.log(`🚀 Server started on http://localhost:${info.port}`)
@@ -42,23 +42,23 @@ export class ServerModule {
     this.server.close()
     this.server = null
     this.onShutdown?.()
-    console.log("🛑 Server stopped")
+    console.log('🛑 Server stopped')
   }
 
   private setupGracefulShutdown() {
     const handleShutdown = () => {
-      console.log("\n🔄 Shutting down server...")
+      console.log('\n🔄 Shutting down server...')
       this.stop()
       process.exit(0)
     }
 
-    process.on("SIGINT", handleShutdown)
-    process.on("SIGTERM", handleShutdown)
+    process.on('SIGINT', handleShutdown)
+    process.on('SIGTERM', handleShutdown)
 
     return () => {
-      process.off("SIGINT", handleShutdown)
-      process.off("SIGTERM", handleShutdown)
-      console.log("🛑 Graceful shutdown handlers removed")
+      process.off('SIGINT', handleShutdown)
+      process.off('SIGTERM', handleShutdown)
+      console.log('🛑 Graceful shutdown handlers removed')
     }
   }
 }

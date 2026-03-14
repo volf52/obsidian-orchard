@@ -1,30 +1,30 @@
+import { type Command, Plugin } from 'obsidian'
+import type { TaskService } from '@/services/task'
+import type { OrchardServices } from '@/services/utils'
+import type { OrchardSettings } from '@/settings/types'
+import { ICON, ORCHAR_RSB_VIEW_TYPE } from '@/constants'
+import { migrateTaskNotes } from '@/modules/task-migration'
+import './styles.css'
+import './components/svelte.css'
+import TaskModule from '@/modules/task.module'
+import VideoModule from '@/modules/video.module'
+import RightSidebarView from '@/right-sidebar-view'
+import { createObsidianVaultAdapter } from '@/services/note-adapter'
+import { wireUpServices } from '@/services/utils'
+import OrchardSettingsTab, { DEFAULT_SETTINGS } from '@/settings'
+import {
+  clearAllSubscriptions,
+  initializeSettingsStore,
+  updateSettings,
+} from '@/stores/settings'
 import {
   createEventBus,
   type EventBus,
   type InlineTaskService,
   NoteService,
   type TaskNoteService,
-} from "@orchard/core"
-import { type Command, Plugin } from "obsidian"
-import { ICON, ORCHAR_RSB_VIEW_TYPE } from "@/constants"
-import RightSidebarView from "@/right-sidebar-view"
-import { createObsidianVaultAdapter } from "@/services/note-adapter"
-import OrchardSettingsTab, { DEFAULT_SETTINGS } from "@/settings"
-import "./styles.css"
-import "./components/svelte.css"
-import { migrateTaskNotes } from "@/modules/task-migration"
-import VideoModule from "@/modules/video.module"
-import TaskModule from "@/modules/task.module"
-import type { TaskService } from "@/services/task"
-import type { OrchardServices } from "@/services/utils"
-import { wireUpServices } from "@/services/utils"
-import type { OrchardSettings } from "@/settings/types"
-import {
-  clearAllSubscriptions,
-  initializeSettingsStore,
-  updateSettings,
-} from "@/stores/settings"
-import TranscriptionModule from "./modules/transcribe.module"
+} from '@orchard/core'
+import TranscriptionModule from './modules/transcribe.module'
 
 class Orchard extends Plugin {
   settings!: OrchardSettings
@@ -70,7 +70,7 @@ class Orchard extends Plugin {
 
     await migrateTaskNotes(this.app, this.taskNotes, this.inlineTasks)
 
-    this.addRibbonIcon(ICON, "Open Orchard", (_evt) => {
+    this.addRibbonIcon(ICON, 'Open Orchard', (_evt) => {
       this.activateView()
     })
 
@@ -88,32 +88,32 @@ class Orchard extends Plugin {
   private async registerCommands() {
     const commands: Command[] = [
       {
-        id: "orchard-open",
-        name: "Open Orchard",
+        id: 'orchard-open',
+        name: 'Open Orchard',
         callback: () => this.activateView(),
       },
       {
-        id: "orchard-create-test-note",
-        name: "Create Test Orchard Note",
+        id: 'orchard-create-test-note',
+        name: 'Create Test Orchard Note',
         callback: async () => {
           try {
             const note = await this.noteService.create({
-              id: "Orchard Test",
-              body: "Hello from Orchard core",
+              id: 'Orchard Test',
+              body: 'Hello from Orchard core',
             })
-            console.log("Created test note", note.id)
+            console.log('Created test note', note.id)
           } catch (err) {
-            console.error("Failed to create test note", err)
+            console.error('Failed to create test note', err)
           }
         },
       },
       {
-        id: "orchard-list-notes-log",
-        name: "List Orchard Notes (log)",
+        id: 'orchard-list-notes-log',
+        name: 'List Orchard Notes (log)',
         callback: async () => {
           const notes = await this.noteService.list()
           console.log(
-            "Orchard notes:",
+            'Orchard notes:',
             notes.map((n: { id: string; version: string }) => ({
               id: n.id,
               v: n.version.slice(0, 8),
@@ -188,19 +188,6 @@ class Orchard extends Plugin {
     const leaf = await RightSidebarView.getOrCreateLeaf(this.app)
     if (!leaf) return
     await this.app.workspace.revealLeaf(leaf)
-  }
-
-  private centerView() {
-    const editor = this.app.workspace.activeEditor?.editor
-    if (!editor) return editor
-
-    editor.scrollIntoView(
-      {
-        from: editor.getCursor("from"),
-        to: editor.getCursor("to"),
-      },
-      true,
-    )
   }
 }
 

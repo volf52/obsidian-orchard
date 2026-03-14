@@ -1,4 +1,4 @@
-import type { EventBus, NoteService } from "@orchard/core"
+import type { EventBus, NoteService } from '@orchard/core'
 
 export interface LateAttachOptions<TInfra> {
   // Called each attempt; return { noteService, events } when available.

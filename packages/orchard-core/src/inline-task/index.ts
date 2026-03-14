@@ -1,12 +1,12 @@
 export {
   formatInlineTaskLine,
+  type InlineTask,
+  type InlineTaskExtraFields,
+  type InlineTaskFormatInput,
   parseInlineTasks,
   TASK_NOTE_TYPE,
-  type TaskSyncState,
+  type TaskCheckbox,
   type TaskFrontmatter,
   type TaskFrontmatterInit,
-  type TaskCheckbox,
-  type InlineTaskExtraFields,
-  type InlineTask,
-  type InlineTaskFormatInput,
-} from "./formatter"
+  type TaskSyncState,
+} from './formatter'

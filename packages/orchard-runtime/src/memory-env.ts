@@ -1,4 +1,4 @@
-import { createEventBus, createMemoryAdapter, NoteService } from "@orchard/core"
+import { createEventBus, createMemoryAdapter, NoteService } from '@orchard/core'
 
 export interface MemoryNoteEnv {
   noteService: NoteService

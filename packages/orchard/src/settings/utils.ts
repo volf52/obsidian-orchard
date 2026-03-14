@@ -1,10 +1,10 @@
-import { type ButtonComponent, Setting, type TextComponent } from "obsidian"
+import { type ButtonComponent, Setting, type TextComponent } from 'obsidian'
 
 export const createHeading = (containerEl: HTMLElement, name: string) => {
   const heading = new Setting(containerEl).setName(name).setHeading()
 
   heading.settingEl.removeChild(heading.controlEl)
-  heading.settingEl.style.justifyContent = "center"
+  heading.settingEl.style.justifyContent = 'center'
 
   return heading
 }
@@ -28,7 +28,7 @@ export const createTextSetting = (args: TextSettingArgs) => {
     .setDesc(args.description)
     .addText((txt) => {
       if (args.fullWidth) {
-        txt.inputEl.style.width = "100%"
+        txt.inputEl.style.width = '100%'
       }
 
       txt.setValue(args.initialValue).onChange((val) => args.onChange(txt, val))
@@ -49,12 +49,12 @@ export const createCenterBtn = (args: CreateCenterBtnArgs) => {
   const setting = new Setting(args.containerEl).addButton((b) => {
     if (args.cta) b.setCta()
 
-    b.buttonEl.style.width = "100%"
+    b.buttonEl.style.width = '100%'
     b.setButtonText(args.text).onClick((e) => args.onClick(b, e))
   })
 
   setting.settingEl.removeChild(setting.infoEl)
-  setting.settingEl.style.justifyContent = "center"
+  setting.settingEl.style.justifyContent = 'center'
 
   return setting
 }

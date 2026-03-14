@@ -1,15 +1,15 @@
-.callout[data-callout="idea"] {
+.callout[data-callout='idea'] {
   --callout-color: 245, 213, 55;
   --callout-icon: lucide-lightbulb;
 }
 
-.callout[data-callout-metadata="notitle"] {
+.callout[data-callout-metadata='notitle'] {
   .callout-title {
     display: none;
   }
 }
 
-.callout[data-callout-metadata="badge"] {
+.callout[data-callout-metadata='badge'] {
   display: flex;
   align-items: flex-start;
   width: fit-content;
@@ -31,7 +31,7 @@
     min-height: 1.5rem;
   }
 
-  &[data-callout="quote"] {
+  &[data-callout='quote'] {
     --callout-icon: lucide-lightbulb;
   }
 }

@@ -1,8 +1,9 @@
-import { randomBytes, randomUUID } from "node:crypto"
-import { createServer, type IncomingHttpHeaders, type Server } from "node:http"
-import { McpServer as SdkMcpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js"
-import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js"
+import { McpServer as SdkMcpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
+import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js'
+import { randomBytes, randomUUID } from 'node:crypto'
+import { createServer, type IncomingHttpHeaders, type Server } from 'node:http'
+import { z } from 'zod'
 import type {
   EventBus,
   Note,
@@ -12,12 +13,11 @@ import type {
   NoteVersion,
   UpdateNoteMutation,
   VaultAdapter,
-} from "@orchard/core"
-import { z } from "zod"
-import { TaskToolService } from "./task-service"
+} from '@orchard/core'
+import { TaskToolService } from './task-service'
 
 const colors = {
-  reset: "\x1b[0m",
+  reset: '\x1b[0m',
   cyan: (s: string) => `\x1b[36m${s}${colors.reset}`,
   green: (s: string) => `\x1b[32m${s}${colors.reset}`,
   yellow: (s: string) => `\x1b[33m${s}${colors.reset}`,
@@ -36,12 +36,12 @@ const summarizeFrontmatter = (
 ): Record<string, unknown> | undefined => {
   const summary: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(frontmatter)) {
-    if (key === "title" || key === "tags") continue
+    if (key === 'title' || key === 'tags') continue
     if (value == null) continue
     if (
-      typeof value === "string" ||
-      typeof value === "number" ||
-      typeof value === "boolean"
+      typeof value === 'string' ||
+      typeof value === 'number' ||
+      typeof value === 'boolean'
     ) {
       summary[key] = value
       continue
@@ -49,7 +49,7 @@ const summarizeFrontmatter = (
     if (Array.isArray(value)) {
       const filtered = value.filter(
         (v): v is string | number =>
-          typeof v === "string" || typeof v === "number",
+          typeof v === 'string' || typeof v === 'number',
       )
       if (filtered.length > 0) summary[key] = filtered.slice(0, 10)
     }
@@ -70,7 +70,6 @@ export class McpServer {
   private readonly transport: StreamableHTTPServerTransport
   private readonly taskFolder: string
   private readonly taskBaseFile: string | null
-  private events: EventBus | null = null
   private unsubscribeEvents: (() => void) | null = null
   private readonly knownTaskIds = new Set<NoteId>()
   setApiKey(key: string) {
@@ -91,22 +90,22 @@ export class McpServer {
     } = {},
   ) {
     const envPort =
-      typeof process !== "undefined"
+      typeof process !== 'undefined'
         ? Number(process.env.MCP_PORT || process.env.PORT)
         : undefined
     this.port =
       opts.port ?? (envPort && !Number.isNaN(envPort) ? envPort : 27126)
     const envKey =
-      typeof process !== "undefined"
+      typeof process !== 'undefined'
         ? process.env.MCP_API_KEY || process.env.API_KEY
         : undefined
     this.noteService = opts.noteService ?? null
     this.apiKey = opts.apiKey ?? envKey ?? null
 
     const envTaskFolder =
-      typeof process !== "undefined" ? process.env.MCP_TASK_FOLDER : undefined
+      typeof process !== 'undefined' ? process.env.MCP_TASK_FOLDER : undefined
     const envTaskBase =
-      typeof process !== "undefined"
+      typeof process !== 'undefined'
         ? process.env.MCP_TASK_BASE_FILE
         : undefined
     this.taskFolder = normalizeTaskFolder(opts.taskFolder ?? envTaskFolder)
@@ -115,8 +114,8 @@ export class McpServer {
     this.taskBaseFile = normalizeTaskBaseFile(baseFileSource)
 
     this.sdk = new SdkMcpServer({
-      name: "orchard-mcp",
-      version: "0.1.0",
+      name: 'orchard-mcp',
+      version: '0.1.0',
     })
 
     this.registerTools()
@@ -136,7 +135,7 @@ export class McpServer {
 
   private requireService(): NoteService {
     if (!this.noteService)
-      throw new McpError(ErrorCode.InternalError, "NoteServiceUnavailable")
+      throw new McpError(ErrorCode.InternalError, 'NoteServiceUnavailable')
     return this.noteService
   }
 
@@ -168,15 +167,15 @@ export class McpServer {
     this.events = events
     this.unsubscribeEvents?.()
     this.unsubscribeEvents = events.subscribe((evt) => {
-      if (!evt || typeof evt !== "object" || !("type" in evt)) return
+      if (!evt || typeof evt !== 'object' || !('type' in evt)) return
       switch (evt.type) {
-        case "note.created":
-          this.handleTaskEvent("task.created", evt.note)
+        case 'note.created':
+          this.handleTaskEvent('task.created', evt.note)
           break
-        case "note.updated":
-          this.handleTaskEvent("task.updated", evt.note, evt.previousVersion)
+        case 'note.updated':
+          this.handleTaskEvent('task.updated', evt.note, evt.previousVersion)
           break
-        case "note.deleted":
+        case 'note.deleted':
           this.handleTaskDeletion(evt.id, evt.previousVersion)
           break
         default:
@@ -186,7 +185,7 @@ export class McpServer {
   }
 
   private handleTaskEvent(
-    type: "task.created" | "task.updated",
+    type: 'task.created' | 'task.updated',
     note: Note,
     previousVersion?: NoteVersion,
   ) {
@@ -208,7 +207,7 @@ export class McpServer {
       previousVersion,
       links: tasks.buildLinks(id),
     }
-    this.broadcast("task.deleted", payload)
+    this.broadcast('task.deleted', payload)
   }
 
   private markTaskKnown(id: NoteId, tasks?: TaskToolService) {
@@ -229,42 +228,42 @@ export class McpServer {
     }
 
     const errorContent = (code: string, details?: Record<string, unknown>) => ({
-      content: [{ type: "text" as const, text: formatError(code, details) }],
+      content: [{ type: 'text' as const, text: formatError(code, details) }],
       isError: true,
     })
 
     const mapError = (
       e: unknown,
     ): { code: string; details?: Record<string, unknown> } => {
-      if (e && typeof e === "object" && "code" in e) {
+      if (e && typeof e === 'object' && 'code' in e) {
         const codeValue = (e as { code?: unknown }).code
         const details = (e as { details?: unknown }).details
         return {
           code:
-            typeof codeValue === "string" && codeValue
+            typeof codeValue === 'string' && codeValue
               ? codeValue
-              : "UnknownError",
+              : 'UnknownError',
           details:
-            details && typeof details === "object"
+            details && typeof details === 'object'
               ? (details as Record<string, unknown>)
               : undefined,
         }
       }
-      if (e instanceof McpError) return { code: e.message || "McpError" }
-      const msg = (e as Error)?.message || "UnknownError"
-      if (/already exists/i.test(msg)) return { code: "NoteAlreadyExists" }
-      if (/Note missing/i.test(msg)) return { code: "NoteNotFound" }
-      if (/VersionConflict/i.test(msg)) return { code: "VersionConflict" }
-      if (/NoteNotFound/i.test(msg)) return { code: "NoteNotFound" }
+      if (e instanceof McpError) return { code: e.message || 'McpError' }
+      const msg = (e as Error)?.message || 'UnknownError'
+      if (/already exists/i.test(msg)) return { code: 'NoteAlreadyExists' }
+      if (/Note missing/i.test(msg)) return { code: 'NoteNotFound' }
+      if (/VersionConflict/i.test(msg)) return { code: 'VersionConflict' }
+      if (/NoteNotFound/i.test(msg)) return { code: 'NoteNotFound' }
       return {
         code:
-          msg.replace(/[^A-Za-z0-9_.-]/g, "_").slice(0, 60) || "UnknownError",
+          msg.replace(/[^A-Za-z0-9_.-]/g, '_').slice(0, 60) || 'UnknownError',
       }
     }
 
     // list_notes
     this.sdk.tool(
-      "list_notes",
+      'list_notes',
       { tag: z.string().optional(), search: z.string().optional() },
       async (args: { tag?: string; search?: string }) => {
         const svc = this.requireService()
@@ -285,7 +284,7 @@ export class McpServer {
             }
           })
           return {
-            content: [{ type: "text", text: JSON.stringify({ notes: slim }) }],
+            content: [{ type: 'text', text: JSON.stringify({ notes: slim }) }],
           }
         } catch (e) {
           const mapped = mapError(e)
@@ -307,7 +306,7 @@ export class McpServer {
 
     // list_tasks
     this.sdk.tool(
-      "list_tasks",
+      'list_tasks',
       {
         tag: z.string().optional(),
         search: z.string().optional(),
@@ -330,7 +329,7 @@ export class McpServer {
           })
           return {
             content: [
-              { type: "text", text: JSON.stringify({ tasks: payload }) },
+              { type: 'text', text: JSON.stringify({ tasks: payload }) },
             ],
           }
         } catch (e) {
@@ -342,7 +341,7 @@ export class McpServer {
 
     // create_task
     this.sdk.tool(
-      "create_task",
+      'create_task',
       {
         id: z.string(),
         title: z.string(),
@@ -366,7 +365,7 @@ export class McpServer {
           this.markTaskKnown(created.id, tasks)
           return {
             content: [
-              { type: "text", text: JSON.stringify({ task: created }) },
+              { type: 'text', text: JSON.stringify({ task: created }) },
             ],
           }
         } catch (e) {
@@ -378,7 +377,7 @@ export class McpServer {
 
     // update_task
     this.sdk.tool(
-      "update_task",
+      'update_task',
       {
         id: z.string(),
         version: z.string(),
@@ -405,7 +404,7 @@ export class McpServer {
           this.markTaskKnown(updated.id, tasks)
           return {
             content: [
-              { type: "text", text: JSON.stringify({ task: updated }) },
+              { type: 'text', text: JSON.stringify({ task: updated }) },
             ],
           }
         } catch (e) {
@@ -417,7 +416,7 @@ export class McpServer {
 
     // transition_task_status
     this.sdk.tool(
-      "transition_task_status",
+      'transition_task_status',
       {
         id: z.string(),
         version: z.string(),
@@ -450,7 +449,7 @@ export class McpServer {
           this.markTaskKnown(updated.id, tasks)
           return {
             content: [
-              { type: "text", text: JSON.stringify({ task: updated }) },
+              { type: 'text', text: JSON.stringify({ task: updated }) },
             ],
           }
         } catch (e) {
@@ -461,7 +460,7 @@ export class McpServer {
     )
 
     // list_tags
-    this.sdk.tool("list_tags", {}, async () => {
+    this.sdk.tool('list_tags', {}, async () => {
       const svc = this.requireService()
       try {
         const notes = await svc.list()
@@ -475,7 +474,7 @@ export class McpServer {
         const tags = Array.from(counts.entries())
           .map(([name, count]) => ({ name, count }))
           .sort((a, b) => a.name.localeCompare(b.name))
-        return { content: [{ type: "text", text: JSON.stringify({ tags }) }] }
+        return { content: [{ type: 'text', text: JSON.stringify({ tags }) }] }
       } catch (e) {
         const mapped = mapError(e)
         return errorContent(mapped.code, mapped.details)
@@ -484,15 +483,15 @@ export class McpServer {
 
     // get_note
     this.sdk.tool(
-      "get_note",
+      'get_note',
       { id: z.string() },
       async (args: { id: string }) => {
         const svc = this.requireService()
         try {
           const noteId = args.id as NoteId
           const note = await svc.read(noteId)
-          if (!note) return errorContent("NoteNotFound")
-          return { content: [{ type: "text", text: JSON.stringify({ note }) }] }
+          if (!note) return errorContent('NoteNotFound')
+          return { content: [{ type: 'text', text: JSON.stringify({ note }) }] }
         } catch (e) {
           const mapped = mapError(e)
           return errorContent(mapped.code, mapped.details)
@@ -502,7 +501,7 @@ export class McpServer {
 
     // create_note
     this.sdk.tool(
-      "create_note",
+      'create_note',
       {
         id: z.string(),
         title: z.string().optional(),
@@ -528,7 +527,7 @@ export class McpServer {
           })
           return {
             content: [
-              { type: "text", text: JSON.stringify({ note: created }) },
+              { type: 'text', text: JSON.stringify({ note: created }) },
             ],
           }
         } catch (e) {
@@ -540,7 +539,7 @@ export class McpServer {
 
     // update_note
     this.sdk.tool(
-      "update_note",
+      'update_note',
       {
         id: z.string(),
         version: z.string(),
@@ -570,7 +569,7 @@ export class McpServer {
           const updated = await svc.update(noteId, mutation, version)
           return {
             content: [
-              { type: "text", text: JSON.stringify({ note: updated }) },
+              { type: 'text', text: JSON.stringify({ note: updated }) },
             ],
           }
         } catch (e) {
@@ -582,7 +581,7 @@ export class McpServer {
 
     // delete_note
     this.sdk.tool(
-      "delete_note",
+      'delete_note',
       { id: z.string(), version: z.string() },
       async (input: { id: string; version: string }) => {
         const svc = this.requireService()
@@ -590,9 +589,9 @@ export class McpServer {
           const noteId = input.id as NoteId
           const version = input.version as NoteVersion
           const ok = await svc.delete(noteId, version)
-          if (!ok) return errorContent("NoteNotFound")
+          if (!ok) return errorContent('NoteNotFound')
           return {
-            content: [{ type: "text", text: JSON.stringify({ ok: true }) }],
+            content: [{ type: 'text', text: JSON.stringify({ ok: true }) }],
           }
         } catch (e) {
           const mapped = mapError(e)
@@ -602,14 +601,14 @@ export class McpServer {
     )
 
     // metrics
-    this.sdk.tool("metrics", {}, async () => {
+    this.sdk.tool('metrics', {}, async () => {
       const svc = this.requireService()
       const notes = await svc.list()
       const uptimeMs = this.startedAt ? Date.now() - this.startedAt : 0
       return {
         content: [
           {
-            type: "text",
+            type: 'text',
             text: JSON.stringify({
               notes: notes.length,
               uptimeMs,
@@ -623,11 +622,11 @@ export class McpServer {
 
   private authOk(url: URL, headers: Headers): boolean {
     if (!this.apiKey) return false // server not ready until key set
-    const auth = headers.get("authorization") || ""
-    const bearer = auth.toLowerCase().startsWith("bearer ")
+    const auth = headers.get('authorization') || ''
+    const bearer = auth.toLowerCase().startsWith('bearer ')
       ? auth.slice(7).trim()
       : null
-    const q = url.searchParams.get("key")
+    const q = url.searchParams.get('key')
     const provided = bearer || q || null
     return !!provided && provided === this.apiKey
   }
@@ -635,7 +634,7 @@ export class McpServer {
   async start(): Promise<void> {
     if (!this.noteService) {
       log.info(
-        "Starting without NoteService; /health ok=false until setNoteService().",
+        'Starting without NoteService; /health ok=false until setNoteService().',
       )
     }
     if (this.running) return
@@ -645,9 +644,9 @@ export class McpServer {
     await this.sdk.connect(this.transport)
 
     this.httpServer = createServer((req, res) => {
-      const url = new URL(req.url || "/", `http://localhost:${this.port}`)
+      const url = new URL(req.url || '/', `http://localhost:${this.port}`)
 
-      if (url.pathname === "/health") {
+      if (url.pathname === '/health') {
         const payload = {
           ok: !!this.noteService && !!this.apiKey,
           noteServiceReady: !!this.noteService,
@@ -655,24 +654,24 @@ export class McpServer {
           running: this.running,
         }
         res.statusCode = payload.ok ? 200 : 503
-        res.setHeader("Content-Type", "application/json")
+        res.setHeader('Content-Type', 'application/json')
         res.end(JSON.stringify(payload))
         return
       }
 
-      if (url.pathname === "/config/key" && req.method === "POST") {
-        let body = ""
-        req.on("data", (chunk) => {
+      if (url.pathname === '/config/key' && req.method === 'POST') {
+        let body = ''
+        req.on('data', (chunk) => {
           body += chunk
         })
-        req.on("end", () => {
+        req.on('end', () => {
           if (!this.authOk(url, toHeaders(req.headers))) {
             res.statusCode = this.apiKey ? 401 : 503
-            res.setHeader("Content-Type", "application/json")
+            res.setHeader('Content-Type', 'application/json')
             res.end(
               JSON.stringify({
                 error: {
-                  code: this.apiKey ? "Unauthorized" : "ServerNotReady",
+                  code: this.apiKey ? 'Unauthorized' : 'ServerNotReady',
                 },
               }),
             )
@@ -686,33 +685,33 @@ export class McpServer {
             })
             const cfg = schema.parse(parsed)
             if (cfg.rotate || cfg.newKey) {
-              this.apiKey = cfg.newKey || randomBytes(32).toString("hex")
+              this.apiKey = cfg.newKey || randomBytes(32).toString('hex')
             }
             res.statusCode = 200
-            res.setHeader("Content-Type", "application/json")
+            res.setHeader('Content-Type', 'application/json')
             res.end(JSON.stringify({ ok: true }))
           } catch (_error) {
             res.statusCode = 400
-            res.setHeader("Content-Type", "application/json")
-            res.end(JSON.stringify({ error: { code: "BadRequest" } }))
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ error: { code: 'BadRequest' } }))
           }
         })
         return
       }
 
-      if (url.pathname === "/config/storage" && req.method === "POST") {
-        let body = ""
-        req.on("data", (chunk) => {
+      if (url.pathname === '/config/storage' && req.method === 'POST') {
+        let body = ''
+        req.on('data', (chunk) => {
           body += chunk
         })
-        req.on("end", () => {
+        req.on('end', () => {
           if (!this.authOk(url, toHeaders(req.headers))) {
             res.statusCode = this.apiKey ? 401 : 503
-            res.setHeader("Content-Type", "application/json")
+            res.setHeader('Content-Type', 'application/json')
             res.end(
               JSON.stringify({
                 error: {
-                  code: this.apiKey ? "Unauthorized" : "ServerNotReady",
+                  code: this.apiKey ? 'Unauthorized' : 'ServerNotReady',
                 },
               }),
             )
@@ -720,28 +719,28 @@ export class McpServer {
           }
           try {
             const parsed = body ? JSON.parse(body) : {}
-            const schema = z.object({ mode: z.enum(["memory", "vault"]) })
+            const schema = z.object({ mode: z.enum(['memory', 'vault']) })
             const cfg = schema.parse(parsed)
             // Caller (plugin) will handle actual restart; here we just acknowledge
             res.statusCode = 200
-            res.setHeader("Content-Type", "application/json")
+            res.setHeader('Content-Type', 'application/json')
             res.end(JSON.stringify({ ok: true, mode: cfg.mode }))
           } catch {
             res.statusCode = 400
-            res.setHeader("Content-Type", "application/json")
-            res.end(JSON.stringify({ error: { code: "BadRequest" } }))
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ error: { code: 'BadRequest' } }))
           }
         })
         return
       }
 
-      if (url.pathname === "/mcp") {
+      if (url.pathname === '/mcp') {
         if (!this.authOk(url, toHeaders(req.headers))) {
           res.statusCode = this.apiKey ? 401 : 503
-          res.setHeader("Content-Type", "application/json")
+          res.setHeader('Content-Type', 'application/json')
           res.end(
             JSON.stringify({
-              error: { code: this.apiKey ? "Unauthorized" : "ServerNotReady" },
+              error: { code: this.apiKey ? 'Unauthorized' : 'ServerNotReady' },
             }),
           )
           return
@@ -752,11 +751,11 @@ export class McpServer {
       }
 
       res.statusCode = 404
-      res.setHeader("Content-Type", "application/json")
-      res.end(JSON.stringify({ error: { code: "NotFound" } }))
+      res.setHeader('Content-Type', 'application/json')
+      res.end(JSON.stringify({ error: { code: 'NotFound' } }))
     })
 
-    this.httpServer.listen(this.port, "0.0.0.0", () => {
+    this.httpServer.listen(this.port, '0.0.0.0', () => {
       this.startedAt = Date.now()
       log.start(`MCP server (SDK) listening http://localhost:${this.port}`)
       log.info(`Health: http://localhost:${this.port}/health`)
@@ -775,7 +774,7 @@ export class McpServer {
     )
     this.httpServer = null
     this.startedAt = null
-    log.stop("MCP server stopped")
+    log.stop('MCP server stopped')
   }
 }
 
@@ -788,10 +787,10 @@ export class McpServer {
 function toHeaders(init: IncomingHttpHeaders): Headers {
   const headers = new Headers()
   for (const [key, value] of Object.entries(init)) {
-    if (typeof value === "string") {
+    if (typeof value === 'string') {
       headers.set(key, value)
     } else if (Array.isArray(value)) {
-      headers.set(key, value.join(", "))
+      headers.set(key, value.join(', '))
     }
   }
   return headers
@@ -827,7 +826,7 @@ export async function createMcpServer(opts: CreateMcpServerOptions = {}) {
   let noteService = opts.noteService || null
   if (!noteService) {
     try {
-      const core = await import("@orchard/core")
+      const core = await import('@orchard/core')
       const adapterFactory: () => { adapter: VaultAdapter; events?: EventBus } =
         opts.createAdapter ||
         (() => ({
@@ -866,15 +865,15 @@ function isWithinFolder(id: NoteId, folder: string): boolean {
 }
 
 function normalizeTaskFolder(input?: string | null): string {
-  if (input == null) return "tasks"
-  const trimmed = input.trim().replace(/^\/+|\/+$/g, "")
-  if (!trimmed) return ""
-  return trimmed.replace(/\\+/g, "/").toLowerCase()
+  if (input == null) return 'tasks'
+  const trimmed = input.trim().replace(/^\/+|\/+$/g, '')
+  if (!trimmed) return ''
+  return trimmed.replace(/\\+/g, '/').toLowerCase()
 }
 
 function normalizeTaskBaseFile(input?: string | null): string | null {
-  if (input == null) return ".obsidian/bases/orchard-tasks.base.json"
+  if (input == null) return '.obsidian/bases/orchard-tasks.base.json'
   const trimmed = input.trim()
   if (!trimmed) return null
-  return trimmed.replace(/\\+/g, "/")
+  return trimmed.replace(/\\+/g, '/')
 }

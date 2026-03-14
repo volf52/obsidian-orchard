@@ -1,4 +1,3 @@
-import { computeNoteVersion } from "./hash"
 import type {
   CreateNoteInput,
   EventBus,
@@ -9,7 +8,8 @@ import type {
   NoteVersion,
   UpdateNoteMutation,
   VaultAdapter,
-} from "./types"
+} from './types'
+import { computeNoteVersion } from './hash'
 
 /**
  * Normalize a note identifier into the canonical NoteId form.
@@ -19,8 +19,8 @@ import type {
  */
 function normalizeId(id: string): NoteId {
   let n = id.trim()
-  if (!n.endsWith(".md")) n = `${n}.md`
-  n = n.replace(/\\+/g, "/")
+  if (!n.endsWith('.md')) n = `${n}.md`
+  n = n.replace(/\\+/g, '/')
   n = n.toLowerCase()
   return n as NoteId
 }
@@ -55,7 +55,7 @@ export class NoteService {
           parsed.frontmatter.title?.toString() ??
           deriveTitle(info.id, parsed.body),
         tags: Array.isArray(parsed.frontmatter.tags)
-          ? parsed.frontmatter.tags.filter((t) => typeof t === "string")
+          ? parsed.frontmatter.tags.filter((t) => typeof t === 'string')
           : [],
         updatedAt: info.mtime,
         frontmatter: parsed.frontmatter,
@@ -79,7 +79,7 @@ export class NoteService {
       title:
         parsed.frontmatter.title?.toString() ?? deriveTitle(norm, parsed.body),
       tags: Array.isArray(parsed.frontmatter.tags)
-        ? parsed.frontmatter.tags.filter((t) => typeof t === "string")
+        ? parsed.frontmatter.tags.filter((t) => typeof t === 'string')
         : [],
       updatedAt: info.mtime,
       frontmatter: parsed.frontmatter,
@@ -94,15 +94,15 @@ export class NoteService {
     if (existing != null) {
       throw new Error(`Note already exists: ${id}`)
     }
-    const frontmatter = { ...(input.frontmatter ?? {}) }
+    const frontmatter = { ...input.frontmatter }
     if (input.title) frontmatter.title = input.title
     if (input.tags) frontmatter.tags = input.tags
-    const body = input.body ?? ""
+    const body = input.body ?? ''
     const raw = serialize(frontmatter, body)
     await this.adapter.writeFile(id, raw)
     const note = await this.read(id)
-    if (!note) throw new Error("Failed to read back created note")
-    this.events?.publish({ type: "note.created", note })
+    if (!note) throw new Error('Failed to read back created note')
+    this.events?.publish({ type: 'note.created', note })
     return note
   }
 
@@ -114,7 +114,7 @@ export class NoteService {
     const current = await this.read(id)
     if (!current) throw new Error(`Note missing: ${id}`)
     if (current.version !== expectedVersion) {
-      throw new Error("VersionConflict: stale version provided")
+      throw new Error('VersionConflict: stale version provided')
     }
     const frontmatter = { ...current.frontmatter }
     if (mutation.frontmatter) Object.assign(frontmatter, mutation.frontmatter)
@@ -129,9 +129,9 @@ export class NoteService {
     const raw = serialize(frontmatter, body)
     await this.adapter.writeFile(current.id, raw)
     const updated = await this.read(current.id)
-    if (!updated) throw new Error("Failed to read back updated note")
+    if (!updated) throw new Error('Failed to read back updated note')
     this.events?.publish({
-      type: "note.updated",
+      type: 'note.updated',
       note: updated,
       previousVersion: current.version,
     })
@@ -142,12 +142,12 @@ export class NoteService {
     const current = await this.read(id)
     if (!current) return false
     if (current.version !== expectedVersion) {
-      throw new Error("VersionConflict: stale version provided")
+      throw new Error('VersionConflict: stale version provided')
     }
     const ok = await this.adapter.deleteFile(current.id)
     if (ok) {
       this.events?.publish({
-        type: "note.deleted",
+        type: 'note.deleted',
         id: current.id,
         previousVersion: current.version,
       })
@@ -190,8 +190,8 @@ interface ParsedRaw extends NoteContent {}
  * @returns An object with `frontmatter` (a record of parsed keys to values) and `body` (the text after the frontmatter or the original `raw` if no frontmatter is present).
  */
 function parseRaw(raw: string): ParsedRaw {
-  if (raw.startsWith("---\n")) {
-    const end = raw.indexOf("\n---\n", 4)
+  if (raw.startsWith('---\n')) {
+    const end = raw.indexOf('\n---\n', 4)
     if (end !== -1) {
       const fmBlock = raw.slice(4, end)
       const body = raw.slice(end + 5) // skip closing ---\n
@@ -201,12 +201,12 @@ function parseRaw(raw: string): ParsedRaw {
         if (!m || !m[1]) continue
         const key = m[1] as string // regex ensures group 1
         let value: unknown = m[2]
-        if (value === "") value = ""
-        else if (value === "true") value = true
-        else if (value === "false") value = false
+        if (value === '') value = ''
+        else if (value === 'true') value = true
+        else if (value === 'false') value = false
         else if (!Number.isNaN(Number(value))) value = Number(value)
         // Support JSON arrays/objects stored inline (e.g. tags: ["a","b"]).
-        else if (typeof value === "string" && /^(\[|\{)/.test(value.trim())) {
+        else if (typeof value === 'string' && /^(\[|\{)/.test(value.trim())) {
           try {
             const parsed = JSON.parse(value)
             value = parsed
@@ -232,13 +232,13 @@ function parseRaw(raw: string): ParsedRaw {
 function serialize(frontmatter: Record<string, unknown>, body: string): string {
   const keys = Object.keys(frontmatter)
   if (keys.length === 0) return body
-  const lines: string[] = ["---"]
+  const lines: string[] = ['---']
   for (const k of keys.sort()) {
     const v = frontmatter[k]
     lines.push(`${k}: ${primitiveToString(v)}`)
   }
-  lines.push("---", body)
-  return lines.join("\n")
+  lines.push('---', body)
+  return lines.join('\n')
 }
 
 /**
@@ -248,8 +248,8 @@ function serialize(frontmatter: Record<string, unknown>, body: string): string {
  * @returns An empty string for `null`/`undefined`, JSON for objects, or the result of `String(v)` for other values
  */
 function primitiveToString(v: unknown): string {
-  if (v == null) return ""
-  if (typeof v === "object") return JSON.stringify(v)
+  if (v == null) return ''
+  if (typeof v === 'object') return JSON.stringify(v)
   return String(v)
 }
 
@@ -263,7 +263,7 @@ function primitiveToString(v: unknown): string {
  * @returns The first non-empty line of `body` (trimmed and truncated to 120 characters) or the `id` without a `.md` suffix.
  */
 function deriveTitle(id: string, body: string): string {
-  const base = id.replace(/\.md$/, "")
+  const base = id.replace(/\.md$/, '')
   const firstLine = body.split(/\n/)[0]?.trim()
   if (firstLine && firstLine.length > 0) return firstLine.slice(0, 120)
   return base

@@ -1,6 +1,6 @@
-import { createEventBus, createMemoryAdapter, NoteService } from "@orchard/core"
-import { Notice, Plugin, TFile, type Vault } from "obsidian"
-import { McpServer } from "./mcp-server"
+import { Notice, Plugin, TFile, type Vault } from 'obsidian'
+import { createEventBus, createMemoryAdapter, NoteService } from '@orchard/core'
+import { McpServer } from './mcp-server'
 
 /**
  * Creates a NoteService-compatible adapter that maps Obsidian vault file operations to MCP storage operations.
@@ -16,14 +16,14 @@ import { McpServer } from "./mcp-server"
 function createObsidianVaultAdapter(vault: Vault) {
   function normalize(id: string): string {
     let n = id.trim()
-    if (!n.endsWith(".md")) n = `${n}.md`
-    n = n.replace(/\\+/g, "/").toLowerCase()
+    if (!n.endsWith('.md')) n = `${n}.md`
+    n = n.replace(/\\+/g, '/').toLowerCase()
     return n
   }
   return {
     async readFile(id: string) {
       const file = vault.getAbstractFileByPath(id)
-      if (file instanceof TFile && file.extension === "md")
+      if (file instanceof TFile && file.extension === 'md')
         return vault.read(file)
       const t = vault.getAbstractFileByPath(normalize(id))
       if (t instanceof TFile) return vault.read(t)
@@ -45,7 +45,7 @@ function createObsidianVaultAdapter(vault: Vault) {
     async list() {
       return vault
         .getFiles()
-        .filter((f): f is TFile => f instanceof TFile && f.extension === "md")
+        .filter((f): f is TFile => f instanceof TFile && f.extension === 'md')
         .map((f) => ({ id: f.path, mtime: f.stat.mtime, size: f.stat.size }))
     },
     async deleteFile(id: string) {
@@ -60,13 +60,13 @@ function createObsidianVaultAdapter(vault: Vault) {
 interface McpSettings {
   enabled: boolean
   apiKey: string
-  storage: "vault" | "memory"
+  storage: 'vault' | 'memory'
 }
 
 const DEFAULT_SETTINGS: McpSettings = {
   enabled: true,
-  apiKey: "",
-  storage: "vault",
+  apiKey: '',
+  storage: 'vault',
 }
 
 export default class OrchardMcpPlugin extends Plugin {
@@ -74,7 +74,7 @@ export default class OrchardMcpPlugin extends Plugin {
   mcp: McpServer | null = null
 
   override async onload() {
-    console.log("Orchard MCP Plugin (standalone) loading...")
+    console.log('Orchard MCP Plugin (standalone) loading...')
     await this.loadSettings()
 
     if (this.settings.enabled) {
@@ -82,33 +82,33 @@ export default class OrchardMcpPlugin extends Plugin {
     }
 
     this.addCommand({
-      id: "orchard-mcp-restart",
-      name: "Restart MCP Server",
+      id: 'orchard-mcp-restart',
+      name: 'Restart MCP Server',
       callback: async () => {
         await this.restartServer()
       },
     })
 
     this.addCommand({
-      id: "orchard-mcp-toggle",
-      name: "Toggle MCP Server",
+      id: 'orchard-mcp-toggle',
+      name: 'Toggle MCP Server',
       callback: async () => {
         if (this.mcp) {
           await this.stopServer()
           this.settings.enabled = false
-          console.log("[MCP] Disabled")
+          console.log('[MCP] Disabled')
         } else {
           this.settings.enabled = true
           await this.startServer()
-          console.log("[MCP] Enabled")
+          console.log('[MCP] Enabled')
         }
         await this.saveSettings()
       },
     })
 
     this.addCommand({
-      id: "orchard-mcp-show-key",
-      name: "Show MCP API Key",
+      id: 'orchard-mcp-show-key',
+      name: 'Show MCP API Key',
       callback: async () => {
         if (!this.settings.apiKey) {
           this.settings.apiKey = this.generateKey()
@@ -118,20 +118,20 @@ export default class OrchardMcpPlugin extends Plugin {
         new Notice(`MCP API Key: ${this.settings.apiKey}`)
         console.log(`[MCP] API key shown to user ***${tail}`)
         const clipboard =
-          typeof navigator !== "undefined" ? navigator.clipboard : undefined
+          typeof navigator !== 'undefined' ? navigator.clipboard : undefined
         await clipboard?.writeText?.(this.settings.apiKey)
-        new Notice("MCP API Key copied to clipboard")
+        new Notice('MCP API Key copied to clipboard')
       },
     })
 
     this.addCommand({
-      id: "orchard-mcp-regenerate-key",
-      name: "Regenerate MCP API Key",
+      id: 'orchard-mcp-regenerate-key',
+      name: 'Regenerate MCP API Key',
       callback: async () => {
         this.settings.apiKey = this.generateKey()
         await this.saveSettings()
         const tail = this.settings.apiKey.slice(-6)
-        new Notice("MCP API Key regenerated")
+        new Notice('MCP API Key regenerated')
         console.log(`[MCP] API key regenerated ***${tail}`)
         await this.restartServer()
       },
@@ -153,7 +153,7 @@ export default class OrchardMcpPlugin extends Plugin {
 
     const events = createEventBus()
     const adapter =
-      this.settings.storage === "vault"
+      this.settings.storage === 'vault'
         ? createObsidianVaultAdapter(this.app.vault)
         : createMemoryAdapter()
     const noteService = new NoteService({ adapter, events })
@@ -174,7 +174,7 @@ export default class OrchardMcpPlugin extends Plugin {
   private async restartServer() {
     await this.stopServer()
     await this.startServer()
-    console.log("[MCP] Restart complete")
+    console.log('[MCP] Restart complete')
   }
 
   private async loadSettings() {
@@ -190,7 +190,7 @@ export default class OrchardMcpPlugin extends Plugin {
     const arr = new Uint8Array(24)
     type RandomSource = { getRandomValues?: (data: Uint8Array) => Uint8Array }
     const cryptoObj =
-      typeof globalThis !== "undefined" && "crypto" in globalThis
+      typeof globalThis !== 'undefined' && 'crypto' in globalThis
         ? ((globalThis as { crypto?: RandomSource }).crypto ?? null)
         : null
     if (cryptoObj?.getRandomValues) {
@@ -200,7 +200,7 @@ export default class OrchardMcpPlugin extends Plugin {
         arr[i] = Math.floor(Math.random() * 256)
     }
     return Array.from(arr)
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("")
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('')
   }
 }

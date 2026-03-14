@@ -1,9 +1,9 @@
-import type { App, Command } from "obsidian"
-import { mount, unmount } from "svelte"
-import TranscribeFileModal from "@/components/TranscribeFileModal.svelte"
-import BetterModal from "@/obsidian-extended/better-modal"
-import type { OrchardServices } from "@/services/utils"
-import type { OrchardSettings } from "@/settings/types"
+import type { App, Command } from 'obsidian'
+import { mount, unmount } from 'svelte'
+import type { OrchardServices } from '@/services/utils'
+import type { OrchardSettings } from '@/settings/types'
+import TranscribeFileModal from '@/components/TranscribeFileModal.svelte'
+import BetterModal from '@/obsidian-extended/better-modal'
 
 class TranscriptionModule {
   constructor(
@@ -16,8 +16,8 @@ class TranscriptionModule {
     const commands: Command[] = []
 
     commands.push({
-      id: "orchard-transcribe-meeting",
-      name: "Transcribe File",
+      id: 'orchard-transcribe-meeting',
+      name: 'Transcribe File',
       callback: () => {
         this.trascribeFlow()
       },
@@ -27,7 +27,7 @@ class TranscriptionModule {
   }
 
   private trascribeFlow() {
-    const m = new BetterModal(this.app, "Transcribe File")
+    const m = new BetterModal(this.app, 'Transcribe File')
 
     m.modalEl.removeChild(m.contentEl)
 
@@ -40,9 +40,9 @@ class TranscriptionModule {
         ) => {
           m.disableClose()
 
-          console.log("File submitted", file.name, file.type, file.size)
+          console.log('File submitted', file.name, file.type, file.size)
 
-          onErr("transcribe", new Error("Transcription not yet implemented"))
+          onErr('transcribe', new Error('Transcription not yet implemented'))
 
           m.enableClose()
           m.close()

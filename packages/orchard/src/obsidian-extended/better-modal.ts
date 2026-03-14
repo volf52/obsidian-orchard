@@ -1,6 +1,6 @@
-import { type App, Modal } from "obsidian"
-import { createStore } from "zustand/vanilla"
-import { notifyErr } from "@/notify"
+import { type App, Modal } from 'obsidian'
+import { createStore } from 'zustand/vanilla'
+import { notifyErr } from '@/notify'
 
 type OnCloseFunction = (() => void) | (() => Promise<void>)
 
@@ -22,16 +22,16 @@ class BetterModal extends Modal {
       this.setTitle(title)
     }
 
-    const bgEl = this.containerEl.find("div.modal-bg")
+    const bgEl = this.containerEl.find('div.modal-bg')
     if (!bgEl) {
-      notifyErr("Modal background element not found")
-      throw new Error("Modal background element not found")
+      notifyErr('Modal background element not found')
+      throw new Error('Modal background element not found')
     }
 
-    const btnEl = this.modalEl.find("div.modal-close-button")
+    const btnEl = this.modalEl.find('div.modal-close-button')
     if (!btnEl) {
-      notifyErr("Modal close button element not found")
-      throw new Error("Modal close button element not found")
+      notifyErr('Modal close button element not found')
+      throw new Error('Modal close button element not found')
     }
 
     this.#bgEl = bgEl as HTMLDivElement
@@ -41,10 +41,10 @@ class BetterModal extends Modal {
     this.#closeBtnDisabledEl = btnEl.cloneNode(true) as HTMLDivElement
 
     this.#bgDisabledEl.setCssStyles({
-      cursor: "not-allowed",
+      cursor: 'not-allowed',
     })
     this.#closeBtnDisabledEl.setCssStyles({
-      cursor: "not-allowed",
+      cursor: 'not-allowed',
     })
 
     this.#canCloseStore.subscribe((canClose) => {

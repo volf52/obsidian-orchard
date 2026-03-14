@@ -1,4 +1,4 @@
-import type { NoteId, VaultAdapter, VaultAdapterFileInfo } from "./types"
+import type { NoteId, VaultAdapter, VaultAdapterFileInfo } from './types'
 
 interface Entry {
   data: string

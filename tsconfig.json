@@ -4,12 +4,10 @@
     "pretty": true,
     "skipLibCheck": true
   },
-  "exclude": [
-    "node_modules"
-  ],
+  "exclude": ["node_modules"],
   "references": [
     {
-      "path": "./internal/build-plugins",
+      "path": "./internal/build-plugins"
     },
     {
       "path": "./packages/orchard-core"
@@ -20,5 +18,6 @@
     {
       "path": "./packages/orchard-runtime"
     }
-  ]
+  ],
+  "include": ["./*.ts"]
 }

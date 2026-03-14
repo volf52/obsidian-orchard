@@ -1,12 +1,12 @@
-import { Notice, Plugin } from "obsidian"
-import { ServerModule } from "./server-module"
+import { Notice, Plugin } from 'obsidian'
+import { ServerModule } from './server-module'
 
 interface ServerSettings {
   apiKey: string
 }
 
 const DEFAULT_SETTINGS: ServerSettings = {
-  apiKey: "",
+  apiKey: '',
 }
 
 export default class OrchardServerPlugin extends Plugin {
@@ -14,7 +14,7 @@ export default class OrchardServerPlugin extends Plugin {
   serverModule: ServerModule | null = null
 
   override async onload() {
-    console.log("Orchard Server Plugin loading...")
+    console.log('Orchard Server Plugin loading...')
     await this.loadSettings()
 
     // Generate API key if none exists
@@ -29,8 +29,8 @@ export default class OrchardServerPlugin extends Plugin {
 
     // Add command to regenerate API key
     this.addCommand({
-      id: "orchard-server-regenerate-apikey",
-      name: "Regenerate Server API Key",
+      id: 'orchard-server-regenerate-apikey',
+      name: 'Regenerate Server API Key',
       callback: async () => {
         this.settings.apiKey = ServerModule.generateApiKey()
         await this.saveSettings()
@@ -45,8 +45,8 @@ export default class OrchardServerPlugin extends Plugin {
     })
 
     this.addCommand({
-      id: "orchard-server-show-apikey",
-      name: "Show Server API Key",
+      id: 'orchard-server-show-apikey',
+      name: 'Show Server API Key',
       callback: () => {
         const msg = ` API 🔑: ${this.settings.apiKey}`
         new Notice(`Server ${msg}`)
@@ -56,11 +56,11 @@ export default class OrchardServerPlugin extends Plugin {
         navigator.clipboard
           .writeText(this.settings.apiKey)
           .then(() => {
-            new Notice("API Key copied to clipboard!")
+            new Notice('API Key copied to clipboard!')
           })
           .catch((err) => {
-            console.error("Failed to copy API Key:", err)
-            new Notice("Failed to copy API Key")
+            console.error('Failed to copy API Key:', err)
+            new Notice('Failed to copy API Key')
           })
       },
     })

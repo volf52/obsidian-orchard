@@ -1,10 +1,10 @@
-import type { BunPlugin } from "bun"
+import type { BunPlugin } from 'bun'
 
 export const sveltePlugin: BunPlugin = {
-  name: "svelte-transformer",
+  name: 'svelte-transformer',
 
   setup: async (build) => {
-    const { compile } = await import("svelte/compiler")
+    const { compile } = await import('svelte/compiler')
 
     const cssOutput: string[] = []
     let totalTime = 0
@@ -15,8 +15,8 @@ export const sveltePlugin: BunPlugin = {
       const start = performance.now()
       const compiled = compile(file, {
         filename: path,
-        generate: "client",
-        css: "external",
+        generate: 'client',
+        css: 'external',
       })
       const end = performance.now()
 
@@ -26,16 +26,16 @@ export const sveltePlugin: BunPlugin = {
 
       totalTime += end - start
 
-      return { loader: "js", contents: compiled.js.code }
+      return { loader: 'js', contents: compiled.js.code }
     })
 
     build.onLoad({ filter: /svelte\.css$/ }, async ({ defer }) => {
       await defer()
 
       if (cssOutput.length > 0) {
-        const contents = cssOutput.join("\n")
+        const contents = cssOutput.join('\n')
 
-        return { loader: "css", contents }
+        return { loader: 'css', contents }
       }
     })
 

@@ -1,3 +1,3 @@
-import YoutubeApiService from "./service"
+import YoutubeApiService from './service'
 
 export { YoutubeApiService }

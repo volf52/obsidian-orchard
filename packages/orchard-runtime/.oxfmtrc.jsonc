@@ -1,0 +1,31 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "sortImports": {
+    "newlinesBetween": false,
+    "groups": [
+      "type-import",
+      ["value-builtin", "value-external"],
+      "type-internal",
+      "value-internal",
+      ["type-parent", "type-sibling", "type-index"],
+      ["value-parent", "value-sibling", "value-index"],
+      {
+        "newlinesBetween": true
+      },
+      "unknown"
+    ],
+    "internalPattern": ["@orchard/", "@internal/", "@/"]
+  },
+  "ignorePatterns": ["node_modules", "dist", "**/*.md", "**/*.toml"],
+  "printWidth": 80,
+  "useTabs": false,
+  "tabWidth": 2,
+  "semi": false,
+  "singleQuote": true,
+  "trailingComma": "all",
+  "bracketSpacing": true,
+  "arrowParens": "always",
+  "overrides": [
+    { "files": ["*.json", "*.jsonc"], "options": { "trailingComma": "none" } }
+  ]
+}

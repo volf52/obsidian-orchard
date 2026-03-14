@@ -1,4 +1,4 @@
-import type { BunPlugin } from "bun";
+import type { BunPlugin } from 'bun'
 
 // Shared Bun plugin to alias @orchard/core to its source index.
 /**
@@ -10,11 +10,11 @@ import type { BunPlugin } from "bun";
  */
 export function coreAliasPlugin(): BunPlugin {
   return {
-    name: "core-alias",
+    name: 'core-alias',
     setup(build) {
       build.onResolve({ filter: /^@orchard\/core$/ }, () => ({
-        path: new URL("../src/index.ts", import.meta.url).pathname,
-      }));
+        path: new URL('../src/index.ts', import.meta.url).pathname,
+      }))
     },
-  };
+  }
 }

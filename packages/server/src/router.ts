@@ -1,7 +1,7 @@
-import { Hono } from "hono"
-import { bearerAuth } from "hono/bearer-auth"
-import { cors } from "hono/cors"
-import { logger } from "hono/logger"
+import { Hono } from 'hono'
+import { bearerAuth } from 'hono/bearer-auth'
+import { cors } from 'hono/cors'
+import { logger } from 'hono/logger'
 
 export const initRouter = (apiKey: string) => {
   const app = new Hono()
@@ -10,43 +10,43 @@ export const initRouter = (apiKey: string) => {
   return (
     app
       // Middleware
-      .use("*", logger())
+      .use('*', logger())
       .use(
-        "*",
+        '*',
         cors({
-          origin: "*",
-          allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-          allowHeaders: ["Content-Type", "Authorization"],
+          origin: '*',
+          allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+          allowHeaders: ['Content-Type', 'Authorization'],
         }),
       )
 
       // .get("/", Scalar({ url: "/" }))
-      .get("/health", (c) =>
+      .get('/health', (c) =>
         c.json({
-          status: "ok",
+          status: 'ok',
           timestamp: new Date().toISOString(),
         }),
       )
 
       // Protected API routes
       .use(
-        "/api/*",
+        '/api/*',
         bearerAuth({
           token: apiKey,
         }),
       )
-      .route("/api", apiRouter)
+      .route('/api', apiRouter)
   )
 }
 
 const initApiRouter = () => {
   const apiRouter = new Hono()
 
-  apiRouter.get("/status", (c) =>
+  apiRouter.get('/status', (c) =>
     c.json({
-      status: "API is running",
+      status: 'API is running',
       timestamp: new Date().toISOString(),
-      version: "1.0.0",
+      version: '1.0.0',
     }),
   )
 

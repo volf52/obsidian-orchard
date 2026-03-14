@@ -1,3 +1,9 @@
+import type { Vault } from 'obsidian'
+import {
+  ensureDirectory,
+  ensureTaskBaseDefinition,
+  generateTaskNoteId,
+} from '@/utils/task-files'
 import {
   InlineTaskService,
   type Note,
@@ -5,20 +11,12 @@ import {
   type NoteService,
   type NoteVersion,
   serializeTaskFrontmatter,
-  TaskNoteService,
-  toTaskNote,
   type TaskFrontmatter,
   type TaskNote,
-} from "@orchard/core"
-import type { Vault } from "obsidian"
-
-import {
-  ensureDirectory,
-  ensureTaskBaseDefinition,
-  generateTaskNoteId,
-} from "@/utils/task-files"
-
-import type { TaskSchema } from "./schema"
+  TaskNoteService,
+  toTaskNote,
+} from '@orchard/core'
+import type { TaskSchema } from './schema'
 
 export interface TaskCreateInput {
   title: string
@@ -85,7 +83,7 @@ export class TaskService {
 
     const nextFrontmatter = mergeFrontmatter(input.frontmatter, current)
     const body =
-      input.body !== undefined ? formatBody(input.body) : (current.body ?? "")
+      input.body !== undefined ? formatBody(input.body) : (current.body ?? '')
 
     const updated = await this.noteService.update(
       id,
@@ -114,9 +112,9 @@ export class TaskService {
  * @returns An empty string if `body` is empty or undefined; otherwise `body` with trailing whitespace removed and exactly one newline appended
  */
 function formatBody(body: string | undefined): string {
-  if (!body) return ""
-  const trimmed = body.replace(/\s+$/u, "")
-  return trimmed ? `${trimmed}\n` : ""
+  if (!body) return ''
+  const trimmed = body.replace(/\s+$/u, '')
+  return trimmed ? `${trimmed}\n` : ''
 }
 
 /**
@@ -126,9 +124,9 @@ function formatBody(body: string | undefined): string {
  * @returns The directory portion (all segments except the last) or an empty string if there is no directory
  */
 function toDirname(id: NoteId): string {
-  const segments = id.split("/")
-  if (segments.length <= 1) return ""
-  return segments.slice(0, -1).join("/")
+  const segments = id.split('/')
+  if (segments.length <= 1) return ''
+  return segments.slice(0, -1).join('/')
 }
 
 /**
@@ -143,7 +141,7 @@ function mergeFrontmatter(
   current?: Note,
 ): TaskFrontmatter {
   const currentFrontmatter =
-    current?.frontmatter && typeof current.frontmatter === "object"
+    current?.frontmatter && typeof current.frontmatter === 'object'
       ? current.frontmatter
       : {}
 
