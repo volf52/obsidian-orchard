@@ -2,6 +2,7 @@
   "name": "obsidian-orchard-monorepo",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "My obsidian plugins for personal use",
   "workspaces": {
     "packages": [

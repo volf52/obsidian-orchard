@@ -690,7 +690,7 @@ export class McpServer {
             res.statusCode = 200
             res.setHeader('Content-Type', 'application/json')
             res.end(JSON.stringify({ ok: true }))
-          } catch (_error) {
+          } catch {
             res.statusCode = 400
             res.setHeader('Content-Type', 'application/json')
             res.end(JSON.stringify({ error: { code: 'BadRequest' } }))

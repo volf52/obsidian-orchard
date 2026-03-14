@@ -170,10 +170,13 @@ class Orchard extends Plugin {
 
   private async loadSettings() {
     const loadedSettings = await this.loadData()
+    const googleApiKey =
+      await this.app.secretStorage.getSecret('orchard-gapi-key')
 
-    const settings = {
+    const settings: OrchardSettings = {
       ...DEFAULT_SETTINGS,
       ...loadedSettings,
+      googleApiKey,
     }
 
     this.settings = settings
@@ -181,7 +184,14 @@ class Orchard extends Plugin {
 
   async saveSettings() {
     updateSettings(this.settings)
-    await this.saveData(this.settings)
+
+    const { googleApiKey, ...rest } = this.settings
+
+    await this.app.secretStorage.setSecret(
+      'orchard-gapi-key',
+      googleApiKey || '',
+    )
+    await this.saveData(rest)
   }
 
   async activateView() {
